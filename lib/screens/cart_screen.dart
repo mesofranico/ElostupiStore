@@ -84,7 +84,7 @@ class CartScreen extends StatelessWidget {
           children: [
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(16),
                 itemCount: cartController.items.length,
                 itemBuilder: (context, index) {
                   return CartItemWidget(cartItem: cartController.items[index]);
@@ -92,14 +92,16 @@ class CartScreen extends StatelessWidget {
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withValues(alpha: 0.3),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     spreadRadius: 1,
-                    blurRadius: 5,
+                    blurRadius: 8,
                     offset: const Offset(0, -2),
                   ),
                 ],
@@ -116,49 +118,68 @@ class CartScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
+                      Obx(() => Text(
                         '€${cartController.totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
                         ),
-                      ),
+                      )),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
+                  const SizedBox(height: 20),
+                  Obx(() => SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Get.snackbar(
-                          'Sucesso!',
-                          'Compra finalizada com sucesso!',
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.green.withValues(alpha: 0.8),
-                          colorText: Colors.white,
-                          duration: const Duration(seconds: 3),
-                        );
-                        cartController.clearCart();
-                        Get.back();
-                      },
+                      onPressed: cartController.isLoading.value 
+                          ? null 
+                          : () async {
+                              final success = await cartController.finalizeOrder();
+                              if (success) {
+                                Get.back();
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 2,
                       ),
-                      child: const Text(
-                        'Finalizar Compra',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: cartController.isLoading.value
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Processando...',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : const Text(
+                              'Finalizar Compra',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                  ),
+                  )),
                 ],
               ),
             ),

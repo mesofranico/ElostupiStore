@@ -5,6 +5,7 @@ import 'controllers/app_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'screens/shop_screen.dart';
+import 'screens/admin_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       defaultTransition: Transition.fade,
       transitionDuration: const Duration(milliseconds: 300),
+      getPages: [
+        GetPage(name: '/admin', page: () => const AdminScreen()),
+      ],
     );
   }
 }

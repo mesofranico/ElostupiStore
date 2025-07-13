@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/product.dart';
 import '../controllers/cart_controller.dart';
+import '../controllers/app_controller.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -44,6 +45,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.find<CartController>();
+    final AppController appController = Get.find<AppController>();
     
     return Container(
       decoration: BoxDecoration(
@@ -187,23 +189,32 @@ class ProductCard extends StatelessWidget {
                         children: [
                           // Preço
                           Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.green[50],
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.green[200]!),
-                              ),
-                              child: Text(
-                                '€${product.price.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontSize: _getPriceFontSize(context) - 3,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[700],
+                            child: Obx(() {
+                              final displayPrice = appController.showResalePrice.value && product.price2 != null 
+                                  ? product.price2! 
+                                  : product.price;
+                              final isResalePrice = appController.showResalePrice.value && product.price2 != null;
+                              
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: isResalePrice ? Colors.orange[50] : Colors.green[50],
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isResalePrice ? Colors.orange[200]! : Colors.green[200]!,
+                                  ),
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
+                                child: Text(
+                                  '€${displayPrice.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: _getPriceFontSize(context) - 3,
+                                    fontWeight: FontWeight.bold,
+                                    color: isResalePrice ? Colors.orange[700] : Colors.green[700],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }),
                           ),
                           const SizedBox(width: 8),
                           // Botão adicionar

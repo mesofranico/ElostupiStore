@@ -7,6 +7,7 @@ class AppController extends GetxController {
   final GetStorage _storage = GetStorage();
   
   final RxBool autoRefreshEnabled = true.obs;
+  final RxBool showResalePrice = false.obs;
 
   @override
   void onInit() {
@@ -17,6 +18,7 @@ class AppController extends GetxController {
   Future<void> loadSettings() async {
     try {
       autoRefreshEnabled.value = _storage.read('auto_refresh_enabled') ?? true;
+      showResalePrice.value = _storage.read('show_resale_price') ?? false;
     } catch (e) {
       if (kDebugMode) {
         print('Erro ao carregar configurações: $e');
@@ -27,6 +29,11 @@ class AppController extends GetxController {
   Future<void> toggleAutoRefresh() async {
     autoRefreshEnabled.value = !autoRefreshEnabled.value;
     await _storage.write('auto_refresh_enabled', autoRefreshEnabled.value);
+  }
+
+  Future<void> toggleResalePrice() async {
+    showResalePrice.value = !showResalePrice.value;
+    await _storage.write('show_resale_price', showResalePrice.value);
   }
 
   ThemeData get lightTheme {

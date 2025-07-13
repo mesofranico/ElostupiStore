@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/product.dart';
+import '../services/product_service.dart';
+import 'app_controller.dart';
 
 class CartController extends GetxController {
   final GetStorage _storage = GetStorage();
+  final ProductService _productService = ProductService();
   
   final RxList<CartItem> items = <CartItem>[].obs;
   final RxBool isLoading = false.obs;
@@ -17,9 +20,39 @@ class CartController extends GetxController {
   }
 
   void addToCart(Product product) {
+    // Verificar se há stock disponível
+    if (product.stock != null && product.stock! <= 0) {
+      Get.snackbar(
+        'Stock Indisponível',
+        '${product.name} não está disponível no momento',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+      );
+      return;
+    }
+
     final existingIndex = items.indexWhere((item) => item.product.id == product.id);
     
     if (existingIndex >= 0) {
+      // Verificar se não excede o stock disponível
+      if (product.stock != null && items[existingIndex].quantity >= product.stock!) {
+        Get.snackbar(
+          'Stock Limitado',
+          'Quantidade máxima de ${product.name} já está no carrinho',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.withValues(alpha: 0.8),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+        );
+        return;
+      }
+      
       items[existingIndex].quantity++;
       items.refresh();
     } else {
@@ -53,6 +86,23 @@ class CartController extends GetxController {
     
     final index = items.indexWhere((item) => item.product.id == productId);
     if (index >= 0) {
+      final product = items[index].product;
+      
+      // Verificar se não excede o stock disponível
+      if (product.stock != null && quantity > product.stock!) {
+        Get.snackbar(
+          'Stock Insuficiente',
+          'Quantidade solicitada excede o stock disponível (${product.stock} unidades)',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.withValues(alpha: 0.8),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+        );
+        return;
+      }
+      
       items[index].quantity = quantity;
       items.refresh();
       saveCartToStorage();
@@ -65,7 +115,13 @@ class CartController extends GetxController {
   }
 
   double get totalPrice {
-    return items.fold(0.0, (sum, item) => sum + (item.product.price * item.quantity));
+    final AppController appController = Get.find<AppController>();
+    return items.fold(0.0, (sum, item) {
+      final price = appController.showResalePrice.value && item.product.price2 != null 
+          ? item.product.price2! 
+          : item.product.price;
+      return sum + (price * item.quantity);
+    });
   }
 
   int get totalItems {
@@ -112,6 +168,66 @@ class CartController extends GetxController {
       if (kDebugMode) {
         print('Erro ao carregar carrinho: $e');
       }
+    }
+  }
+
+  // Finalizar compra e atualizar stock
+  Future<bool> finalizeOrder() async {
+    if (items.isEmpty) return false;
+    
+    isLoading.value = true;
+    
+    try {
+      // Atualizar stock para cada item
+      for (final item in items) {
+        print('[CART] Tentando decrementar stock de ${item.product.id} (${item.product.name}), quantidade: ${item.quantity}');
+        final result = await _productService.decrementStock(
+          item.product.id, 
+          item.quantity
+        );
+        print('[CART] Resultado: success=${result['success']}, message=${result['message']}');
+        
+        if (!(result['success'] ?? false)) {
+          Get.snackbar(
+            'Erro na Compra',
+            result['message'] ?? 'Erro ao atualizar stock de ${item.product.name}',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+          isLoading.value = false;
+          return false;
+        }
+      }
+      
+      // Limpar carrinho após sucesso
+      clearCart();
+      
+      Get.snackbar(
+        'Compra Finalizada!',
+        'Pedido realizado com sucesso. Stock atualizado.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      
+      isLoading.value = false;
+      return true;
+      
+    } catch (e) {
+      isLoading.value = false;
+      print('[CART] Exceção finalizeOrder: $e');
+      Get.snackbar(
+        'Erro na Compra',
+        'Erro ao finalizar pedido: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return false;
     }
   }
 }

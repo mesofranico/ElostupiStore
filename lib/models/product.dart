@@ -2,23 +2,21 @@ class Product {
   final String id;
   final String name;
   final double price;
+  final double? price2;
   final String description;
   final String imageUrl;
   final String? category;
   final int? stock;
-  final String? createdAt;
-  final String? updatedAt;
 
   Product({
     required this.id,
     required this.name,
     required this.price,
+    this.price2,
     required this.description,
     required this.imageUrl,
     this.category,
     this.stock,
-    this.createdAt,
-    this.updatedAt,
   });
 
   // Converte JSON para Product
@@ -26,14 +24,22 @@ class Product {
     return Product(
       id: json['id'].toString(),
       name: json['name'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
+      price: _parseDouble(json['price']) ?? 0.0,
+      price2: _parseDouble(json['price2']),
       description: json['description'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
       category: json['category'],
-      stock: json['stock'],
-      createdAt: json['createdAt'],
-      updatedAt: json['updatedAt'],
+      stock: json['stock'] is int ? json['stock'] : int.tryParse(json['stock']?.toString() ?? ''),
     );
+  }
+
+  // Método auxiliar para converter valores para double
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   // Converte Product para JSON
@@ -42,12 +48,11 @@ class Product {
       'id': id,
       'name': name,
       'price': price,
+      'price2': price2,
       'description': description,
       'imageUrl': imageUrl,
       'category': category,
       'stock': stock,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
     };
   }
 
@@ -56,23 +61,21 @@ class Product {
     String? id,
     String? name,
     double? price,
+    double? price2,
     String? description,
     String? imageUrl,
     String? category,
     int? stock,
-    String? createdAt,
-    String? updatedAt,
   }) {
     return Product(
       id: id ?? this.id,
       name: name ?? this.name,
       price: price ?? this.price,
+      price2: price2 ?? this.price2,
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
       category: category ?? this.category,
       stock: stock ?? this.stock,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 } 

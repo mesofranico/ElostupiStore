@@ -287,7 +287,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         title: Row(
           children: [
             const Text(
-              'ElosTupi',
+              'ElosTupi - Gestão de produtos',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -358,12 +358,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               ],
             );
           }),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              productController.refreshProducts();
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Get.to(() => const SettingsScreen()),

@@ -1,31 +1,34 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/product.dart';
+import 'database_service.dart';
 
 class ProductService {
-  static const String primaryUrl = 'https://elostupi.pt/store/products.json';
+  final DatabaseService _databaseService = DatabaseService();
 
   Future<List<Product>> getProducts() async {
-    try {
-      final response = await http.get(Uri.parse(primaryUrl))
-          .timeout(const Duration(seconds: 10));
-      
-      if (response.statusCode == 200) {
-        return _parseProducts(response.body);
-      }
-      
-      throw Exception('Falha ao carregar produtos: Status ${response.statusCode}');
-    } catch (e) {
-      throw Exception('Erro de conexão: $e');
-    }
+    return await _databaseService.getProducts();
   }
 
-  List<Product> _parseProducts(String jsonString) {
-    try {
-      final List<dynamic> jsonList = json.decode(jsonString);
-      return jsonList.map((json) => Product.fromJson(json)).toList();
-    } catch (e) {
-      throw Exception('Erro ao processar dados JSON: $e');
-    }
+  Future<bool> updateProductStock(String productId, int newStock) async {
+    return await _databaseService.updateProductStock(productId, newStock);
+  }
+
+  Future<Map<String, dynamic>> decrementStock(String productId, int quantity) async {
+    return await _databaseService.decrementStock(productId, quantity);
+  }
+
+  Future<Product?> getProduct(String productId) async {
+    return await _databaseService.getProduct(productId);
+  }
+
+  Future<bool> createProduct(Product product) async {
+    return await _databaseService.createProduct(product);
+  }
+
+  Future<bool> updateProduct(Product product) async {
+    return await _databaseService.updateProduct(product);
+  }
+
+  Future<bool> deleteProduct(String productId) async {
+    return await _databaseService.deleteProduct(productId);
   }
 } 
