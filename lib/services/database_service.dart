@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
 
@@ -55,7 +56,9 @@ class DatabaseService {
   // Decrementar stock após venda
   Future<Map<String, dynamic>> decrementStock(String productId, int quantity) async {
     try {
-      print('[DEBUG] Requisição decrementStock para produto $productId, quantidade $quantity');
+      if (kDebugMode) {
+        print('[DEBUG] Requisição decrementStock para produto $productId, quantidade $quantity');
+      }
       final response = await http.post(
         Uri.parse('$baseUrl$productsEndpoint/$productId/decrement'),
         headers: _headers,
@@ -63,8 +66,12 @@ class DatabaseService {
           'quantity': quantity,
         }),
       ).timeout(const Duration(seconds: 10));
-      print('[DEBUG] Status:  [33m [1m${response.statusCode} [0m');
-      print('[DEBUG] Body: ${response.body}');
+      if (kDebugMode) {
+        print('[DEBUG] Status:  [33m [1m${response.statusCode} [0m');
+      }
+      if (kDebugMode) {
+        print('[DEBUG] Body: ${response.body}');
+      }
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': null};
@@ -79,7 +86,9 @@ class DatabaseService {
         return {'success': false, 'message': msg};
       }
     } catch (e) {
-      print('[DEBUG] Erro decrementStock: $e');
+      if (kDebugMode) {
+        print('[DEBUG] Erro decrementStock: $e');
+      }
       return {'success': false, 'message': 'Erro de conexão: $e'};
     }
   }
@@ -136,14 +145,27 @@ class DatabaseService {
   // Atualizar produto
   Future<bool> updateProduct(Product product) async {
     try {
+      if (kDebugMode) {
+        print('[DB] Atualizando produto: ${product.id}');
+      }
       final response = await http.put(
         Uri.parse('$baseUrl$productsEndpoint/${product.id}'),
         headers: _headers,
         body: json.encode(product.toJson()),
       ).timeout(const Duration(seconds: 10));
 
+      if (kDebugMode) {
+        print('[DB] Status da resposta: ${response.statusCode}');
+      }
+      if (kDebugMode) {
+        print('[DB] Body da resposta: ${response.body}');
+      }
+      
       return response.statusCode == 200;
     } catch (e) {
+      if (kDebugMode) {
+        print('[DB] Erro ao atualizar produto: $e');
+      }
       throw Exception('Erro ao atualizar produto: $e');
     }
   }

@@ -22,16 +22,7 @@ class CartController extends GetxController {
   void addToCart(Product product) {
     // Verificar se há stock disponível
     if (product.stock != null && product.stock! <= 0) {
-      Get.snackbar(
-        'Stock Indisponível',
-        '${product.name} não está disponível no momento',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-      );
+      // Não mostrar snackbar - o estado já é visível no card
       return;
     }
 
@@ -60,17 +51,6 @@ class CartController extends GetxController {
     }
     
     saveCartToStorage();
-    
-    Get.snackbar(
-      'Produto Adicionado',
-      '${product.name} foi adicionado ao carrinho',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withValues(alpha: 0.8),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
-    );
   }
 
   void removeFromCart(String productId) {
@@ -175,17 +155,25 @@ class CartController extends GetxController {
   Future<bool> finalizeOrder() async {
     if (items.isEmpty) return false;
     
+    // Ativar wake lock temporariamente durante a operação
+    final appController = Get.find<AppController>();
+    appController.enableWakeLockTemporarily();
+    
     isLoading.value = true;
     
     try {
       // Atualizar stock para cada item
       for (final item in items) {
-        print('[CART] Tentando decrementar stock de ${item.product.id} (${item.product.name}), quantidade: ${item.quantity}');
+        if (kDebugMode) {
+          print('[CART] Tentando decrementar stock de ${item.product.id} (${item.product.name}), quantidade: ${item.quantity}');
+        }
         final result = await _productService.decrementStock(
           item.product.id, 
           item.quantity
         );
-        print('[CART] Resultado: success=${result['success']}, message=${result['message']}');
+        if (kDebugMode) {
+          print('[CART] Resultado: success=${result['success']}, message=${result['message']}');
+        }
         
         if (!(result['success'] ?? false)) {
           Get.snackbar(
@@ -218,7 +206,9 @@ class CartController extends GetxController {
       
     } catch (e) {
       isLoading.value = false;
-      print('[CART] Exceção finalizeOrder: $e');
+      if (kDebugMode) {
+        print('[CART] Exceção finalizeOrder: $e');
+      }
       Get.snackbar(
         'Erro na Compra',
         'Erro ao finalizar pedido: $e',

@@ -11,10 +11,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageInit.init();
   
-  // Inicializar controllers
+  // Inicializar controllers na ordem correta
   Get.put(AppController());
-  Get.put(ProductController());
-  Get.put(CartController());
+  Get.put(CartController()); // CartController primeiro
+  Get.put(ProductController()); // ProductController depois
   
   runApp(const MyApp());
 }

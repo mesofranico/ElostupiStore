@@ -37,55 +37,6 @@ class SettingsScreen extends StatelessWidget {
               leading: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.refresh,
-                  color: Colors.blue[600],
-                  size: 24,
-                ),
-              ),
-              title: const Text(
-                'Atualização Automática',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: const Text(
-                'Atualizar produtos automaticamente',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              trailing: Obx(() => Switch(
-                value: appController.autoRefreshEnabled.value,
-                onChanged: (value) => appController.toggleAutoRefresh(),
-                activeColor: Colors.blue,
-              )),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(20),
-              leading: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
                   color: Colors.green[50],
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -113,6 +64,55 @@ class SettingsScreen extends StatelessWidget {
                 value: appController.showResalePrice.value,
                 onChanged: (value) => appController.toggleResalePrice(),
                 activeColor: Colors.green,
+              )),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(20),
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.visibility,
+                  color: Colors.orange[600],
+                  size: 24,
+                ),
+              ),
+              title: const Text(
+                'Manter Tela Ligada',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: const Text(
+                'Impedir que a tela apague',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              trailing: Obx(() => Switch(
+                value: appController.keepScreenOn.value,
+                onChanged: (value) => appController.toggleKeepScreenOn(),
+                activeColor: Colors.orange,
               )),
             ),
           ),
@@ -208,22 +208,65 @@ class SettingsScreen extends StatelessWidget {
               onTap: () {
                 Get.dialog(
                   AlertDialog(
-                    title: const Text('Sobre ElosTupi'),
+                    title: const Text('Informações'),
                     content: const Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Versão: 1.0.0'),
-                        SizedBox(height: 8),
-                        Text('Desenvolvido com Flutter e GetX'),
+                        SizedBox(height: 16),
+                        Text(
+                          'Desenvolvido com Flutter e GetX',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         SizedBox(height: 8),
                         Text('Uma loja moderna e responsiva'),
+                        SizedBox(height: 16),
+                        Divider(),
+                        SizedBox(height: 8),
+                        Text(
+                          'Programador:',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 4),
+                        Text('Carlos Santos'),
+                        SizedBox(height: 4),
+                        Text('opmeso@gmail.com'),
+                        SizedBox(height: 8),
+                        Text(
+                          '© 2024 ElosTupi. Todos os direitos reservados.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                     actions: [
-                      TextButton(
-                        onPressed: () => Get.back(),
-                        child: const Text('Fechar'),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ElevatedButton(
+                            onPressed: () => Get.back(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              'Fechar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

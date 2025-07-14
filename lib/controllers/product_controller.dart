@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
+import 'cart_controller.dart';
 
 class ProductController extends GetxController {
   final ProductService _productService = ProductService();
@@ -19,6 +20,98 @@ class ProductController extends GetxController {
   void onInit() {
     super.onInit();
     loadProducts();
+    
+    // Observar mudanças no carrinho para atualizar indicadores de stock
+    // Verificar se o CartController já foi inicializado
+    try {
+      final cartController = Get.find<CartController>();
+      ever(cartController.items, (_) {
+        _updateStockIndicators();
+      });
+    } catch (e) {
+      // CartController ainda não foi inicializado, tentar novamente mais tarde
+      Future.delayed(const Duration(milliseconds: 100), () {
+        try {
+          final cartController = Get.find<CartController>();
+          ever(cartController.items, (_) {
+            _updateStockIndicators();
+          });
+        } catch (e) {
+          if (kDebugMode) {
+            print('CartController não encontrado: $e');
+          }
+        }
+      });
+    }
+  }
+
+  void _updateStockIndicators() {
+    // Forçar atualização dos indicadores de stock
+    products.refresh();
+  }
+
+  // Calcular stock disponível considerando o carrinho
+  int getAvailableStock(Product product) {
+    try {
+      final cartController = Get.find<CartController>();
+      final cartItem = cartController.items.firstWhereOrNull((item) => item.product.id == product.id);
+      final cartQuantity = cartItem?.quantity ?? 0;
+      final currentStock = product.stock ?? 0;
+      return currentStock - cartQuantity;
+    } catch (e) {
+      // Se CartController não estiver disponível, retornar stock original
+      return product.stock ?? 0;
+    }
+  }
+
+  // Verificar se há produtos com stock baixo (considerando carrinho)
+  int getLowStockCount(String category) {
+    try {
+      if (category == 'Todas') {
+        return products.where((p) {
+          final availableStock = getAvailableStock(p);
+          return availableStock <= 5 && availableStock > 0;
+        }).length;
+      } else {
+        return products.where((p) {
+          if (p.category != category) return false;
+          final availableStock = getAvailableStock(p);
+          return availableStock <= 5 && availableStock > 0;
+        }).length;
+      }
+    } catch (e) {
+      // Fallback para cálculo sem carrinho
+      if (category == 'Todas') {
+        return products.where((p) => (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).length;
+      } else {
+        return products.where((p) => p.category == category && (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).length;
+      }
+    }
+  }
+
+  // Verificar se há produtos sem stock (considerando carrinho)
+  int getNoStockCount(String category) {
+    try {
+      if (category == 'Todas') {
+        return products.where((p) {
+          final availableStock = getAvailableStock(p);
+          return availableStock == 0;
+        }).length;
+      } else {
+        return products.where((p) {
+          if (p.category != category) return false;
+          final availableStock = getAvailableStock(p);
+          return availableStock == 0;
+        }).length;
+      }
+    } catch (e) {
+      // Fallback para cálculo sem carrinho
+      if (category == 'Todas') {
+        return products.where((p) => (p.stock ?? 0) == 0).length;
+      } else {
+        return products.where((p) => p.category == category && (p.stock ?? 0) == 0).length;
+      }
+    }
   }
 
   Future<void> loadProducts() async {

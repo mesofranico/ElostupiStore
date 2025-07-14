@@ -26,6 +26,15 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     ever(productController.products, (_) {
       _updateTabController();
     });
+    
+    // Observar mudanças na categoria selecionada para sincronizar o TabController
+    ever(productController.selectedCategory, (category) {
+      final categories = productController.categories;
+      final index = categories.indexOf(category);
+      if (index >= 0 && index != _tabController.index) {
+        _tabController.animateTo(index);
+      }
+    });
   }
 
   void _updateTabController() {
@@ -43,7 +52,11 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       });
       
       // Definir categoria inicial como "Todas"
-      productController.setCategory('Todas');
+      if (categories.isNotEmpty) {
+        productController.setCategory('Todas');
+        // Forçar rebuild do widget
+        setState(() {});
+      }
     }
   }
 
@@ -116,17 +129,27 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   Widget _buildBody() {
     return Obx(() {
       if (productController.isLoading.value) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
                 Text(
-                  'Carregando produtos...',
-                  style: TextStyle(
+                  productController.selectedCategory.value == 'Todas'
+                      ? 'Carregando produtos...'
+                      : 'Carregando ${productController.selectedCategory.value}...',
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Aguarde um momento',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -202,31 +225,67 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         final filteredProducts = productController.filteredProducts;
 
         if (filteredProducts.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.inventory_2_outlined,
+                  productController.selectedCategory.value == 'Todas' 
+                      ? Icons.inventory_2_outlined
+                      : Icons.category_outlined,
                   size: 64,
                   color: Colors.grey,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
-                  'Nenhum produto encontrado',
-                  style: TextStyle(
+                  productController.selectedCategory.value == 'Todas'
+                      ? 'Nenhum produto encontrado'
+                      : 'Nenhum produto em "${productController.selectedCategory.value}"',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey,
                   ),
+                  textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  productController.searchQuery.value.isNotEmpty
+                      ? 'Tente ajustar sua pesquisa'
+                      : 'Esta categoria ainda não tem produtos',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (productController.selectedCategory.value != 'Todas') ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      productController.setCategory('Todas');
+                      _tabController.animateTo(0);
+                    },
+                    icon: const Icon(Icons.grid_view),
+                    label: const Text('Ver Todos os Produtos'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ],
             ),
           );
         }
 
         return GridView.builder(
-          padding: EdgeInsets.all(_getPadding(Get.context!)),
+          padding: EdgeInsets.fromLTRB(
+            _getPadding(Get.context!),
+            _getPadding(Get.context!),
+            _getPadding(Get.context!),
+            _getPadding(Get.context!) + 20, // Padding extra na parte inferior
+          ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: _getCrossAxisCount(Get.context!),
             childAspectRatio: _getChildAspectRatio(Get.context!),
@@ -235,7 +294,11 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           ),
           itemCount: filteredProducts.length,
           itemBuilder: (context, index) {
-            return ProductCard(product: filteredProducts[index]);
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: ProductCard(product: filteredProducts[index]),
+            );
           },
         );
       });
@@ -251,28 +314,50 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       
       return Container(
         color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.blue,
-          unselectedLabelColor: Colors.grey[600],
-          indicatorColor: Colors.blue,
-          indicatorWeight: 3,
-          indicatorSize: TabBarIndicatorSize.label,
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+        child: SafeArea(
+          child: Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: categories.asMap().entries.map((entry) {
+                final index = entry.key;
+                final category = entry.value;
+                final isSelected = productController.selectedCategory.value == category;
+                
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      productController.setCategory(category);
+                      _tabController.animateTo(index);
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          category,
+                          style: TextStyle(
+                            color: isSelected ? Colors.blue : Colors.grey[500],
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          height: 3,
+                          width: isSelected ? 30 : 20,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.blue : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.normal,
-            fontSize: 14,
-          ),
-          tabs: categories.map((category) {
-            return Tab(
-              text: category,
-            );
-          }).toList(),
         ),
       );
     });
@@ -319,7 +404,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(52),
+          preferredSize: const Size.fromHeight(60),
           child: _buildTabBar(),
         ),
         actions: [

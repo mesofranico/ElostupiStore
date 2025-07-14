@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/admin_controller.dart';
 import '../controllers/product_controller.dart';
+import '../controllers/app_controller.dart';
 import '../models/product.dart';
+import '../widgets/product_actions.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -24,9 +26,6 @@ class _AdminScreenState extends State<AdminScreen> {
   final _imageUrlController = TextEditingController();
   final _categoryController = TextEditingController();
   final _stockController = TextEditingController();
-  
-  bool _isEditing = false;
-  String? _editingProductId;
 
   @override
   void dispose() {
@@ -51,25 +50,12 @@ class _AdminScreenState extends State<AdminScreen> {
     _imageUrlController.clear();
     _categoryController.clear();
     _stockController.clear();
-    _isEditing = false;
-    _editingProductId = null;
   }
 
-  void _editProduct(Product product) {
-    _isEditing = true;
-    _editingProductId = product.id;
-    
-    _idController.text = product.id;
-    _nameController.text = product.name;
-    _priceController.text = product.price.toString();
-    _price2Controller.text = product.price2?.toString() ?? '';
-    _descriptionController.text = product.description;
-    _imageUrlController.text = product.imageUrl;
-    _categoryController.text = product.category ?? '';
-    _stockController.text = product.stock?.toString() ?? '';
-  }
+
 
   Future<void> _deleteProduct(String productId) async {
+    // Primeiro, pedir confirmação
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: const Text('Confirmar Exclusão'),
@@ -89,26 +75,91 @@ class _AdminScreenState extends State<AdminScreen> {
     );
 
     if (confirmed == true) {
-      final success = await adminController.deleteProduct(productId);
-      if (success) {
-        await productController.refreshProducts();
-        Get.snackbar(
-          'Sucesso',
-          adminController.successMessage.value,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
-      } else {
-        Get.snackbar(
-          'Erro',
-          adminController.errorMessage.value,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+      // Agora pedir o PIN de segurança
+      final pinController = TextEditingController();
+      final pinConfirmed = await Get.dialog<bool>(
+        AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.security, color: Colors.red[600], size: 24),
+              const SizedBox(width: 8),
+              const Text('Código de Segurança'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Para remover este produto, introduza o código PIN:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: pinController,
+                decoration: const InputDecoration(
+                  labelText: 'Código PIN',
+                  border: OutlineInputBorder(),
+                  hintText: '5614',
+                ),
+                keyboardType: TextInputType.number,
+                obscureText: true,
+                maxLength: 4,
+                autofocus: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (pinController.text == '5614') {
+                  Get.back(result: true);
+                } else {
+                  Get.snackbar(
+                    'Erro',
+                    'Código PIN incorreto!',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
+      );
+
+      if (pinConfirmed == true) {
+        final success = await adminController.deleteProduct(productId);
+        if (success) {
+          await productController.refreshProducts();
+          Get.snackbar(
+            'Sucesso',
+            adminController.successMessage.value,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          Get.snackbar(
+            'Erro',
+            adminController.errorMessage.value,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        }
       }
     }
   }
@@ -132,7 +183,7 @@ class _AdminScreenState extends State<AdminScreen> {
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Row(
           children: [
@@ -281,7 +332,9 @@ class _AdminScreenState extends State<AdminScreen> {
                           // Limpa para digitar nova
                           _categoryController.text = '';
                           await Future.delayed(const Duration(milliseconds: 100));
-                          FocusScope.of(context).requestFocus(FocusNode());
+                          if (mounted) {
+                            FocusScope.of(context).requestFocus(FocusNode());
+                          }
                         } else if (value != null) {
                           _categoryController.text = value;
                         }
@@ -327,6 +380,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 24), // Espaçamento extra antes dos botões
                 ],
               ),
             ),
@@ -335,15 +389,18 @@ class _AdminScreenState extends State<AdminScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Get.back();
+              Navigator.of(context).pop();
               _clearForm();
             },
             child: const Text('Cancelar'),
           ),
           ElevatedButton.icon(
             onPressed: adminController.isLoading.value ? null : () async {
-              final success = await _saveProduct(isEditing: isEditing);
-              if (success) Get.back();
+              // Fechar o modal imediatamente
+              Navigator.of(context).pop();
+              
+              // Processar a operação em background
+              await _saveProduct(isEditing: isEditing);
             },
             icon: adminController.isLoading.value
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -364,48 +421,40 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Future<bool> _saveProduct({required bool isEditing}) async {
-    if (!_formKey.currentState!.validate()) return false;
+    try {
+      if (!_formKey.currentState!.validate()) {
+        return false;
+      }
 
-    final product = Product(
-      id: _idController.text.trim(),
-      name: _nameController.text.trim(),
-      price: double.parse(_priceController.text),
-      price2: _price2Controller.text.isNotEmpty ? double.parse(_price2Controller.text) : null,
-      description: _descriptionController.text.trim(),
-      imageUrl: _imageUrlController.text.trim(),
-      category: _categoryController.text.trim().isNotEmpty ? _categoryController.text.trim() : null,
-      stock: _stockController.text.isNotEmpty ? int.parse(_stockController.text) : 0,
-    );
+      // Ativar wake lock temporariamente durante a operação
+      final appController = Get.find<AppController>();
+      appController.enableWakeLockTemporarily();
 
-    bool success;
-    if (isEditing) {
-      success = await adminController.updateProduct(product);
-    } else {
-      success = await adminController.createProduct(product);
-    }
-
-    if (success) {
-      _clearForm();
-      await productController.refreshProducts();
-      Get.snackbar(
-        'Sucesso',
-        adminController.successMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
+      final product = Product(
+        id: _idController.text.trim(),
+        name: _nameController.text.trim(),
+        price: double.parse(_priceController.text),
+        price2: _price2Controller.text.isNotEmpty ? double.parse(_price2Controller.text) : null,
+        description: _descriptionController.text.trim(),
+        imageUrl: _imageUrlController.text.trim(),
+        category: _categoryController.text.trim().isNotEmpty ? _categoryController.text.trim() : null,
+        stock: _stockController.text.isNotEmpty ? int.parse(_stockController.text) : 0,
       );
-    } else {
-      Get.snackbar(
-        'Erro',
-        adminController.errorMessage.value,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+
+      bool success;
+      if (isEditing) {
+        success = await adminController.updateProduct(product);
+      } else {
+        success = await adminController.createProduct(product);
+      }
+
+      if (success) {
+        await productController.refreshProducts();
+      }
+      return success;
+    } catch (e) {
+      return false;
     }
-    return success;
   }
 
   @override
@@ -452,7 +501,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.08),
+                              color: Colors.grey.withValues(alpha: 0.08),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                               spreadRadius: 0,
@@ -490,20 +539,10 @@ class _AdminScreenState extends State<AdminScreen> {
                               style: const TextStyle(fontSize: 14, color: Colors.grey),
                             ),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () => _showProductForm(editProduct: product),
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                tooltip: 'Editar',
-                              ),
-                              IconButton(
-                                onPressed: () => _deleteProduct(product.id),
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                tooltip: 'Remover',
-                              ),
-                            ],
+                          trailing: ProductActions(
+                            product: product,
+                            onEdit: () => _showProductForm(editProduct: product),
+                            onDelete: () => _deleteProduct(product.id),
                           ),
                         ),
                       );

@@ -192,14 +192,6 @@ class CartItemWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       onTap: () {
                         cartController.removeFromCart(cartItem.product.id);
-                        Get.snackbar(
-                          'Item Removido',
-                          '${cartItem.product.name} removido do carrinho',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: Colors.red.withValues(alpha: 0.8),
-                          colorText: Colors.white,
-                          duration: const Duration(seconds: 2),
-                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
