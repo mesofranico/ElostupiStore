@@ -267,7 +267,7 @@ class CartScreen extends StatelessWidget {
                                           ),
                                           SizedBox(width: 8),
                                           Text(
-                                            'Salvar como Pendente',
+                                            'Guardar Pedido',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -348,7 +348,7 @@ class CartScreen extends StatelessWidget {
                                           ),
                                           SizedBox(width: 8),
                                           Text(
-                                            'Finalizar Compra',
+                                            'Finalizar Pedido',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
