@@ -1,12 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const productsRouter = require('./products');
+const pendingOrdersRouter = require('./pending_orders');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/products', productsRouter);
+app.use('/api/pending-orders', pendingOrdersRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {

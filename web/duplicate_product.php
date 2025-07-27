@@ -49,6 +49,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $category = trim($_POST['category'] ?? '');
         $stock = !empty($_POST['stock']) ? intval($_POST['stock']) : 0;
 
+        // Novo bloco: Baixar e salvar imagem localmente se URL for fornecido
+        $localImagePath = '';
+        if (!empty($imageUrl) && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $imageContent = @file_get_contents($imageUrl);
+            if ($imageContent === false) {
+                throw new Exception('Não foi possível baixar a imagem do URL fornecido.');
+            }
+            // Detectar extensão da imagem
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $finfo->buffer($imageContent);
+            $ext = '';
+            switch ($mimeType) {
+                case 'image/jpeg': $ext = 'jpg'; break;
+                case 'image/png': $ext = 'png'; break;
+                case 'image/gif': $ext = 'gif'; break;
+                case 'image/webp': $ext = 'webp'; break;
+                default:
+                    throw new Exception('Tipo de imagem não suportado: ' . $mimeType);
+            }
+            // Garantir que a pasta imagens existe
+            $imagesDir = __DIR__ . '/imagens';
+            if (!is_dir($imagesDir)) {
+                mkdir($imagesDir, 0777, true);
+            }
+            $localImagePath = 'imagens/' . $id . '.' . $ext;
+            $fullImagePath = $imagesDir . '/' . $id . '.' . $ext;
+            if (file_put_contents($fullImagePath, $imageContent) === false) {
+                throw new Exception('Erro ao salvar a imagem no servidor.');
+            }
+        }
+
         // Verificar se o novo ID já existe
         $stmt = $pdo->prepare("SELECT id FROM products WHERE id = ?");
         $stmt->execute([$id]);
@@ -63,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
-        $stmt->execute([$id, $name, $price, $price2, $description, $imageUrl, $category, $stock]);
+        $stmt->execute([$id, $name, $price, $price2, $description, $localImagePath ?: $imageUrl, $category, $stock]);
         
         // Redirecionar para a lista de produtos após sucesso
         header('Location: list_products.php?message=Produto duplicado com sucesso!&type=success');

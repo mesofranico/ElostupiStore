@@ -43,6 +43,13 @@ class ProductCard extends StatelessWidget {
     }
   }
 
+  // Função utilitária para montar a URL completa da imagem
+  String getFullImageUrl(String imageUrl) {
+    if (imageUrl.isEmpty) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return 'https://elostupi.csmpanel.ovh/$imageUrl';
+  }
+
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.find<CartController>();
@@ -86,24 +93,21 @@ class ProductCard extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(16),
                         ),
-                        child: Container(
-                          color: Colors.grey[50],
-                          child: Image.network(
-                            product.imageUrl,
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[100],
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                              );
-                            },
-                          ),
+                        child: Image.network(
+                          getFullImageUrl(product.imageUrl),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[100],
+                              child: const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       // Indicador de stock no canto superior direito

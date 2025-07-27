@@ -457,6 +457,13 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
+  // Função utilitária para montar a URL completa da imagem
+  String getFullImageUrl(String imageUrl) {
+    if (imageUrl.isEmpty) return '';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return 'https://elostupi.csmpanel.ovh/$imageUrl';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -521,7 +528,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
-                                      product.imageUrl,
+                                      getFullImageUrl(product.imageUrl),
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) => const Icon(Icons.image, color: Colors.blueGrey),
                                     ),

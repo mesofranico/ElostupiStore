@@ -413,7 +413,17 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               children: [
                 IconButton(
                   icon: const Icon(Icons.shopping_cart),
-                  onPressed: () => Get.to(() => const CartScreen()),
+                  onPressed: () {
+                    final future = Get.to(() => const CartScreen());
+                    if (future != null) {
+                      future.then((_) {
+                        final productController = Get.find<ProductController>();
+                        final cartController = Get.find<CartController>();
+                        productController.refreshProducts();
+                        cartController.updatePendingOrders();
+                      });
+                    }
+                  },
                 ),
                 if (cartController.totalItems > 0)
                   Positioned(
@@ -443,6 +453,56 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               ],
             );
           }),
+         Obx(() {
+           final pendingCount = cartController.pendingOrders.length;
+           return Stack(
+             clipBehavior: Clip.none,
+             children: [
+               IconButton(
+                 icon: const Icon(Icons.pending_actions),
+                 tooltip: 'Pedidos Pendentes',
+                 onPressed: () {
+                   final future = Get.toNamed('/pendentes');
+                   if (future != null) {
+                     future.then((_) {
+                       final productController = Get.find<ProductController>();
+                       final cartController = Get.find<CartController>();
+                       productController.refreshProducts();
+                       cartController.updatePendingOrders();
+                     });
+                   }
+                 },
+               ),
+               if (pendingCount > 0)
+                 Positioned(
+                   right: 2,
+                   top: 8,
+                   child: Container(
+                     padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0),
+                     decoration: BoxDecoration(
+                       color: Colors.orange,
+                       borderRadius: BorderRadius.circular(10),
+                       border: Border.all(color: Colors.white, width: 1),
+                     ),
+                     constraints: const BoxConstraints(
+                       minWidth: 14,
+                       minHeight: 14,
+                     ),
+                     child: Text(
+                       pendingCount > 99 ? '99+' : '$pendingCount',
+                       style: const TextStyle(
+                         color: Colors.white,
+                         fontSize: 9,
+                         fontWeight: FontWeight.bold,
+                         height: 1,
+                       ),
+                       textAlign: TextAlign.center,
+                     ),
+                   ),
+                 ),
+             ],
+           );
+         }),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Get.to(() => const SettingsScreen()),

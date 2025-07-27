@@ -5,13 +5,16 @@ import 'package:get_storage/get_storage.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import 'app_controller.dart';
+import '../services/pending_order_service.dart';
 
 class CartController extends GetxController {
   final GetStorage _storage = GetStorage();
   final ProductService _productService = ProductService();
+  final PendingOrderService _pendingOrderService = PendingOrderService();
   
   final RxList<CartItem> items = <CartItem>[].obs;
   final RxBool isLoading = false.obs;
+  final RxList<Map<String, dynamic>> pendingOrders = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
@@ -218,6 +221,97 @@ class CartController extends GetxController {
         duration: const Duration(seconds: 3),
       );
       return false;
+    }
+  }
+
+  // Salvar pedido como pendente (API)
+  Future<bool> savePendingOrderAPI() async {
+    if (items.isEmpty) return false;
+    final List<Map<String, dynamic>> orderItems = items.map((item) => {
+      'product': {
+        'id': item.product.id,
+        'name': item.product.name,
+        'price': item.product.price,
+        'price2': item.product.price2,
+      },
+      'quantity': item.quantity,
+    }).toList();
+    final now = DateTime.now();
+    final id = '${now.year.toString().padLeft(4, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}'
+        '${now.hour.toString().padLeft(2, '0')}'
+        '${now.minute.toString().padLeft(2, '0')}'
+        '${now.second.toString().padLeft(2, '0')}';
+    final createdAt = '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')} '
+        '${now.hour.toString().padLeft(2, '0')}-'
+        '${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+    final order = {
+      'id': id,
+      'createdAt': createdAt,
+      'items': orderItems,
+      'total': totalPrice,
+    };
+    isLoading.value = true;
+    try {
+      final ok = await _pendingOrderService.createPendingOrder(order);
+      isLoading.value = false;
+      return ok;
+    } catch (e) {
+      isLoading.value = false;
+      if (kDebugMode) print('Erro ao salvar pendente: $e');
+      return false;
+    }
+  }
+
+  // Listar pedidos pendentes (API)
+  Future<List<Map<String, dynamic>>> getPendingOrders() async {
+    try {
+      return await _pendingOrderService.getPendingOrders();
+    } catch (e) {
+      if (kDebugMode) print('Erro ao buscar pendentes: $e');
+      return [];
+    }
+  }
+
+  // Remover pedido pendente (API)
+  Future<bool> removePendingOrderAPI(String id) async {
+    isLoading.value = true;
+    try {
+      final ok = await _pendingOrderService.removePendingOrder(id);
+      isLoading.value = false;
+      return ok;
+    } catch (e) {
+      isLoading.value = false;
+      if (kDebugMode) print('Erro ao remover pendente: $e');
+      return false;
+    }
+  }
+
+  // Finalizar pedido pendente (API)
+  Future<bool> finalizePendingOrderAPI(String id) async {
+    isLoading.value = true;
+    try {
+      final ok = await _pendingOrderService.finalizePendingOrder(id);
+      isLoading.value = false;
+      return ok;
+    } catch (e) {
+      isLoading.value = false;
+      if (kDebugMode) print('Erro ao finalizar pendente: $e');
+      return false;
+    }
+  }
+
+  // Atualizar lista de pedidos pendentes da API
+  Future<void> updatePendingOrders() async {
+    try {
+      final list = await _pendingOrderService.getPendingOrders();
+      pendingOrders.value = list;
+    } catch (e) {
+      if (kDebugMode) print('Erro ao atualizar pendentes: $e');
+      pendingOrders.clear();
     }
   }
 }

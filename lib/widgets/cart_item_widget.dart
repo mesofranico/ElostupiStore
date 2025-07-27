@@ -3,6 +3,13 @@ import 'package:get/get.dart';
 import '../controllers/cart_controller.dart';
 import '../controllers/app_controller.dart';
 
+// Função utilitária para montar a URL completa da imagem
+String getFullImageUrl(String imageUrl) {
+  if (imageUrl.isEmpty) return '';
+  if (imageUrl.startsWith('http')) return imageUrl;
+  return 'https://elostupi.csmpanel.ovh/$imageUrl';
+}
+
 class CartItemWidget extends StatelessWidget {
   final CartItem cartItem;
 
@@ -48,7 +55,7 @@ class CartItemWidget extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  cartItem.product.imageUrl,
+                  getFullImageUrl(cartItem.product.imageUrl),
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,

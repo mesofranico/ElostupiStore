@@ -50,14 +50,26 @@ class ProductController extends GetxController {
     products.refresh();
   }
 
-  // Calcular stock disponível considerando o carrinho
+  // Calcular stock disponível considerando o carrinho e pedidos pendentes
   int getAvailableStock(Product product) {
     try {
       final cartController = Get.find<CartController>();
       final cartItem = cartController.items.firstWhereOrNull((item) => item.product.id == product.id);
       final cartQuantity = cartItem?.quantity ?? 0;
+      // Somar quantidade em pedidos pendentes (reativo)
+      int pendingQuantity = 0;
+      final List<Map<String, dynamic>> pendingOrders = cartController.pendingOrders;
+      for (final order in pendingOrders) {
+        final List<dynamic> items = order['items'] ?? [];
+        for (final item in items) {
+          if (item['product']?['id']?.toString() == product.id) {
+            final q = item['quantity'];
+            pendingQuantity += (q is int) ? q : int.tryParse(q?.toString() ?? '') ?? 0;
+          }
+        }
+      }
       final currentStock = product.stock ?? 0;
-      return currentStock - cartQuantity;
+      return currentStock - cartQuantity - pendingQuantity;
     } catch (e) {
       // Se CartController não estiver disponível, retornar stock original
       return product.stock ?? 0;

@@ -181,87 +181,188 @@ class CartScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Obx(() => Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: cartController.isLoading.value
-                            ? [Colors.grey[400]!, Colors.grey[500]!]
-                            : [Colors.green, Colors.green[700]!],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: cartController.isLoading.value
-                              ? Colors.grey.withValues(alpha: 0.3)
-                              : Colors.green.withValues(alpha: 0.4),
-                          spreadRadius: 1,
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                  Obx(() => Row(
+                    children: [
+                      // Botão Salvar como Pendente
+                      Expanded(
+                        child: Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [Colors.orange, Colors.orange[700]!],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withAlpha((0.3 * 255).toInt()),
+                                spreadRadius: 1,
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: cartController.isLoading.value
+                                  ? null
+                                  : () async {
+                                      final ok = await cartController.savePendingOrderAPI();
+                                      if (ok) {
+                                        cartController.clearCart();
+                                        Get.snackbar(
+                                          'Pedido Pendente',
+                                          'O pedido foi salvo como pendente na nuvem. Você pode finalizar depois.',
+                                          snackPosition: SnackPosition.BOTTOM,
+                                          backgroundColor: Colors.orange.withAlpha((0.9 * 255).toInt()),
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 3),
+                                        );
+                                        Get.back();
+                                      } else {
+                                        Get.snackbar(
+                                          'Erro',
+                                          'Não foi possível salvar o pedido pendente. Tente novamente.',
+                                          snackPosition: SnackPosition.BOTTOM,
+                                          backgroundColor: Colors.red.withAlpha((0.9 * 255).toInt()),
+                                          colorText: Colors.white,
+                                          duration: const Duration(seconds: 3),
+                                        );
+                                      }
+                                    },
+                              child: Center(
+                                child: cartController.isLoading.value
+                                    ? const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Processando...',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.hourglass_empty,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Salvar como Pendente',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: cartController.isLoading.value
-                            ? null
-                            : () async {
-                                final success = await cartController.finalizeOrder();
-                                if (success) {
-                                  Get.back();
-                                }
-                              },
-                        child: Center(
-                          child: cartController.isLoading.value
-                              ? const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      // Botão Finalizar Compra
+                      Expanded(
+                        child: Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [Colors.green, Colors.green[700]!],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withAlpha((0.4 * 255).toInt()),
+                                spreadRadius: 1,
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: cartController.isLoading.value
+                                  ? null
+                                  : () async {
+                                      final success = await cartController.finalizeOrder();
+                                      if (success) {
+                                        Get.back();
+                                      }
+                                    },
+                              child: Center(
+                                child: cartController.isLoading.value
+                                    ? const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            'Processando...',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.payment,
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Finalizar Compra',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Processando...',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.payment,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Finalizar Compra',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   )),
                 ],
               ),
