@@ -5,7 +5,7 @@ import '../models/product.dart';
 
 class DatabaseService {
   // Configuração da API
-  static const String baseUrl = 'https://elostupi.pt/api';
+  static const String baseUrl = 'https://api.elostupi.pt/api';
   
   // Endpoints
   static const String productsEndpoint = '/products';

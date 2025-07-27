@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'core/storage_init.dart';
+import 'core/locale_config.dart';
 import 'controllers/app_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'screens/shop_screen.dart';
 import 'screens/admin_screen.dart';
 import 'screens/pending_orders_screen.dart';
+import 'screens/membership_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'ElosTupi',
       theme: appController.lightTheme,
+      locale: LocaleConfig.defaultLocale,
       home: const ShopScreen(),
       debugShowCheckedModeBanner: false,
       defaultTransition: Transition.fade,
@@ -37,6 +40,7 @@ class MyApp extends StatelessWidget {
       getPages: [
         GetPage(name: '/admin', page: () => const AdminScreen()),
         GetPage(name: '/pendentes', page: () => const PendingOrdersScreen()),
+        GetPage(name: '/membership', page: () => const MembershipScreen()),
       ],
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class PendingOrderService {
-  static const String baseUrl = 'https://elostupi.pt/api/pending-orders';
+  static const String baseUrl = 'https://api.elostupi.pt/api/pending-orders';
 
   Future<List<Map<String, dynamic>>> getPendingOrders() async {
     final response = await http.get(Uri.parse(baseUrl));
