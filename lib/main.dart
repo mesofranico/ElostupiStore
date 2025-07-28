@@ -7,6 +7,7 @@ import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'screens/shop_screen.dart';
 import 'screens/admin_screen.dart';
+import 'screens/admin_products_screen.dart';
 import 'screens/pending_orders_screen.dart';
 import 'screens/membership_screen.dart';
 
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
       transitionDuration: const Duration(milliseconds: 300),
       getPages: [
         GetPage(name: '/admin', page: () => const AdminScreen()),
+        GetPage(name: '/admin/products', page: () => const AdminProductsScreen()),
         GetPage(name: '/pendentes', page: () => const PendingOrdersScreen()),
         GetPage(name: '/membership', page: () => const MembershipScreen()),
       ],

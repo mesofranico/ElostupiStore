@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../models/payment.dart';
 import '../services/payment_service.dart';
+import 'member_controller.dart';
 
 class PaymentController extends GetxController {
   final RxList<Payment> payments = <Payment>[].obs;
@@ -213,5 +214,22 @@ class PaymentController extends GetxController {
   // Obter pagamentos com falha
   List<Payment> getFailedPayments() {
     return payments.where((payment) => payment.status == 'failed').toList();
+  }
+
+  // Obter pagamentos filtrados por data (para relatórios)
+  List<Payment> getFilteredPayments() {
+    final memberController = Get.find<MemberController>();
+    if (memberController.filterStartDate.value == null || memberController.filterEndDate.value == null) {
+      return payments;
+    }
+    
+    final startDate = memberController.filterStartDate.value!;
+    final endDate = memberController.filterEndDate.value!;
+    
+    return payments.where((payment) {
+      final paymentDate = payment.paymentDate;
+      return paymentDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+             paymentDate.isBefore(endDate.add(const Duration(days: 1)));
+    }).toList();
   }
 } 

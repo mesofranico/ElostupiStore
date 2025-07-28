@@ -9,6 +9,10 @@ class MemberController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final Rx<Member?> selectedMember = Rx<Member?>(null);
+  
+  // Filtros de data para relatórios
+  final Rx<DateTime?> filterStartDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> filterEndDate = Rx<DateTime?>(null);
 
   @override
   void onInit() {
@@ -220,5 +224,34 @@ class MemberController extends GetxController {
         'deletionComplete': false
       };
     }
+  }
+
+  // Aplicar filtro de data
+  void applyDateFilter(DateTime startDate, DateTime endDate) {
+    filterStartDate.value = startDate;
+    filterEndDate.value = endDate;
+  }
+
+  // Limpar filtro de data
+  void clearDateFilter() {
+    filterStartDate.value = null;
+    filterEndDate.value = null;
+  }
+
+  // Obter membros filtrados por data (para relatórios)
+  List<Member> getFilteredMembers() {
+    if (filterStartDate.value == null || filterEndDate.value == null) {
+      return members;
+    }
+    
+    return members.where((member) {
+      // Filtrar por data de ingresso
+      final joinDate = member.joinDate;
+      final startDate = filterStartDate.value!;
+      final endDate = filterEndDate.value!;
+      
+      return joinDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+             joinDate.isBefore(endDate.add(const Duration(days: 1)));
+    }).toList();
   }
 } 

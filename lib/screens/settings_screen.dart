@@ -145,14 +145,14 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               title: const Text(
-                'Gestão de Produtos',
+                'Administração',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               subtitle: const Text(
-                'Adicionar, editar e remover produtos',
+                'Gestão de produtos e mensalidades',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
@@ -160,53 +160,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               onTap: () {
                 Get.toNamed('/admin');
-              },
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(20),
-              leading: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.indigo[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.people,
-                  color: Colors.indigo[600],
-                  size: 24,
-                ),
-              ),
-              title: const Text(
-                'Gestão de Mensalidades',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: const Text(
-                'Gerir pagamentos da corrente mediúnica',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Get.toNamed('/membership');
               },
             ),
           ),
