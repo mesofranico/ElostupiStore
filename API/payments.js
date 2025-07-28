@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -36,6 +37,7 @@ router.get('/:id', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -62,17 +64,26 @@ router.post('/', async (req, res) => {
       member_id,
       amount,
       payment_date,
-      status
+      status,
+      payment_type
     } = req.body;
+
+    console.log('Criando pagamento:', {
+      member_id,
+      amount,
+      payment_date,
+      status,
+      payment_type: payment_type || 'regular'
+    });
 
     const [result] = await pool.execute(`
       INSERT INTO payments (
         member_id, amount, payment_date, 
-        status, created_at
-      ) VALUES (?, ?, ?, ?, NOW())
+        status, payment_type, created_at
+      ) VALUES (?, ?, ?, ?, ?, NOW())
     `, [
       member_id, amount, payment_date,
-      status
+      status, payment_type || 'regular'
     ]);
 
     // Atualizar status do membro se o pagamento for concluído
@@ -122,6 +133,7 @@ router.post('/', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -223,6 +235,7 @@ router.get('/member/:memberId', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -250,6 +263,7 @@ router.get('/period', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -275,6 +289,7 @@ router.get('/status/:status', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 

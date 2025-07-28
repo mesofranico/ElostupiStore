@@ -299,21 +299,103 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/members/:id - Deletar membro
+// DELETE /api/members/:id - Deletar membro e todas as informações relacionadas
 router.delete('/:id', async (req, res) => {
   try {
-    const [result] = await pool.execute(
-      'DELETE FROM members WHERE id = ?',
-      [req.params.id]
+    const memberId = req.params.id;
+    
+    // Verificar se o membro existe antes de deletar
+    const [existingMember] = await pool.execute(
+      'SELECT id, name FROM members WHERE id = ?',
+      [memberId]
     );
 
-    if (result.affectedRows === 0) {
+    if (existingMember.length === 0) {
       return res.status(404).json({ error: 'Membro não encontrado' });
     }
 
-    res.json({ message: 'Membro deletado com sucesso' });
+    const memberName = existingMember[0].name;
+    
+    // Contar pagamentos relacionados antes da exclusão
+    const [paymentsCount] = await pool.execute(
+      'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
+      [memberId]
+    );
+    
+    const totalPayments = paymentsCount[0].count;
+    
+    // Iniciar transação para garantir consistência
+    await pool.execute('START TRANSACTION');
+    
+    try {
+      // Deletar o membro (os pagamentos serão automaticamente removidos devido ao ON DELETE CASCADE)
+      const [result] = await pool.execute(
+        'DELETE FROM members WHERE id = ?',
+        [memberId]
+      );
+
+      if (result.affectedRows === 0) {
+        await pool.execute('ROLLBACK');
+        return res.status(404).json({ error: 'Membro não encontrado' });
+      }
+
+      // Confirmar transação
+      await pool.execute('COMMIT');
+      
+      // Log da exclusão completa
+      console.log(`Membro "${memberName}" (ID: ${memberId}) foi completamente removido da base de dados.`);
+      console.log(`- ${totalPayments} pagamento(s) relacionado(s) também foram removido(s) automaticamente.`);
+      
+      res.json({ 
+        message: 'Membro e todas as informações relacionadas foram removidos com sucesso',
+        details: {
+          memberName: memberName,
+          memberId: memberId,
+          paymentsRemoved: totalPayments
+        }
+      });
+      
+    } catch (deleteError) {
+      // Em caso de erro, reverter transação
+      await pool.execute('ROLLBACK');
+      throw deleteError;
+    }
+    
   } catch (error) {
     console.error('Erro ao deletar membro:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/members/verify-deletion/:id - Verificar se a exclusão foi completa
+router.get('/verify-deletion/:id', async (req, res) => {
+  try {
+    const memberId = req.params.id;
+    
+    // Verificar se o membro ainda existe
+    const [memberExists] = await pool.execute(
+      'SELECT id, name FROM members WHERE id = ?',
+      [memberId]
+    );
+    
+    // Verificar se há pagamentos relacionados
+    const [paymentsExist] = await pool.execute(
+      'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
+      [memberId]
+    );
+    
+    const verification = {
+      memberExists: memberExists.length > 0,
+      memberName: memberExists.length > 0 ? memberExists[0].name : null,
+      paymentsExist: paymentsExist[0].count > 0,
+      paymentsCount: paymentsExist[0].count,
+      deletionComplete: memberExists.length === 0 && paymentsExist[0].count === 0,
+      timestamp: new Date().toISOString()
+    };
+    
+    res.json(verification);
+  } catch (error) {
+    console.error('Erro ao verificar exclusão:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

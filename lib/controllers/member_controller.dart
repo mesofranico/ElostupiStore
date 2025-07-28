@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/member.dart';
 import '../services/member_service.dart';
+import 'payment_controller.dart';
 
 class MemberController extends GetxController {
   final RxList<Member> members = <Member>[].obs;
@@ -120,6 +122,18 @@ class MemberController extends GetxController {
       
       await MemberService.deleteMember(id);
       members.removeWhere((member) => member.id == id);
+      
+      // Recarregar também os pagamentos para atualizar a lista
+      try {
+        final PaymentController paymentController = Get.find<PaymentController>();
+        await paymentController.loadPayments();
+      } catch (e) {
+        // Se não conseguir recarregar pagamentos, não é crítico
+        if (kDebugMode) {
+          print('Aviso: Não foi possível recarregar pagamentos após exclusão do membro: $e');
+        }
+      }
+      
       return true;
     } catch (e) {
       errorMessage.value = e.toString();
@@ -193,5 +207,18 @@ class MemberController extends GetxController {
     final now = DateTime.now();
     final overdue = now.difference(member.nextPaymentDate!).inDays;
     return overdue > 0 ? overdue : 0;
+  }
+
+  // Verificar se a exclusão de um membro foi completa
+  Future<Map<String, dynamic>> verifyMemberDeletion(int memberId) async {
+    try {
+      return await MemberService.verifyDeletion(memberId);
+    } catch (e) {
+      errorMessage.value = e.toString();
+      return {
+        'error': e.toString(),
+        'deletionComplete': false
+      };
+    }
   }
 } 

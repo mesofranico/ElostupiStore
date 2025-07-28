@@ -106,6 +106,22 @@ class MemberService {
     }
   }
 
+  // Verificar se a exclusão de um membro foi completa
+  static Future<Map<String, dynamic>> verifyDeletion(int memberId) async {
+    try {
+      final response = await http.get(Uri.parse('${ApiConfig.membersUrl}/verify-deletion/$memberId'));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return Map<String, dynamic>.from(data);
+      } else {
+        throw Exception('Falha ao verificar exclusão: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erro de conexão: $e');
+    }
+  }
+
   // Buscar membros por status de pagamento
   static Future<List<Member>> getMembersByPaymentStatus(String status) async {
     try {

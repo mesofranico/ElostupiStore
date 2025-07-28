@@ -4,6 +4,7 @@ class Payment {
   final double amount;
   final DateTime paymentDate;
   final String status;
+  final String paymentType;
   final String? memberName;
   final DateTime createdAt;
 
@@ -13,6 +14,7 @@ class Payment {
     required this.amount,
     required this.paymentDate,
     required this.status,
+    required this.paymentType,
     this.memberName,
     required this.createdAt,
   });
@@ -24,6 +26,7 @@ class Payment {
       amount: double.parse(json['amount'].toString()),
       paymentDate: DateTime.parse(json['payment_date']),
       status: json['status'],
+      paymentType: json['payment_type'] ?? 'regular',
       memberName: json['member_name'],
       createdAt: DateTime.parse(json['created_at']),
     );
@@ -36,6 +39,7 @@ class Payment {
       'amount': amount,
       'payment_date': paymentDate.toIso8601String(),
       'status': status,
+      'payment_type': paymentType,
       'member_name': memberName,
       'created_at': createdAt.toIso8601String(),
     };
@@ -47,6 +51,7 @@ class Payment {
     double? amount,
     DateTime? paymentDate,
     String? status,
+    String? paymentType,
     String? memberName,
     DateTime? createdAt,
   }) {
@@ -56,6 +61,7 @@ class Payment {
       amount: amount ?? this.amount,
       paymentDate: paymentDate ?? this.paymentDate,
       status: status ?? this.status,
+      paymentType: paymentType ?? this.paymentType,
       memberName: memberName ?? this.memberName,
       createdAt: createdAt ?? this.createdAt,
     );

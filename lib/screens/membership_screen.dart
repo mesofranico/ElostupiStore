@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/member_controller.dart';
@@ -533,6 +534,39 @@ class MembershipScreen extends StatelessWidget {
                                 ),
                               ),
                               
+                              // Tipo de Pagamento
+                              Expanded(
+                                flex: 1,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Tipo',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[500],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _getPaymentTypeColor(payment.paymentType).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        _getPaymentTypeText(payment.paymentType),
+                                        style: TextStyle(
+                                          color: _getPaymentTypeColor(payment.paymentType),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              
                               // Status (texto)
                               Expanded(
                                 flex: 1,
@@ -644,8 +678,6 @@ class MembershipScreen extends StatelessWidget {
                           _buildReportRow('Total de Pagamentos', stats['total'].toString()),
                           _buildReportRow('Valor Total', CurrencyFormatter.formatEuro(stats['totalAmount'])),
                           _buildReportRow('Concluídos', stats['completed'].toString()),
-                          _buildReportRow('Pendentes', stats['pending'].toString()),
-                          _buildReportRow('Falhados', stats['failed'].toString()),
                         ],
                       );
                     }),
@@ -841,6 +873,32 @@ class MembershipScreen extends StatelessWidget {
     }
   }
 
+  Color _getPaymentTypeColor(String paymentType) {
+    switch (paymentType.toLowerCase()) {
+      case 'regular':
+        return Colors.blue;
+      case 'overdue':
+        return Colors.red;
+      case 'advance':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getPaymentTypeText(String paymentType) {
+    switch (paymentType.toLowerCase()) {
+      case 'regular':
+        return 'Mensal';
+      case 'overdue':
+        return 'Atraso';
+      case 'advance':
+        return 'Adiantado';
+      default:
+        return 'Regular';
+    }
+  }
+
   void _showAddMemberDialog(BuildContext context, MemberController controller) {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
@@ -850,172 +908,289 @@ class MembershipScreen extends StatelessWidget {
     bool isActive = true;
     
     Get.dialog(
-      AlertDialog(
-        title: const Text('Novo Membro'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome Completo *',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Telefone',
-                  border: OutlineInputBorder(),
-                  hintText: '(351) 999999999',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: selectedMembershipType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Mensalidade *',
-                  border: OutlineInputBorder(),
-                ),
-                items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  selectedMembershipType = value!;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: feeController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor da Mensalidade (€) *',
-                  border: OutlineInputBorder(),
-                  prefixText: '€ ',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              Row(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Checkbox(
-                    value: isActive,
-                    onChanged: (value) {
-                      isActive = value!;
-                    },
+                  // Cabeçalho
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.green,
+                          child: Icon(
+                            Icons.person_add,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Novo Membro',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Adicionar novo membro à corrente',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Text('Membro Ativo'),
+                  
+                  // Conteúdo
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          // Informações pessoais
+                          _buildEditSection(
+                            'Informações Pessoais',
+                            [
+                              TextField(
+                                controller: nameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Nome Completo *',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.person),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: emailController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.email),
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: phoneController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Telefone',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.phone),
+                                  hintText: '(351) 999999999',
+                                ),
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Informações financeiras
+                          _buildEditSection(
+                            'Informações Financeiras',
+                            [
+                              DropdownButtonFormField<String>(
+                                value: selectedMembershipType,
+                                decoration: const InputDecoration(
+                                  labelText: 'Tipo de Mensalidade *',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.category),
+                                ),
+                                items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
+                                    .map((type) => DropdownMenuItem(
+                                          value: type,
+                                          child: Text(type),
+                                        ))
+                                    .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedMembershipType = value!;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: feeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Valor da Mensalidade (€) *',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.euro),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Status do membro
+                          _buildEditSection(
+                            'Status do Membro',
+                            [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey[200]!),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Checkbox(
+                                      value: isActive,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          isActive = value!;
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Membro Ativo',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          Text(
+                                            isActive 
+                                                ? 'Membro pode realizar pagamentos'
+                                                : 'Membro suspenso de pagamentos',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isActive ? Colors.green[100] : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        isActive ? 'ATIVO' : 'INATIVO',
+                                        style: TextStyle(
+                                          color: isActive ? Colors.green[700] : Colors.grey[700],
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Botões de ação
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('Cancelar'),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () async {
+                            // Validação
+                            if (nameController.text.trim().isEmpty) {
+                              return;
+                            }
+                            
+                            if (feeController.text.trim().isEmpty) {
+                              return;
+                            }
+                            
+                            final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
+                            if (fee == null || fee <= 0) {
+                              return;
+                            }
+                            
+                            try {
+                              // Criar novo membro
+                              final newMember = Member(
+                                name: nameController.text.trim(),
+                                email: emailController.text.trim(),
+                                phone: phoneController.text.trim(),
+                                membershipType: selectedMembershipType,
+                                monthlyFee: fee,
+                                joinDate: DateTime.now(),
+                                isActive: isActive,
+                                paymentStatus: 'pending',
+                                nextPaymentDate: MembershipCalculator.calculateFirstPaymentDate(DateTime.now()),
+                              );
+                              
+                              // Salvar membro
+                              final success = await controller.createMember(newMember);
+                              
+                              if (success) {
+                                Get.back(); // Fechar diálogo
+                              }
+                            } catch (e) {
+                              // Erro silencioso - o usuário pode tentar novamente
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Adicionar Membro'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              // Validação
-              if (nameController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Erro',
-                  'Nome é obrigatório',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-              
-              if (feeController.text.trim().isEmpty) {
-                Get.snackbar(
-                  'Erro',
-                  'Valor da mensalidade é obrigatório',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-              
-              final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
-              if (fee == null || fee <= 0) {
-                Get.snackbar(
-                  'Erro',
-                  'Valor da mensalidade deve ser um número válido',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                );
-                return;
-              }
-              
-              try {
-                // Criar novo membro
-                final newMember = Member(
-                  name: nameController.text.trim(),
-                  email: emailController.text.trim(),
-                  phone: phoneController.text.trim(),
-                  membershipType: selectedMembershipType,
-                  monthlyFee: fee,
-                  joinDate: DateTime.now(),
-                  isActive: isActive,
-                  paymentStatus: 'pending',
-                  nextPaymentDate: MembershipCalculator.calculateFirstPaymentDate(DateTime.now()),
-                );
-                
-                // Salvar membro
-                final success = await controller.createMember(newMember);
-                
-                if (success) {
-                  Get.back(); // Fechar diálogo
-                  
-                  Get.snackbar(
-                    'Membro Adicionado',
-                    'Membro ${newMember.name} adicionado com sucesso!',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 3),
-                  );
-                } else {
-                  Get.snackbar(
-                    'Erro',
-                    'Erro ao adicionar membro. Tente novamente.',
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 3),
-                  );
-                }
-              } catch (e) {
-                Get.snackbar(
-                  'Erro',
-                  'Erro ao adicionar membro: $e',
-                  backgroundColor: Colors.red,
-                  colorText: Colors.white,
-                  duration: const Duration(seconds: 3),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
             ),
-            child: const Text('Adicionar'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1315,33 +1490,15 @@ class MembershipScreen extends StatelessWidget {
                           onPressed: () async {
                             // Validação
                             if (nameController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Erro',
-                                'Nome é obrigatório',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                              );
                               return;
                             }
                             
                             if (feeController.text.trim().isEmpty) {
-                              Get.snackbar(
-                                'Erro',
-                                'Valor da mensalidade é obrigatório',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                              );
                               return;
                             }
                             
                             final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
                             if (fee == null || fee <= 0) {
-                              Get.snackbar(
-                                'Erro',
-                                'Valor da mensalidade deve ser um número válido',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                              );
                               return;
                             }
                             
@@ -1350,13 +1507,6 @@ class MembershipScreen extends StatelessWidget {
                             final isChangingMembershipType = selectedMembershipType != member.membershipType;
                             
                             if (isOverdue && isChangingMembershipType) {
-                              Get.snackbar(
-                                'Erro',
-                                'Não é possível alterar o tipo de mensalidade enquanto houver pagamentos em atraso. Regularize os pagamentos primeiro.',
-                                backgroundColor: Colors.orange,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 4),
-                              );
                               return;
                             }
                             
@@ -1376,31 +1526,9 @@ class MembershipScreen extends StatelessWidget {
                               
                               if (success) {
                                 Get.back(); // Fechar diálogo
-                                
-                                Get.snackbar(
-                                  'Membro Atualizado',
-                                  'Membro ${updatedMember.name} atualizado com sucesso!',
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 3),
-                                );
-                              } else {
-                                Get.snackbar(
-                                  'Erro',
-                                  'Erro ao atualizar membro. Tente novamente.',
-                                  backgroundColor: Colors.red,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 3),
-                                );
                               }
                             } catch (e) {
-                              Get.snackbar(
-                                'Erro',
-                                'Erro ao atualizar membro: $e',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
+                              // Erro silencioso - o usuário pode tentar novamente
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -1540,7 +1668,7 @@ class MembershipScreen extends StatelessWidget {
     final overdueAmount = member.totalOverdue ?? 0;
     
     // Definir tipo de pagamento padrão
-    String paymentType = overdueMonths > 0 ? 'overdue' : 'advance';
+    String paymentType = overdueMonths > 0 ? 'overdue' : 'regular';
     int numberOfMonths = 1;
     double totalAmount = overdueMonths > 0 ? overdueAmount : _calculateTotalAmount(member.membershipType, member.monthlyFee, numberOfMonths);
     
@@ -1555,6 +1683,9 @@ class MembershipScreen extends StatelessWidget {
         case 'overdue':
           totalAmount = overdueAmount;
           break;
+        case 'regular':
+          totalAmount = member.monthlyFee;
+          break;
         case 'advance':
           // Só permitir pagamentos antecipados se não há atrasos
           if (overdueMonths == 0) {
@@ -1564,7 +1695,7 @@ class MembershipScreen extends StatelessWidget {
           }
           break;
         default:
-          totalAmount = overdueMonths > 0 ? overdueAmount : _calculateTotalAmount(member.membershipType, member.monthlyFee, numberOfMonths);
+          totalAmount = overdueMonths > 0 ? overdueAmount : member.monthlyFee;
       }
     }
     
@@ -1663,6 +1794,21 @@ class MembershipScreen extends StatelessWidget {
                                   onChanged: (value) {
                                     setState(() {
                                       paymentType = value!;
+                                    });
+                                  },
+                                ),
+                              
+                              // Pagamento mensal regular (apenas se não há atrasos)
+                              if (overdueMonths == 0)
+                                RadioListTile<String>(
+                                  title: const Text('Mensalidade Regular'),
+                                  subtitle: Text('1 ${_capitalizeFirstLetter(member.membershipType).toLowerCase()} - ${CurrencyFormatter.formatEuro(member.monthlyFee)}'),
+                                  value: 'regular',
+                                  groupValue: paymentType,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      paymentType = value!;
+                                      numberOfMonths = 1;
                                     });
                                   },
                                 ),
@@ -1793,19 +1939,26 @@ class MembershipScreen extends StatelessWidget {
                                 case 'overdue':
                                   monthsToAdvance = overdueMonths;
                                   break;
+                                case 'regular':
+                                  monthsToAdvance = 1;
+                                  break;
                                 case 'advance':
                                   monthsToAdvance = numberOfMonths;
                                   break;
                                 default:
-                                  monthsToAdvance = numberOfMonths;
+                                  monthsToAdvance = 1;
                               }
                               
                               // Criar o pagamento
+                              if (kDebugMode) {
+                                print('Criando pagamento com tipo: $paymentType');
+                              }
                               final payment = Payment(
                                 memberId: member.id!,
                                 amount: totalAmount,
                                 paymentDate: DateTime.now(),
                                 status: 'completed',
+                                paymentType: paymentType,
                                 createdAt: DateTime.now(),
                               );
                               
@@ -1826,6 +1979,13 @@ class MembershipScreen extends StatelessWidget {
                                     baseDate,
                                     member.membershipType,
                                     monthsToAdvance
+                                  );
+                                } else if (paymentType == 'regular') {
+                                  // Para pagamentos regulares, calcular próxima data normal
+                                  final baseDate = member.nextPaymentDate ?? currentPaymentDate;
+                                  nextPaymentDate = MembershipCalculator.calculateNextPaymentByType(
+                                    member.membershipType,
+                                    fromDate: baseDate
                                   );
                                 } else {
                                   // Para pagamentos antecipados, calcular baseado na próxima data atual + meses adiantados
@@ -1871,33 +2031,11 @@ class MembershipScreen extends StatelessWidget {
                                 await paymentController.loadPayments();
                                 
                                 Get.back(); // Fechar diálogo
-                                
-                                Get.snackbar(
-                                  'Pagamento Registado',
-                                  'Pagamento de ${CurrencyFormatter.formatEuro(totalAmount)} registado com sucesso!',
-                                  backgroundColor: Colors.green,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 3),
-                                );
                               } else {
                                 Get.back(); // Fechar diálogo
-                                Get.snackbar(
-                                  'Erro',
-                                  'Erro ao registar pagamento. Tente novamente.',
-                                  backgroundColor: Colors.red,
-                                  colorText: Colors.white,
-                                  duration: const Duration(seconds: 3),
-                                );
                               }
                             } catch (e) {
                               Get.back(); // Fechar diálogo
-                              Get.snackbar(
-                                'Erro',
-                                'Erro ao registar pagamento: $e',
-                                backgroundColor: Colors.red,
-                                colorText: Colors.white,
-                                duration: const Duration(seconds: 3),
-                              );
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -1919,24 +2057,237 @@ class MembershipScreen extends StatelessWidget {
   }
 
   void _showDeleteConfirmation(BuildContext context, Member member, MemberController controller) {
+    // Buscar informações sobre pagamentos do membro
+    final PaymentController paymentController = Get.find<PaymentController>();
+    final memberPayments = paymentController.payments.where((p) => p.memberId == member.id).toList();
+    final totalPayments = memberPayments.length;
+    final totalAmount = memberPayments.fold<double>(0, (sum, p) => sum + p.amount);
+    
     Get.dialog(
-      AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: Text('Tem certeza que deseja excluir o membro ${member.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Cabeçalho
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.red,
+                      child: Icon(
+                        Icons.warning,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Confirmar Exclusão',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Esta ação não pode ser desfeita',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Conteúdo
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tem certeza que deseja excluir o membro:',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Informações do membro
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Text(
+                                  member.name[0].toUpperCase(),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      member.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      _capitalizeFirstLetter(member.membershipType),
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Aviso sobre dados que serão removidos
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Dados que serão removidos:',
+                                style: TextStyle(
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _buildInfoRow(Icons.person, 'Perfil do membro', 'Completamente removido', Colors.red),
+                          _buildInfoRow(Icons.payment, 'Histórico de pagamentos', '$totalPayments pagamento(s)', Colors.red),
+                          _buildInfoRow(Icons.euro, 'Valor total em pagamentos', CurrencyFormatter.formatEuro(totalAmount), Colors.red),
+                          _buildInfoRow(Icons.schedule, 'Datas e status', 'Todas as informações temporais', Colors.red),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Aviso final
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info, color: Colors.orange[700], size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Esta ação é irreversível. Todos os dados relacionados ao membro serão permanentemente removidos da base de dados.',
+                              style: TextStyle(
+                                color: Colors.orange[700],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Botões de ação
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          await controller.deleteMember(member.id!);
+                          Get.back(); // Fechar diálogo
+                        } catch (e) {
+                          Get.back(); // Fechar diálogo
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Confirmar Exclusão'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              controller.deleteMember(member.id!);
-              Get.back();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Excluir'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -2256,20 +2607,40 @@ class MembershipScreen extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _getPaymentStatusColor(payment.status).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              _getPaymentStatusText(payment.status),
-                              style: TextStyle(
-                                color: _getPaymentStatusColor(payment.status),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getPaymentTypeColor(payment.paymentType).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _getPaymentTypeText(payment.paymentType),
+                                  style: TextStyle(
+                                    color: _getPaymentTypeColor(payment.paymentType),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getPaymentStatusColor(payment.status).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _getPaymentStatusText(payment.status),
+                                  style: TextStyle(
+                                    color: _getPaymentStatusColor(payment.status),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -2289,6 +2660,7 @@ class MembershipScreen extends StatelessWidget {
                       [
                         _buildInfoRow(Icons.person, 'Membro', payment.memberName ?? 'Não informado'),
                         _buildInfoRow(Icons.euro, 'Valor', CurrencyFormatter.formatEuro(payment.amount)),
+                        _buildInfoRow(Icons.category, 'Tipo', _getPaymentTypeText(payment.paymentType)),
                         _buildInfoRow(Icons.calendar_today, 'Data', _formatDate(payment.paymentDate)),
                         _buildInfoRow(Icons.access_time, 'Criado em', _formatDate(payment.createdAt)),
                       ],
@@ -2330,12 +2702,6 @@ class MembershipScreen extends StatelessWidget {
 
   void _generateReport(BuildContext context, MemberController memberController, PaymentController paymentController) {
     // Implementar geração de relatório
-    Get.snackbar(
-      'Relatório',
-      'Relatório gerado com sucesso!',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
   }
 
   void _showDateRangeDialog(BuildContext context, PaymentController controller) {
