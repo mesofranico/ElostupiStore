@@ -1136,23 +1136,76 @@ class MembershipScreen extends StatelessWidget {
                           _buildEditSection(
                             'Informações Financeiras',
                             [
-                              DropdownButtonFormField<String>(
-                                value: selectedMembershipType,
-                                decoration: const InputDecoration(
-                                  labelText: 'Tipo de Mensalidade *',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.category),
-                                ),
-                                items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
-                                    .map((type) => DropdownMenuItem(
-                                          value: type,
-                                          child: Text(type),
-                                        ))
-                                    .toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedMembershipType = value!;
-                                  });
+                              // Verificar se há pagamentos em atraso
+                              Builder(
+                                builder: (context) {
+                                  final isOverdue = member.overdueMonths != null && member.overdueMonths! > 0;
+                                  
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      DropdownButtonFormField<String>(
+                                        value: selectedMembershipType,
+                                        decoration: InputDecoration(
+                                          labelText: 'Tipo de Mensalidade *',
+                                          border: const OutlineInputBorder(),
+                                          prefixIcon: const Icon(Icons.category),
+                                          suffixIcon: isOverdue 
+                                              ? Tooltip(
+                                                  message: 'Não é possível alterar o tipo de mensalidade quando há pagamentos em atraso',
+                                                  child: Icon(
+                                                    Icons.warning,
+                                                    color: Colors.orange,
+                                                    size: 20,
+                                                  ),
+                                                )
+                                              : null,
+                                        ),
+                                        items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
+                                            .map((type) => DropdownMenuItem(
+                                                  value: type,
+                                                  child: Text(type),
+                                                ))
+                                            .toList(),
+                                        onChanged: isOverdue ? null : (value) {
+                                          setState(() {
+                                            selectedMembershipType = value!;
+                                          });
+                                        },
+                                      ),
+                                      if (isOverdue) ...[
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange[50],
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.orange[200]!),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.warning,
+                                                color: Colors.orange[700],
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  'Não é possível alterar o tipo de mensalidade enquanto houver pagamentos em atraso (${member.overdueMonths} mensalidade${member.overdueMonths! > 1 ? 's' : ''})',
+                                                  style: TextStyle(
+                                                    color: Colors.orange[700],
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  );
                                 },
                               ),
                               const SizedBox(height: 16),
@@ -1288,6 +1341,21 @@ class MembershipScreen extends StatelessWidget {
                                 'Valor da mensalidade deve ser um número válido',
                                 backgroundColor: Colors.red,
                                 colorText: Colors.white,
+                              );
+                              return;
+                            }
+                            
+                            // Verificar se está tentando alterar o tipo de mensalidade com pagamentos em atraso
+                            final isOverdue = member.overdueMonths != null && member.overdueMonths! > 0;
+                            final isChangingMembershipType = selectedMembershipType != member.membershipType;
+                            
+                            if (isOverdue && isChangingMembershipType) {
+                              Get.snackbar(
+                                'Erro',
+                                'Não é possível alterar o tipo de mensalidade enquanto houver pagamentos em atraso. Regularize os pagamentos primeiro.',
+                                backgroundColor: Colors.orange,
+                                colorText: Colors.white,
+                                duration: const Duration(seconds: 4),
                               );
                               return;
                             }
