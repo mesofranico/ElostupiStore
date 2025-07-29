@@ -7,7 +7,9 @@ const pool = mysql.createPool({
   database: 'elostupistore',
   port: 3306,
   waitForConnections: true,
-  connectionLimit: 10
+  connectionLimit: 10,
+  charset: 'utf8mb4',
+  collation: 'utf8mb4_unicode_ci'
 });
 
 module.exports = pool; 

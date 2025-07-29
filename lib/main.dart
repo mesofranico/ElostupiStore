@@ -10,6 +10,8 @@ import 'screens/admin_screen.dart';
 import 'screens/admin_products_screen.dart';
 import 'screens/pending_orders_screen.dart';
 import 'screens/membership_screen.dart';
+import 'screens/electricity_reading_screen.dart';
+import 'screens/electricity_settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +45,8 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/admin/products', page: () => const AdminProductsScreen()),
         GetPage(name: '/pendentes', page: () => const PendingOrdersScreen()),
         GetPage(name: '/membership', page: () => const MembershipScreen()),
+        GetPage(name: '/electricity', page: () => const ElectricityReadingScreen()),
+        GetPage(name: '/electricity/settings', page: () => const ElectricitySettingsScreen()),
       ],
     );
   }
