@@ -21,13 +21,13 @@ router.get('/', async (req, res) => {
 // Criar novo pedido pendente
 router.post('/', async (req, res) => {
   try {
-    const { id, createdAt, items, total } = req.body;
-    if (!id || !createdAt || !items || !total) {
-      return res.status(400).json({ error: 'Campos obrigatórios ausentes' });
+    const { id, createdAt, items, total, note } = req.body;
+    if (!id || !createdAt || !items || !total || !note || note.trim() === '') {
+      return res.status(400).json({ error: 'Campos obrigatórios ausentes. A nota é obrigatória.' });
     }
     await db.execute(
-      'INSERT INTO pending_orders (id, createdAt, items, total) VALUES (?, ?, ?, ?)',
-      [id, createdAt, JSON.stringify(items), total]
+      'INSERT INTO pending_orders (id, createdAt, items, total, note) VALUES (?, ?, ?, ?, ?)',
+      [id, createdAt, JSON.stringify(items), total, note.trim()]
     );
     res.status(201).json({ success: true, message: 'Pedido pendente criado' });
   } catch (error) {

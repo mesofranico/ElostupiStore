@@ -225,7 +225,7 @@ class CartController extends GetxController {
   }
 
   // Salvar pedido como pendente (API)
-  Future<bool> savePendingOrderAPI() async {
+  Future<bool> savePendingOrderAPI({required String note}) async {
     if (items.isEmpty) return false;
     final List<Map<String, dynamic>> orderItems = items.map((item) => {
       'product': {
@@ -253,6 +253,7 @@ class CartController extends GetxController {
       'createdAt': createdAt,
       'items': orderItems,
       'total': totalPrice,
+      'note': note.trim(),
     };
     isLoading.value = true;
     try {
