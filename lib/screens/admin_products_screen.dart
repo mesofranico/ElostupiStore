@@ -477,7 +477,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestão de Produtos'),
+        title: const Text('Gestão'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         actions: [

@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/product.dart';
+import '../models/cart_item.dart';
 import '../services/product_service.dart';
 import 'app_controller.dart';
 import '../services/pending_order_service.dart';
+import '../services/bluetooth_print_service.dart';
 
 class CartController extends GetxController {
   final GetStorage _storage = GetStorage();
   final ProductService _productService = ProductService();
   final PendingOrderService _pendingOrderService = PendingOrderService();
+  final BluetoothPrintService _bluetoothService = Get.find<BluetoothPrintService>();
   
   final RxList<CartItem> items = <CartItem>[].obs;
   final RxBool isLoading = false.obs;
@@ -192,6 +195,9 @@ class CartController extends GetxController {
         }
       }
       
+      // Tentar imprimir talão
+      await _printReceipt();
+      
       // Limpar carrinho após sucesso
       clearCart();
       
@@ -221,6 +227,19 @@ class CartController extends GetxController {
         duration: const Duration(seconds: 3),
       );
       return false;
+    }
+  }
+
+  // Imprimir talão da compra
+  Future<void> _printReceipt() async {
+    try {
+      await _bluetoothService.printReceipt(
+        items: items.toList(),
+        total: totalPrice,
+      );
+    } catch (e) {
+      // Não mostrar erro ao utilizador se a impressão falhar
+      // A compra já foi finalizada com sucesso
     }
   }
 
@@ -296,12 +315,61 @@ class CartController extends GetxController {
     isLoading.value = true;
     try {
       final ok = await _pendingOrderService.finalizePendingOrder(id);
+      if (ok) {
+        // Tentar imprimir talão do pedido finalizado
+        await _printPendingOrderReceipt(id);
+      }
       isLoading.value = false;
       return ok;
     } catch (e) {
       isLoading.value = false;
       if (kDebugMode) print('Erro ao finalizar pendente: $e');
       return false;
+    }
+  }
+
+  // Imprimir talão de pedido pendente finalizado
+  Future<void> _printPendingOrderReceipt(String orderId) async {
+    try {
+      // Encontrar o pedido na lista de pendentes
+      final orderList = pendingOrders.where((order) => order['id'] == orderId).toList();
+      if (orderList.isEmpty) return;
+      final order = orderList.first;
+
+      // Converter itens do pedido para CartItem
+      final List<CartItem> orderItems = [];
+      final List<dynamic> items = order['items'] ?? [];
+      
+      for (final item in items) {
+        final productData = item['product'];
+        final product = Product(
+          id: productData['id'],
+          name: productData['name'],
+          price: double.tryParse(productData['price'].toString()) ?? 0.0,
+          price2: double.tryParse(productData['price2'].toString()) ?? 0.0,
+          description: productData['description'] ?? '', // Adicionar descrição
+          stock: 0, // Não relevante para impressão
+          imageUrl: '', // Não relevante para impressão
+        );
+        
+        orderItems.add(CartItem(
+          product: product,
+          quantity: item['quantity'] ?? 1,
+        ));
+      }
+
+      final total = double.tryParse(order['total'].toString()) ?? 0.0;
+      final note = order['note'] as String?;
+
+      // Imprimir talão
+      await _bluetoothService.printReceipt(
+        items: orderItems,
+        total: total,
+        note: note,
+      );
+    } catch (e) {
+      // Não mostrar erro ao utilizador se a impressão falhar
+      // O pedido já foi finalizado com sucesso
     }
   }
 
@@ -317,12 +385,4 @@ class CartController extends GetxController {
   }
 }
 
-class CartItem {
-  final Product product;
-  int quantity;
-
-  CartItem({
-    required this.product,
-    required this.quantity,
-  });
-} 
+ 

@@ -372,7 +372,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         title: Row(
           children: [
             const Text(
-              'ElosTupi - Gestão de produtos',
+              'ElosTupi - Gestão',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

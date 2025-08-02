@@ -27,6 +27,19 @@ class AppController extends GetxController {
     try {
       showResalePrice.value = _storage.read('show_resale_price') ?? false;
       keepScreenOn.value = _storage.read('keep_screen_on') ?? false;
+      
+      // Aplicar configuração de wake lock ao carregar
+      if (keepScreenOn.value) {
+        WakelockPlus.enable();
+      } else {
+        WakelockPlus.disable();
+      }
+      
+      if (kDebugMode) {
+        print('Configurações carregadas:');
+        print('- Preço de revenda: ${showResalePrice.value}');
+        print('- Manter tela ligada: ${keepScreenOn.value}');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Erro ao carregar configurações: $e');
@@ -37,6 +50,24 @@ class AppController extends GetxController {
   Future<void> toggleResalePrice() async {
     showResalePrice.value = !showResalePrice.value;
     await _storage.write('show_resale_price', showResalePrice.value);
+    
+    if (kDebugMode) {
+      print('Preço de revenda alterado para: ${showResalePrice.value}');
+    }
+    
+    // Feedback visual
+    Get.snackbar(
+      'Configuração Atualizada',
+      showResalePrice.value 
+        ? 'Preços de revenda ativados' 
+        : 'Preços de revenda desativados',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.withValues(alpha: 0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
   }
 
   Future<void> toggleKeepScreenOn() async {
@@ -48,6 +79,24 @@ class AppController extends GetxController {
     } else {
       WakelockPlus.disable();
     }
+    
+    if (kDebugMode) {
+      print('Manter tela ligada alterado para: ${keepScreenOn.value}');
+    }
+    
+    // Feedback visual
+    Get.snackbar(
+      'Configuração Atualizada',
+      keepScreenOn.value 
+        ? 'Tela manterá ligada' 
+        : 'Tela pode apagar normalmente',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.orange.withValues(alpha: 0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
   }
 
   // Métodos para controle manual do wake lock
@@ -74,6 +123,38 @@ class AppController extends GetxController {
         WakelockPlus.disable();
       }
     });
+  }
+
+  // Resetar configurações para valores padrão
+  Future<void> resetSettings() async {
+    try {
+      showResalePrice.value = false;
+      keepScreenOn.value = false;
+      
+      await _storage.write('show_resale_price', false);
+      await _storage.write('keep_screen_on', false);
+      
+      WakelockPlus.disable();
+      
+      if (kDebugMode) {
+        print('Configurações resetadas para valores padrão');
+      }
+      
+      Get.snackbar(
+        'Configurações Resetadas',
+        'Todas as configurações foram restauradas para os valores padrão',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.blue.withValues(alpha: 0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao resetar configurações: $e');
+      }
+    }
   }
 
   ThemeData get lightTheme {

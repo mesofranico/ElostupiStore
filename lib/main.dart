@@ -5,6 +5,7 @@ import 'core/locale_config.dart';
 import 'controllers/app_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
+import 'services/bluetooth_print_service.dart';
 import 'screens/shop_screen.dart';
 import 'screens/admin_screen.dart';
 import 'screens/admin_products_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/pending_orders_screen.dart';
 import 'screens/membership_screen.dart';
 import 'screens/electricity_reading_screen.dart';
 import 'screens/electricity_settings_screen.dart';
+import 'screens/bluetooth_printer_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,7 @@ void main() async {
   
   // Inicializar controllers na ordem correta
   Get.put(AppController());
+  Get.put(BluetoothPrintService()); // Serviço Bluetooth primeiro
   Get.put(CartController()); // CartController primeiro
   Get.put(ProductController()); // ProductController depois
   
@@ -47,6 +50,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/membership', page: () => const MembershipScreen()),
         GetPage(name: '/electricity', page: () => const ElectricityReadingScreen()),
         GetPage(name: '/electricity/settings', page: () => const ElectricitySettingsScreen()),
+        GetPage(name: '/bluetooth-printer', page: () => BluetoothPrinterScreen()),
       ],
     );
   }

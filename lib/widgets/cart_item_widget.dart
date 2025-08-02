@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/cart_controller.dart';
 import '../controllers/app_controller.dart';
+import '../models/cart_item.dart';
 
 // Função utilitária para montar a URL completa da imagem
 String getFullImageUrl(String imageUrl) {
