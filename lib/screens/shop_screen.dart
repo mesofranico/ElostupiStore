@@ -15,12 +15,14 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   late TabController _tabController;
+  late ScrollController _scrollController;
   final ProductController productController = Get.find<ProductController>();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
+    _scrollController = ScrollController();
     
     // Observar mudanças nas categorias para atualizar o TabController
     ever(productController.products, (_) {
@@ -53,6 +55,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -305,52 +308,141 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       return Container(
         color: Colors.white,
         child: SafeArea(
-          child: Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            height: 60,
             child: Row(
-              children: categories.asMap().entries.map((entry) {
-                final index = entry.key;
-                final category = entry.value;
-                final isSelected = productController.selectedCategory.value == category;
-                
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      productController.setCategory(category);
-                      _tabController.animateTo(index);
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected ? Colors.blue : Colors.grey[500],
-                            fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: 3,
-                          width: isSelected ? 30 : 20,
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.blue : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ],
+              children: [
+                // Botão de scroll para a esquerda
+                if (categories.length > 4)
+                  Container(
+                    width: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.white, Colors.white.withValues(alpha: 0.8)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.chevron_left, color: Colors.blue),
+                      onPressed: () {
+                        // Scroll para a esquerda
+                        _scrollController.animateTo(
+                          (_scrollController.offset - 150).clamp(0.0, _scrollController.position.maxScrollExtent),
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
                     ),
                   ),
-                );
-              }).toList(),
+                
+                // Lista de tabs com scroll horizontal
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: categories.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final category = entry.value;
+                        final isSelected = productController.selectedCategory.value == category;
+                        
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          child: GestureDetector(
+                            onTap: () {
+                              productController.setCategory(category);
+                              _tabController.animateTo(index);
+                              
+                              // Scroll para centralizar a tab selecionada
+                              _scrollToSelectedTab(index);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blue : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected ? Colors.blue : Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    category,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.grey[700],
+                                      fontSize: 14,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                
+                // Botão de scroll para a direita
+                if (categories.length > 4)
+                  Container(
+                    width: 40,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.white.withValues(alpha: 0.8), Colors.white],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.chevron_right, color: Colors.blue),
+                      onPressed: () {
+                        // Scroll para a direita
+                        _scrollController.animateTo(
+                          (_scrollController.offset + 150).clamp(0.0, _scrollController.position.maxScrollExtent),
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
       );
     });
+  }
+
+  // Método para scroll para centralizar a tab selecionada
+  void _scrollToSelectedTab(int index) {
+    // Calcular a posição aproximada da tab
+    final tabWidth = 140.0; // Largura aproximada de cada tab (incluindo margin)
+    final targetOffset = index * tabWidth;
+    
+    // Scroll para centralizar a tab
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final viewportWidth = _scrollController.position.viewportDimension;
+    final scrollTo = (targetOffset - (viewportWidth / 2) + (tabWidth / 2)).clamp(0.0, maxScroll);
+    
+    _scrollController.animateTo(
+      scrollTo,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
