@@ -21,6 +21,9 @@ class ProductController extends GetxController {
     super.onInit();
     loadProducts();
     
+    // Inicializar ordem das categorias
+    _initializeCategoryOrder();
+    
     // Observar mudanças no carrinho para atualizar indicadores de stock
     // Verificar se o CartController já foi inicializado
     try {
@@ -42,6 +45,13 @@ class ProductController extends GetxController {
           }
         }
       });
+    }
+  }
+
+  // Inicializar ordem das categorias
+  void _initializeCategoryOrder() {
+    if (_customCategoryOrder.isEmpty) {
+      _loadCategoryOrderFromAPI();
     }
   }
 
@@ -138,6 +148,9 @@ class ProductController extends GetxController {
       // Salvar no cache local
       await _saveProductsToCache(loadedProducts);
       
+      // Carregar ordem das categorias da API
+      await _loadCategoryOrderFromAPI();
+      
     } catch (e) {
       // Tentar carregar do cache
       final cachedProducts = await _loadProductsFromCache();
@@ -146,6 +159,9 @@ class ProductController extends GetxController {
         products.value = cachedProducts;
         hasCachedData.value = true;
         errorMessage.value = _getFriendlyErrorMessage(e.toString());
+        
+        // Carregar ordem das categorias da API mesmo em modo offline
+        await _loadCategoryOrderFromAPI();
       } else {
         errorMessage.value = _getFriendlyErrorMessage(e.toString());
         products.clear();
@@ -155,6 +171,8 @@ class ProductController extends GetxController {
       isLoading.value = false;
     }
   }
+
+
 
   String _getFriendlyErrorMessage(String error) {
     if (error.contains('SocketException') || error.contains('NetworkException')) {
@@ -227,9 +245,83 @@ class ProductController extends GetxController {
     return filtered;
   }
 
+  // Ordem personalizada das categorias (salva online)
+  final RxList<String> _customCategoryOrder = <String>[].obs;
+
   List<String> get categories {
     final Set<String> categories = products.map((p) => p.category).where((c) => c != null).cast<String>().toSet();
-    return ['Todas', ...categories.toList()..sort()];
+    
+    // Obter categorias na ordem personalizada
+    final List<String> orderedCategories = [];
+    
+    // Adicionar 'Todas' sempre primeiro
+    orderedCategories.add('Todas');
+    
+    // Adicionar categorias na ordem personalizada
+    for (final category in _customCategoryOrder) {
+      if (categories.contains(category)) {
+        orderedCategories.add(category);
+      }
+    }
+    
+    // Adicionar categorias novas que não estão na ordem personalizada
+    final newCategories = categories
+        .where((category) => !_customCategoryOrder.contains(category))
+        .toList()
+      ..sort();
+    
+    orderedCategories.addAll(newCategories);
+    
+    return orderedCategories;
+  }
+
+  // Carregar ordem das categorias da API
+  Future<void> _loadCategoryOrderFromAPI() async {
+    try {
+      final response = await _productService.getCategoryOrder();
+      if (response.isNotEmpty) {
+        _customCategoryOrder.value = response;
+      } else {
+        // Se não há ordem definida na API, sincronizar com produtos atuais
+        await _syncCategoriesWithAPI();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao carregar ordem das categorias da API: $e');
+      }
+      // Em caso de erro, usar ordem alfabética
+      final Set<String> categories = products.map((p) => p.category).where((c) => c != null).cast<String>().toSet();
+      final sortedCategories = categories.toList()..sort();
+      _customCategoryOrder.value = sortedCategories;
+    }
+  }
+
+  // Sincronizar categorias com a API
+  Future<void> _syncCategoriesWithAPI() async {
+    try {
+      final response = await _productService.syncCategories();
+      if (response.isNotEmpty) {
+        _customCategoryOrder.value = response;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao sincronizar categorias: $e');
+      }
+    }
+  }
+
+  // Método para reordenar categorias (salva na API)
+  Future<void> reorderCategories(List<String> newOrder) async {
+    try {
+      await _productService.updateCategoryOrder(newOrder);
+      _customCategoryOrder.value = newOrder;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Erro ao atualizar ordem das categorias: $e');
+      }
+      // Em caso de erro, atualizar localmente
+      _customCategoryOrder.value = newOrder;
+    }
   }
 
   Future<void> refreshProducts() async {

@@ -6,6 +6,7 @@ const membersRouter = require('./members');
 const paymentsRouter = require('./payments');
 const electricityReadingsRouter = require('./electricity_readings');
 const electricitySettingsRouter = require('./electricity_settings');
+const categoriesRouter = require('./categories');
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/api/members', membersRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api', electricityReadingsRouter);
 app.use('/api', electricitySettingsRouter);
+app.use('/api/categories', categoriesRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {

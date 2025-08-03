@@ -26,15 +26,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     ever(productController.products, (_) {
       _updateTabController();
     });
-    
-    // Observar mudanças na categoria selecionada para sincronizar o TabController
-    ever(productController.selectedCategory, (category) {
-      final categories = productController.categories;
-      final index = categories.indexOf(category);
-      if (index >= 0 && index != _tabController.index) {
-        _tabController.animateTo(index);
-      }
-    });
   }
 
   void _updateTabController() {
@@ -51,9 +42,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         }
       });
       
-      // Definir categoria inicial como "Todas"
-      if (categories.isNotEmpty) {
-        productController.setCategory('Todas');
+      // Definir categoria inicial como "Todas" apenas se não houver categoria selecionada
+      if (categories.isNotEmpty && productController.selectedCategory.value == 'Todas') {
         // Forçar rebuild do widget
         setState(() {});
       }

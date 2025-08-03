@@ -5,6 +5,152 @@ import '../controllers/product_controller.dart';
 import '../controllers/app_controller.dart';
 import '../models/product.dart';
 
+// Widget para reordenar categorias
+class CategoryReorderDialog extends StatefulWidget {
+  final List<String> categories;
+  final Function(List<String>) onSave;
+
+  const CategoryReorderDialog({
+    super.key,
+    required this.categories,
+    required this.onSave,
+  });
+
+  @override
+  State<CategoryReorderDialog> createState() => _CategoryReorderDialogState();
+}
+
+class _CategoryReorderDialogState extends State<CategoryReorderDialog> {
+  late List<String> _categories;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = List.from(widget.categories);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: Row(
+        children: [
+          Icon(
+            Icons.sort_by_alpha,
+            color: Colors.blue[600],
+            size: 28,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Reordenar Categorias',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.blue[700],
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        height: 400,
+        child: Column(
+          children: [
+            Text(
+              'Arrasta as categorias para reordená-las:',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ReorderableListView.builder(
+                itemCount: _categories.length,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    // Ajustar índices para o onReorder
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    
+                    // Reordenar a lista
+                    final item = _categories.removeAt(oldIndex);
+                    _categories.insert(newIndex, item);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final category = _categories[index];
+                  return Container(
+                    key: ValueKey(category),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.drag_handle,
+                        color: Colors.grey[400],
+                      ),
+                      title: Text(
+                        category,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: Colors.blue[700],
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton.icon(
+          onPressed: () {
+            widget.onSave(_categories);
+          },
+          icon: const Icon(Icons.save),
+          label: const Text('Guardar Ordem'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[600],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({super.key});
 
@@ -28,6 +174,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   
   // Variáveis para filtro
   String? _selectedCategory;
+  bool _sortByStock = false; // Controlo para ordenar por stock
 
   @override
   void dispose() {
@@ -42,142 +189,19 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     super.dispose();
   }
 
-  void _clearForm() {
-    _formKey.currentState?.reset();
-    _idController.clear();
-    _nameController.clear();
-    _priceController.clear();
-    _price2Controller.clear();
-    _descriptionController.clear();
-    _imageUrlController.clear();
-    _categoryController.clear();
-    _stockController.clear();
-  }
 
-  Future<void> _deleteProduct(String productId) async {
-    // Primeiro, pedir confirmação
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: const Text('Tem certeza que deseja deletar este produto?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Get.back(result: true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Deletar'),
-          ),
-        ],
-      ),
-    );
 
-    if (confirmed == true) {
-      // Agora pedir o PIN de segurança
-      final pinController = TextEditingController();
-      final pinConfirmed = await Get.dialog<bool>(
-        AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.security, color: Colors.red[600], size: 24),
-              const SizedBox(width: 8),
-              const Text('Código de Segurança'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Para remover este produto, introduza o código PIN:',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: pinController,
-                decoration: const InputDecoration(
-                  labelText: 'Código PIN',
-                  border: OutlineInputBorder(),
-                  hintText: '5614',
-                ),
-                keyboardType: TextInputType.number,
-                obscureText: true,
-                maxLength: 4,
-                autofocus: true,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (pinController.text == '5614') {
-                  Get.back(result: true);
-                } else {
-                  Get.snackbar(
-                    'Erro',
-                    'Código PIN incorreto!',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red.withValues(alpha: 0.8),
-                    colorText: Colors.white,
-                    duration: const Duration(seconds: 2),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[600],
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        ),
-      );
 
-      if (pinConfirmed == true) {
-        final success = await adminController.deleteProduct(productId);
-        if (success) {
-          await productController.refreshProducts();
-          Get.snackbar(
-            'Sucesso',
-            adminController.successMessage.value,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
-        } else {
-          Get.snackbar(
-            'Erro',
-            adminController.errorMessage.value,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
-        }
-      }
-    }
-  }
 
-  void _showProductForm({Product? editProduct}) {
-    final isEditing = editProduct != null;
-    if (isEditing) {
-      _idController.text = editProduct.id;
-      _nameController.text = editProduct.name;
-      _priceController.text = editProduct.price.toString();
-      _price2Controller.text = editProduct.price2?.toString() ?? '';
-      _descriptionController.text = editProduct.description;
-      _imageUrlController.text = editProduct.imageUrl;
-      _categoryController.text = editProduct.category ?? '';
-      _stockController.text = editProduct.stock?.toString() ?? '';
-    } else {
-      _clearForm();
-    }
+  void _showEditProductForm(Product editProduct) {
+    _idController.text = editProduct.id;
+    _nameController.text = editProduct.name;
+    _priceController.text = editProduct.price.toString();
+    _price2Controller.text = editProduct.price2?.toString() ?? '';
+    _descriptionController.text = editProduct.description;
+    _imageUrlController.text = editProduct.imageUrl;
+    _categoryController.text = editProduct.category ?? '';
+    _stockController.text = editProduct.stock?.toString() ?? '';
     
     Get.dialog(
       AlertDialog(
@@ -188,209 +212,127 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         title: Row(
           children: [
             Icon(
-              isEditing ? Icons.edit : Icons.add_box,
-              color: isEditing ? Colors.blue[600] : Colors.green[600],
+              Icons.edit,
+              color: Colors.blue[600],
               size: 28,
             ),
             const SizedBox(width: 12),
             Text(
-              isEditing ? 'Editar Produto' : 'Novo Produto',
+              'Editar Produto',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
-                color: isEditing ? Colors.blue[700] : Colors.green[700],
+                color: Colors.blue[700],
               ),
             ),
           ],
         ),
-        content: SizedBox(
-          width: 400,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Campos obrigatórios
-                  const Text('Campos obrigatórios', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
-                  const SizedBox(height: 8),
-                  // ID
-                  TextFormField(
-                    controller: _idController,
-                    decoration: const InputDecoration(
-                      labelText: 'ID do Produto *',
-                      border: OutlineInputBorder(),
-                    ),
-                    enabled: !isEditing, // Não permite editar ID
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'ID é obrigatório';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Nome
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome do Produto *',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Nome é obrigatório';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Preço
-                  TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Preço (€) *',
-                      border: OutlineInputBorder(),
-                      prefixText: '€',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Preço é obrigatório';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Preço deve ser um número válido';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  // Campos opcionais
-                  const Text('Campos opcionais', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black54)),
-                  const SizedBox(height: 8),
-                  // Preço de Revenda
-                  TextFormField(
-                    controller: _price2Controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Preço de Revenda (€)',
-                      border: OutlineInputBorder(),
-                      prefixText: '€',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value != null && value.trim().isNotEmpty) {
-                        if (double.tryParse(value) == null) {
-                          return 'Preço deve ser um número válido';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Descrição
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Descrição',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  // URL da Imagem
-                  TextFormField(
-                    controller: _imageUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'URL da Imagem',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Categoria
-                  Obx(() {
-                    final categories = productController.categories.where((c) => c != 'Todas').toList();
-                    return DropdownButtonFormField<String>(
-                      value: _categoryController.text.isNotEmpty ? _categoryController.text : null,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria',
-                        border: OutlineInputBorder(),
-                      ),
-                      isExpanded: true,
-                      items: [
-                        ...categories.map((cat) => DropdownMenuItem(
-                              value: cat,
-                              child: Text(cat),
-                            )),
-                        const DropdownMenuItem(
-                          value: '__nova__',
-                          child: Text('Criar nova categoria...'),
-                        ),
-                      ],
-                      onChanged: (value) async {
-                        if (value == '__nova__') {
-                          // Limpa para digitar nova
-                          _categoryController.text = '';
-                          await Future.delayed(const Duration(milliseconds: 100));
-                          if (mounted) {
-                            FocusScope.of(context).requestFocus(FocusNode());
-                          }
-                        } else if (value != null) {
-                          _categoryController.text = value;
-                        }
-                      },
-                      onSaved: (value) {
-                        if (value != null && value != '__nova__') {
-                          _categoryController.text = value;
-                        }
-                      },
-                      selectedItemBuilder: (context) {
-                        return [
-                          ...categories.map((cat) => Text(cat)),
-                          const Text('Criar nova categoria...'),
-                        ];
-                      },
-                    );
-                  }),
-                  const SizedBox(height: 8),
-                  // Campo para digitar nova categoria (só aparece se _categoryController.text estiver vazio)
-                  if (_categoryController.text.isEmpty)
-                    TextFormField(
-                      controller: _categoryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nova Categoria',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  // Stock
-                  TextFormField(
-                    controller: _stockController,
-                    decoration: const InputDecoration(
-                      labelText: 'Stock',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value != null && value.trim().isNotEmpty) {
-                        if (int.tryParse(value) == null) {
-                          return 'Stock deve ser um número inteiro';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24), // Espaçamento extra antes dos botões
-                ],
-              ),
-            ),
-          ),
-        ),
+                 content: SizedBox(
+           width: 350,
+           child: Form(
+             key: _formKey,
+             child: Column(
+               mainAxisSize: MainAxisSize.min,
+               crossAxisAlignment: CrossAxisAlignment.stretch,
+               children: [
+                 // Informação do produto (apenas para referência)
+                 Container(
+                   padding: const EdgeInsets.all(16),
+                   decoration: BoxDecoration(
+                     color: Colors.grey[50],
+                     borderRadius: BorderRadius.circular(8),
+                     border: Border.all(color: Colors.grey[200]!),
+                   ),
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       Text(
+                         'Produto: ${editProduct.name}',
+                         style: const TextStyle(
+                           fontWeight: FontWeight.bold,
+                           fontSize: 16,
+                         ),
+                       ),
+                       const SizedBox(height: 4),
+                       Text(
+                         'ID: ${editProduct.id}',
+                         style: TextStyle(
+                           fontSize: 12,
+                           color: Colors.grey[600],
+                         ),
+                       ),
+                     ],
+                   ),
+                 ),
+                 const SizedBox(height: 24),
+                 
+                 // Preço principal
+                 TextFormField(
+                   controller: _priceController,
+                   decoration: const InputDecoration(
+                     labelText: 'Preço (€) *',
+                     border: OutlineInputBorder(),
+                     prefixText: '€',
+                   ),
+                   keyboardType: TextInputType.number,
+                   validator: (value) {
+                     if (value == null || value.trim().isEmpty) {
+                       return 'Preço é obrigatório';
+                     }
+                     if (double.tryParse(value) == null) {
+                       return 'Preço deve ser um número válido';
+                     }
+                     return null;
+                   },
+                 ),
+                 const SizedBox(height: 16),
+                 
+                 // Preço de Revenda
+                 TextFormField(
+                   controller: _price2Controller,
+                   decoration: const InputDecoration(
+                     labelText: 'Preço de Revenda (€)',
+                     border: OutlineInputBorder(),
+                     prefixText: '€',
+                   ),
+                   keyboardType: TextInputType.number,
+                   validator: (value) {
+                     if (value != null && value.trim().isNotEmpty) {
+                       if (double.tryParse(value) == null) {
+                         return 'Preço deve ser um número válido';
+                       }
+                     }
+                     return null;
+                   },
+                 ),
+                 const SizedBox(height: 16),
+                 
+                 // Stock
+                 TextFormField(
+                   controller: _stockController,
+                   decoration: const InputDecoration(
+                     labelText: 'Stock',
+                     border: OutlineInputBorder(),
+                   ),
+                   keyboardType: TextInputType.number,
+                   validator: (value) {
+                     if (value != null && value.trim().isNotEmpty) {
+                       if (int.tryParse(value) == null) {
+                         return 'Stock deve ser um número inteiro';
+                       }
+                     }
+                     return null;
+                   },
+                 ),
+                 const SizedBox(height: 24),
+               ],
+             ),
+           ),
+         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _clearForm();
             },
             child: const Text('Cancelar'),
           ),
@@ -400,26 +342,26 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               Navigator.of(context).pop();
               
               // Processar a operação em background
-              await _saveProduct(isEditing: isEditing);
+              await _saveProduct();
             },
             icon: adminController.isLoading.value
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Icon(isEditing ? Icons.save : Icons.check),
-            label: Text(isEditing ? 'Atualizar' : 'Criar'),
+                : const Icon(Icons.save),
+            label: const Text('Atualizar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: isEditing ? Colors.blue[600] : Colors.green[600],
+              backgroundColor: Colors.blue[600],
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
               textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-                 ],
-       ),
-     );
-   }
+        ],
+      ),
+    );
+  }
 
-  Future<bool> _saveProduct({required bool isEditing}) async {
+  Future<bool> _saveProduct() async {
     try {
       if (!_formKey.currentState!.validate()) {
         return false;
@@ -440,12 +382,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         stock: _stockController.text.isNotEmpty ? int.parse(_stockController.text) : 0,
       );
 
-      bool success;
-      if (isEditing) {
-        success = await adminController.updateProduct(product);
-      } else {
-        success = await adminController.createProduct(product);
-      }
+      final success = await adminController.updateProduct(product);
 
       if (success) {
         await productController.refreshProducts();
@@ -456,21 +393,58 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     }
   }
 
+  void _showCategoryReorderDialog() {
+    Get.dialog(
+      CategoryReorderDialog(
+        categories: productController.categories.where((c) => c != 'Todas').toList(),
+        onSave: (newOrder) async {
+          await productController.reorderCategories(newOrder);
+          Get.back();
+          
+          // Mostrar confirmação
+          Get.snackbar(
+            'Sucesso',
+            'Ordem das categorias atualizada!',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.green.withValues(alpha: 0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2),
+          );
+        },
+      ),
+    );
+  }
+
   // Função utilitária para montar a URL completa da imagem
   String getFullImageUrl(String imageUrl) {
     if (imageUrl.isEmpty) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
-    return 'https://elostupi.csmpanel.ovh/$imageUrl';
+    return 'https://elostupi.pt/loja/$imageUrl';
   }
 
-  // Função para obter produtos filtrados por categoria
-  List<Product> getFilteredProducts() {
+  // Função para obter produtos filtrados por categoria e ordenados por stock
+  List<Product> getFilteredProducts(List<Product> products) {
+    List<Product> filteredProducts;
+    
+    // Filtrar por categoria
     if (_selectedCategory == null || _selectedCategory == 'Todas') {
-      return productController.products;
+      filteredProducts = List.from(products);
+    } else {
+      filteredProducts = products.where((product) => 
+        product.category == _selectedCategory
+      ).toList();
     }
-    return productController.products.where((product) => 
-      product.category == _selectedCategory
-    ).toList();
+    
+    // Ordenar por stock se ativado
+    if (_sortByStock) {
+      filteredProducts.sort((a, b) {
+        final stockA = a.stock ?? 0;
+        final stockB = b.stock ?? 0;
+        return stockA.compareTo(stockB); // Ordem crescente (menor para maior)
+      });
+    }
+    
+    return filteredProducts;
   }
 
   @override
@@ -482,14 +456,14 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            onPressed: () => _showCategoryReorderDialog(),
+            icon: const Icon(Icons.sort_by_alpha),
+            tooltip: 'Reordenar categorias',
+          ),
+          IconButton(
             onPressed: () => productController.refreshProducts(),
             icon: const Icon(Icons.refresh),
             tooltip: 'Atualizar produtos',
-          ),
-          IconButton(
-            onPressed: () => _showProductForm(),
-            icon: const Icon(Icons.add),
-            tooltip: 'Adicionar novo produto',
           ),
         ],
       ),
@@ -497,7 +471,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         children: [
           Column(
             children: [
-              // Filtro de categorias
+              // Filtro de categorias e ordenação por stock
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -510,65 +484,111 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     ),
                   ],
                 ),
-                child: Row(
+                                child: Row(
                   children: [
-                    Icon(Icons.filter_list, color: Colors.blue[600], size: 24),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Categorias:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
+                    // Filtro de categorias
                     Expanded(
-                      child: Obx(() {
-                        final categories = ['Todas', ...productController.categories.where((c) => c != 'Todas')];
-                        return DropdownButtonFormField<String>(
-                          value: _selectedCategory ?? 'Todas',
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.grey[300]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: Colors.blue[600]!),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            filled: true,
-                            fillColor: Colors.grey[50],
+                      flex: 2,
+                      child: Row(
+                        children: [
+                          Icon(Icons.filter_list, color: Colors.blue[600], size: 24),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Obx(() {
+                              final categories = ['Todas', ...productController.categories.where((c) => c != 'Todas')];
+                              return DropdownButtonFormField<String>(
+                                value: _selectedCategory ?? 'Todas',
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.grey[300]!),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.grey[300]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.blue[600]!),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  filled: true,
+                                  fillColor: Colors.grey[50],
+                                ),
+                                items: categories.map((category) => DropdownMenuItem(
+                                  value: category,
+                                  child: Text(category),
+                                )).toList(),
+                                onChanged: (value) {
+                                  // Usar Future.microtask para evitar conflitos durante o build
+                                  Future.microtask(() {
+                                    setState(() {
+                                      _selectedCategory = value;
+                                    });
+                                  });
+                                },
+                              );
+                            }),
                           ),
-                          items: categories.map((category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          )).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value;
-                            });
-                          },
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 12),
-                    // Botão para limpar filtro
-                    if (_selectedCategory != null && _selectedCategory != 'Todas')
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedCategory = null;
-                          });
-                        },
-                        icon: Icon(Icons.clear, color: Colors.red[600]),
-                        tooltip: 'Limpar filtro',
+                          const SizedBox(width: 8),
+                          // Botão para limpar filtro
+                          if (_selectedCategory != null && _selectedCategory != 'Todas')
+                            IconButton(
+                              onPressed: () {
+                                // Usar Future.microtask para evitar conflitos durante o build
+                                Future.microtask(() {
+                                  setState(() {
+                                    _selectedCategory = null;
+                                  });
+                                });
+                              },
+                              icon: Icon(Icons.clear, color: Colors.red[600]),
+                              tooltip: 'Limpar filtro',
+                            ),
+                        ],
                       ),
+                    ),
+                    
+                    // Separador vertical
+                    Container(
+                      width: 1,
+                      height: 40,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      color: Colors.grey[300],
+                    ),
+                    
+                    // Controlo de ordenação por stock
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Icon(Icons.sort, color: Colors.orange[600], size: 24),
+                          const SizedBox(width: 8),
+                          // Switch para ativar/desativar ordenação por stock
+                          Switch(
+                            value: _sortByStock,
+                            onChanged: (value) {
+                              // Usar Future.microtask para evitar conflitos durante o build
+                              Future.microtask(() {
+                                setState(() {
+                                  _sortByStock = value;
+                                });
+                              });
+                            },
+                            activeColor: Colors.orange[600],
+                            activeTrackColor: Colors.orange[200],
+                          ),
+                          const SizedBox(width: 8),
+                          // Informação sobre a ordenação (apenas ícone quando ativado)
+                          if (_sortByStock)
+                            Icon(
+                              Icons.trending_up,
+                              size: 20,
+                              color: Colors.orange[600],
+                            ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -580,7 +600,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   
-                  final filteredProducts = getFilteredProducts();
+                  final filteredProducts = getFilteredProducts(productController.products);
                   
                   if (filteredProducts.isEmpty) {
                     return Center(
@@ -603,22 +623,25 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          if (_selectedCategory != null && _selectedCategory != 'Todas') ...[
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _selectedCategory = null;
-                                });
-                              },
-                              icon: const Icon(Icons.clear),
-                              label: const Text('Limpar Filtro'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue[600],
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ],
+                                                     if (_selectedCategory != null && _selectedCategory != 'Todas') ...[
+                             const SizedBox(height: 16),
+                             ElevatedButton.icon(
+                               onPressed: () {
+                                 // Usar Future.microtask para evitar conflitos durante o build
+                                 Future.microtask(() {
+                                   setState(() {
+                                     _selectedCategory = null;
+                                   });
+                                 });
+                               },
+                               icon: const Icon(Icons.clear),
+                               label: const Text('Limpar Filtro'),
+                               style: ElevatedButton.styleFrom(
+                                 backgroundColor: Colors.blue[600],
+                                 foregroundColor: Colors.white,
+                               ),
+                             ),
+                           ],
                         ],
                       ),
                     );
@@ -825,78 +848,53 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            // Botões de ação
-                                            Row(
-                                              children: [
-                                                // Botão Editar
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [Colors.blue[400]!, Colors.blue[600]!],
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.blue.withValues(alpha: 0.3),
-                                                        blurRadius: 4,
-                                                        offset: const Offset(0, 2),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Material(
-                                                    color: Colors.transparent,
-                                                    child: InkWell(
-                                                      borderRadius: BorderRadius.circular(8),
-                                                      onTap: () => _showProductForm(editProduct: product),
-                                                      child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                                        child: const Icon(
-                                                          Icons.edit,
-                                                          size: 16,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 6),
-                                                // Botão Excluir
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      colors: [Colors.red[400]!, Colors.red[600]!],
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.red.withValues(alpha: 0.3),
-                                                        blurRadius: 4,
-                                                        offset: const Offset(0, 2),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Material(
-                                                    color: Colors.transparent,
-                                                    child: InkWell(
-                                                      borderRadius: BorderRadius.circular(8),
-                                                      onTap: () => _deleteProduct(product.id),
-                                                      child: Container(
-                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                                        child: const Icon(
-                                                          Icons.delete,
-                                                          size: 16,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                                                                         // Botão Editar
+                                             Container(
+                                               decoration: BoxDecoration(
+                                                 gradient: LinearGradient(
+                                                   colors: [Colors.blue[400]!, Colors.blue[600]!],
+                                                   begin: Alignment.topLeft,
+                                                   end: Alignment.bottomRight,
+                                                 ),
+                                                 borderRadius: BorderRadius.circular(8),
+                                                 boxShadow: [
+                                                   BoxShadow(
+                                                     color: Colors.blue.withValues(alpha: 0.3),
+                                                     blurRadius: 4,
+                                                     offset: const Offset(0, 2),
+                                                   ),
+                                                 ],
+                                               ),
+                                               child: Material(
+                                                 color: Colors.transparent,
+                                                 child: InkWell(
+                                                   borderRadius: BorderRadius.circular(8),
+                                                   onTap: () => _showEditProductForm(product),
+                                                   child: Container(
+                                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                     child: Row(
+                                                       mainAxisSize: MainAxisSize.min,
+                                                       children: [
+                                                         const Icon(
+                                                           Icons.edit,
+                                                           size: 14,
+                                                           color: Colors.white,
+                                                         ),
+                                                         const SizedBox(width: 4),
+                                                         const Text(
+                                                           'Editar',
+                                                           style: TextStyle(
+                                                             color: Colors.white,
+                                                             fontSize: 12,
+                                                             fontWeight: FontWeight.w600,
+                                                           ),
+                                                         ),
+                                                       ],
+                                                     ),
+                                                   ),
+                                                 ),
+                                               ),
+                                             ),
                                           ],
                                         ),
                                       ),

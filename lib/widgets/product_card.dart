@@ -47,7 +47,7 @@ class ProductCard extends StatelessWidget {
   String getFullImageUrl(String imageUrl) {
     if (imageUrl.isEmpty) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
-    return 'https://elostupi.csmpanel.ovh/$imageUrl';
+    return 'https://elostupi.pt/loja/$imageUrl';
   }
 
   @override

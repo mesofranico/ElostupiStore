@@ -42,6 +42,18 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_status (status)
 );
 
+-- Tabela para guardar a ordem das categorias
+CREATE TABLE IF NOT EXISTS category_order (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(255) NOT NULL UNIQUE,
+    position INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_position (position),
+    INDEX idx_category_name (category_name)
+);
+
 -- Inserir exemplos de cada tipo de mensalidade
 INSERT INTO members (name, email, phone, membership_type, monthly_fee, join_date, is_active, payment_status) VALUES
 ('João Silva', 'joao.silva@email.com', '(351) 999999111', 'Mensal', 25.00, '2025-01-15', TRUE, 'paid'),
