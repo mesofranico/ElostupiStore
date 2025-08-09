@@ -172,6 +172,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   final _categoryController = TextEditingController();
   final _stockController = TextEditingController();
   
+  // Produto atualmente em edição (necessário para calcular o novo stock com base no atual)
+  Product? _editingProduct;
+  
   // Variáveis para filtro
   String? _selectedCategory;
   bool _sortByStock = false; // Controlo para ordenar por stock
@@ -194,6 +197,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
 
   void _showEditProductForm(Product editProduct) {
+    _editingProduct = editProduct;
     _idController.text = editProduct.id;
     _nameController.text = editProduct.name;
     _priceController.text = editProduct.price.toString();
@@ -201,7 +205,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     _descriptionController.text = editProduct.description;
     _imageUrlController.text = editProduct.imageUrl;
     _categoryController.text = editProduct.category ?? '';
-    _stockController.text = editProduct.stock?.toString() ?? '';
+    // O campo de stock passa a ser um AJUSTE (delta). Deixar vazio por omissão.
+    _stockController.text = '';
     
     Get.dialog(
       AlertDialog(
@@ -308,22 +313,23 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                  const SizedBox(height: 16),
                  
                  // Stock
-                 TextFormField(
-                   controller: _stockController,
-                   decoration: const InputDecoration(
-                     labelText: 'Stock',
-                     border: OutlineInputBorder(),
-                   ),
-                   keyboardType: TextInputType.number,
-                   validator: (value) {
-                     if (value != null && value.trim().isNotEmpty) {
-                       if (int.tryParse(value) == null) {
-                         return 'Stock deve ser um número inteiro';
-                       }
-                     }
-                     return null;
-                   },
-                 ),
+                  TextFormField(
+                    controller: _stockController,
+                    decoration: InputDecoration(
+                      labelText: 'Ajuste de Stock (+/-)',
+                      helperText: 'Stock atual: ${editProduct.stock ?? 0}. Ex.: 10 para adicionar, -10 para remover',
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.trim().isNotEmpty) {
+                        if (int.tryParse(value) == null) {
+                          return 'Stock deve ser um número inteiro';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
                  const SizedBox(height: 24),
                ],
              ),
@@ -371,6 +377,26 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       final appController = Get.find<AppController>();
       appController.enableWakeLockTemporarily();
 
+      // Calcular novo stock com base no stock atual + delta introduzido
+      final int currentStock = _editingProduct?.stock ?? 0;
+      final int deltaStock = _stockController.text.trim().isNotEmpty
+          ? int.parse(_stockController.text.trim())
+          : 0;
+      final int calculatedStock = currentStock + deltaStock;
+
+      // Impedir stock negativo
+      if (calculatedStock < 0) {
+        Get.snackbar(
+          'Erro',
+          'O stock não pode ficar negativo. Ajuste o valor.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.85),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 2),
+        );
+        return false;
+      }
+
       final product = Product(
         id: _idController.text.trim(),
         name: _nameController.text.trim(),
@@ -379,7 +405,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         description: _descriptionController.text.trim(),
         imageUrl: _imageUrlController.text.trim(),
         category: _categoryController.text.trim().isNotEmpty ? _categoryController.text.trim() : null,
-        stock: _stockController.text.isNotEmpty ? int.parse(_stockController.text) : 0,
+        stock: calculatedStock,
       );
 
       final success = await adminController.updateProduct(product);
@@ -387,8 +413,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       if (success) {
         await productController.refreshProducts();
       }
+      // Limpar estado de edição
+      _editingProduct = null;
+      _stockController.clear();
       return success;
     } catch (e) {
+      _editingProduct = null;
       return false;
     }
   }
@@ -814,7 +844,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 12),
-                                      // Preço e botões de ação
+                                      // Botão Editar (preenche a largura)
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
@@ -822,80 +852,58 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                           borderRadius: BorderRadius.circular(8),
                                           border: Border.all(color: Colors.grey[200]!),
                                         ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            // Preço
-                                            Flexible(
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green[50],
-                                                  borderRadius: BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: Colors.green[200]!,
-                                                  ),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [Colors.blue[400]!, Colors.blue[600]!],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius: BorderRadius.circular(10),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.blue.withValues(alpha: 0.3),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 3),
                                                 ),
-                                                child: Text(
-                                                  '€${product.price.toStringAsFixed(2)}',
-                                                  style: TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.green[700],
+                                              ],
+                                            ),
+                                            child: Material(
+                                              color: Colors.transparent,
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: InkWell(
+                                                borderRadius: BorderRadius.circular(10),
+                                                onTap: () => _showEditProductForm(product),
+                                                child: Container(
+                                                  height: 40,
+                                                  alignment: Alignment.center,
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: const [
+                                                      Icon(
+                                                        Icons.edit,
+                                                        size: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                      SizedBox(width: 8),
+                                                      Text(
+                                                        'Editar',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                                                                         // Botão Editar
-                                             Container(
-                                               decoration: BoxDecoration(
-                                                 gradient: LinearGradient(
-                                                   colors: [Colors.blue[400]!, Colors.blue[600]!],
-                                                   begin: Alignment.topLeft,
-                                                   end: Alignment.bottomRight,
-                                                 ),
-                                                 borderRadius: BorderRadius.circular(8),
-                                                 boxShadow: [
-                                                   BoxShadow(
-                                                     color: Colors.blue.withValues(alpha: 0.3),
-                                                     blurRadius: 4,
-                                                     offset: const Offset(0, 2),
-                                                   ),
-                                                 ],
-                                               ),
-                                               child: Material(
-                                                 color: Colors.transparent,
-                                                 child: InkWell(
-                                                   borderRadius: BorderRadius.circular(8),
-                                                   onTap: () => _showEditProductForm(product),
-                                                   child: Container(
-                                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                     child: Row(
-                                                       mainAxisSize: MainAxisSize.min,
-                                                       children: [
-                                                         const Icon(
-                                                           Icons.edit,
-                                                           size: 14,
-                                                           color: Colors.white,
-                                                         ),
-                                                         const SizedBox(width: 4),
-                                                         const Text(
-                                                           'Editar',
-                                                           style: TextStyle(
-                                                             color: Colors.white,
-                                                             fontSize: 12,
-                                                             fontWeight: FontWeight.w600,
-                                                           ),
-                                                         ),
-                                                       ],
-                                                     ),
-                                                   ),
-                                                 ),
-                                               ),
-                                             ),
-                                          ],
+                                          ),
                                         ),
                                       ),
                                     ],

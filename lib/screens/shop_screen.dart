@@ -361,32 +361,19 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
                                 color: isSelected ? Colors.blue : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: isSelected ? Colors.blue : Colors.grey[300]!,
                                   width: 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    category,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.white : Colors.grey[700],
-                                      fontSize: 14,
-                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                    ),
-                                  ),
-                                  if (isSelected) ...[
-                                    const SizedBox(width: 8),
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ],
-                                ],
+                              child: Text(
+                                category,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : Colors.grey[700],
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
