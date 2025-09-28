@@ -35,13 +35,13 @@ class ProductService {
     return await _databaseService.deleteProduct(productId);
   }
 
-  // Métodos para gerir ordem das categorias
+    // Métodos para gerir ordem das categorias
   Future<List<String>> getCategoryOrder() async {
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/categories/order'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -59,7 +59,7 @@ class ProductService {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/categories/sync'),
         headers: {'Content-Type': 'application/json'},
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -78,7 +78,7 @@ class ProductService {
         Uri.parse('${ApiConfig.baseUrl}/categories/order'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'categories': categories}),
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode != 200) {
         throw Exception('Erro ao atualizar ordem das categorias: ${response.statusCode}');

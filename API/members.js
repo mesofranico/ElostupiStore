@@ -192,15 +192,36 @@ router.get('/:id', async (req, res) => {
 // POST /api/members - Criar novo membro
 router.post('/', async (req, res) => {
   try {
-          const {
-        name,
-        email,
-        phone,
-        membership_type,
-        monthly_fee,
-        join_date,
-        is_active
-      } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      membership_type,
+      monthly_fee,
+      join_date,
+      is_active
+    } = req.body;
+
+    // Validações básicas
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Nome é obrigatório' });
+    }
+    
+    if (!phone || phone.trim().length === 0) {
+      return res.status(400).json({ error: 'Telefone é obrigatório' });
+    }
+    
+    if (!membership_type || membership_type.trim().length === 0) {
+      return res.status(400).json({ error: 'Tipo de mensalidade é obrigatório' });
+    }
+    
+    if (!monthly_fee || isNaN(monthly_fee) || monthly_fee <= 0) {
+      return res.status(400).json({ error: 'Valor da mensalidade deve ser um número positivo' });
+    }
+    
+    if (!join_date) {
+      return res.status(400).json({ error: 'Data de adesão é obrigatória' });
+    }
 
     // Calcular primeira data de pagamento (sempre dia 1 do mês seguinte ao ingresso)
     const joinDateObj = new Date(join_date);
@@ -231,9 +252,16 @@ router.post('/', async (req, res) => {
         last_payment_date, next_payment_date, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [
-      name, email, phone, membership_type, monthly_fee,
-      join_date, is_active ? 1 : 0, 'pending',
-      null, firstPaymentDateStr
+      name, 
+      email && email.trim() !== '' ? email : null, // Usar NULL em vez de string vazia
+      phone, 
+      membership_type, 
+      monthly_fee,
+      join_date, 
+      is_active ? 1 : 0, 
+      'pending',
+      null, 
+      firstPaymentDateStr
     ]);
 
     const [newMember] = await pool.execute(
@@ -246,7 +274,27 @@ router.post('/', async (req, res) => {
     res.status(201).json(newMember[0]);
   } catch (error) {
     console.error('Erro ao criar membro:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error('Stack trace:', error.stack);
+    
+    // Verificar se é erro de duplicação (email ou telefone únicos)
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Já existe um membro com este email ou telefone' });
+    }
+    
+    // Verificar se é erro de validação da base de dados
+    if (error.code === 'ER_BAD_NULL_ERROR') {
+      return res.status(400).json({ error: 'Dados obrigatórios em falta' });
+    }
+    
+    // Verificar se é erro de tipo de dados
+    if (error.code === 'ER_TRUNCATED_WRONG_VALUE' || error.code === 'ER_WRONG_VALUE') {
+      return res.status(400).json({ error: 'Formato de dados inválido' });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erro interno do servidor',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -276,9 +324,17 @@ router.put('/:id', async (req, res) => {
         payment_status = ?, updated_at = NOW()
       WHERE id = ?
     `, [
-      name, email, phone, membership_type, monthly_fee,
-      join_date, is_active ? 1 : 0, last_payment_date,
-      next_payment_date, payment_status, req.params.id
+      name, 
+      email && email.trim() !== '' ? email : null, // Usar NULL em vez de string vazia
+      phone, 
+      membership_type, 
+      monthly_fee,
+      join_date, 
+      is_active ? 1 : 0, 
+      last_payment_date,
+      next_payment_date, 
+      payment_status, 
+      req.params.id
     ]);
 
     const [updatedMember] = await pool.execute(
@@ -317,49 +373,36 @@ router.delete('/:id', async (req, res) => {
     const memberName = existingMember[0].name;
     
     // Contar pagamentos relacionados antes da exclusão
-    const [paymentsCount] = await pool.execute(
-      'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
-      [memberId]
-    );
-    
-    const totalPayments = paymentsCount[0].count;
-    
-    // Iniciar transação para garantir consistência
-    await pool.execute('START TRANSACTION');
-    
+    let totalPayments = 0;
     try {
-      // Deletar o membro (os pagamentos serão automaticamente removidos devido ao ON DELETE CASCADE)
-      const [result] = await pool.execute(
-        'DELETE FROM members WHERE id = ?',
+      const [paymentsCount] = await pool.execute(
+        'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
         [memberId]
       );
-
-      if (result.affectedRows === 0) {
-        await pool.execute('ROLLBACK');
-        return res.status(404).json({ error: 'Membro não encontrado' });
-      }
-
-      // Confirmar transação
-      await pool.execute('COMMIT');
-      
-      // Log da exclusão completa
-      console.log(`Membro "${memberName}" (ID: ${memberId}) foi completamente removido da base de dados.`);
-      console.log(`- ${totalPayments} pagamento(s) relacionado(s) também foram removido(s) automaticamente.`);
-      
-      res.json({ 
-        message: 'Membro e todas as informações relacionadas foram removidos com sucesso',
-        details: {
-          memberName: memberName,
-          memberId: memberId,
-          paymentsRemoved: totalPayments
-        }
-      });
-      
-    } catch (deleteError) {
-      // Em caso de erro, reverter transação
-      await pool.execute('ROLLBACK');
-      throw deleteError;
+      totalPayments = paymentsCount[0].count;
+    } catch (error) {
+      // Se houver erro ao contar pagamentos, continuar sem contar
+      totalPayments = 0;
     }
+    
+    // Deletar o membro (os pagamentos serão automaticamente removidos devido ao ON DELETE CASCADE)
+    const [result] = await pool.execute(
+      'DELETE FROM members WHERE id = ?',
+      [memberId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Membro não encontrado' });
+    }
+    
+    res.json({ 
+      message: 'Membro e todas as informações relacionadas foram removidos com sucesso',
+      details: {
+        memberName: memberName,
+        memberId: memberId,
+        paymentsRemoved: totalPayments
+      }
+    });
     
   } catch (error) {
     console.error('Erro ao deletar membro:', error);
@@ -378,18 +421,29 @@ router.get('/verify-deletion/:id', async (req, res) => {
       [memberId]
     );
     
-    // Verificar se há pagamentos relacionados
-    const [paymentsExist] = await pool.execute(
-      'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
-      [memberId]
-    );
+    // Verificar se há pagamentos relacionados (se a tabela existir)
+    let paymentsExist = false;
+    let paymentsCount = 0;
+    try {
+      const [paymentsResult] = await pool.execute(
+        'SELECT COUNT(*) as count FROM payments WHERE member_id = ?',
+        [memberId]
+      );
+      paymentsExist = paymentsResult[0].count > 0;
+      paymentsCount = paymentsResult[0].count;
+    } catch (error) {
+      // Se a tabela payments não existir, assumir que não há pagamentos
+      console.log('Aviso: Tabela payments não encontrada na verificação');
+      paymentsExist = false;
+      paymentsCount = 0;
+    }
     
     const verification = {
       memberExists: memberExists.length > 0,
       memberName: memberExists.length > 0 ? memberExists[0].name : null,
-      paymentsExist: paymentsExist[0].count > 0,
-      paymentsCount: paymentsExist[0].count,
-      deletionComplete: memberExists.length === 0 && paymentsExist[0].count === 0,
+      paymentsExist: paymentsExist,
+      paymentsCount: paymentsCount,
+      deletionComplete: memberExists.length === 0 && !paymentsExist,
       timestamp: new Date().toISOString()
     };
     

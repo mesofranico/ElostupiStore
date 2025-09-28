@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../models/member.dart';
 import '../services/member_service.dart';
 import 'payment_controller.dart';
@@ -91,11 +92,28 @@ class MemberController extends GetxController {
       members.add(createdMember);
       return true;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = e.toString().replaceAll('Exception: ', '');
       return false;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Método para limpar cache e recarregar dados
+  Future<void> refreshData() async {
+    members.clear();
+    errorMessage.value = '';
+    
+    // Verificar se há GetStorage sendo usado
+    try {
+      final storage = GetStorage();
+      await storage.remove('members_cache');
+      await storage.remove('cached_members');
+    } catch (e) {
+      // Ignorar erros de storage
+    }
+    
+    await loadMembers();
   }
 
   // Atualizar membro
@@ -140,7 +158,10 @@ class MemberController extends GetxController {
       
       return true;
     } catch (e) {
-      errorMessage.value = e.toString();
+      errorMessage.value = e.toString().replaceAll('Exception: ', '');
+      if (kDebugMode) {
+        print('Erro ao deletar membro: $e');
+      }
       return false;
     } finally {
       isLoading.value = false;

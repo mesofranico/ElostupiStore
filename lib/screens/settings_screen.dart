@@ -63,7 +63,7 @@ class SettingsScreen extends StatelessWidget {
               trailing: Obx(() => Switch(
                 value: appController.showResalePrice.value,
                 onChanged: (value) => appController.toggleResalePrice(),
-                activeColor: Colors.green,
+                activeThumbColor: Colors.green,
               )),
             ),
           ),
@@ -112,7 +112,7 @@ class SettingsScreen extends StatelessWidget {
               trailing: Obx(() => Switch(
                 value: appController.keepScreenOn.value,
                 onChanged: (value) => appController.toggleKeepScreenOn(),
-                activeColor: Colors.orange,
+                activeThumbColor: Colors.orange,
               )),
             ),
           ),
@@ -207,77 +207,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               onTap: () {
                 Get.toNamed('/bluetooth-printer');
-              },
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(20),
-              leading: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.restore,
-                  color: Colors.red[600],
-                  size: 24,
-                ),
-              ),
-              title: const Text(
-                'Resetar Configurações',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: const Text(
-                'Restaurar configurações padrão',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              onTap: () {
-                Get.dialog(
-                  AlertDialog(
-                    title: const Text('Resetar Configurações'),
-                    content: const Text(
-                      'Tem certeza que deseja resetar todas as configurações para os valores padrão?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Get.back(),
-                        child: const Text('Cancelar'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                          appController.resetSettings();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Resetar'),
-                      ),
-                    ],
-                  ),
-                );
               },
             ),
           ),

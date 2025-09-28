@@ -95,33 +95,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $product) {
             
             $imageUploaded = true; // Marcar que foi feito upload com sucesso
         }
-        // Se não houve upload local, tentar baixar do URL (apenas se diferente do atual e não foi feito upload)
-        elseif (!$imageUploaded && !empty($imageUrl) && $imageUrl !== $product['imageUrl']) {
-            $imageContent = @file_get_contents($imageUrl);
-            if ($imageContent === false) {
-                throw new Exception('Não foi possível baixar a imagem do URL fornecido.');
-            }
-            // Detectar extensão da imagem
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            $mimeType = $finfo->buffer($imageContent);
-            $ext = '';
-            switch ($mimeType) {
-                case 'image/jpeg': $ext = 'jpg'; break;
-                case 'image/png': $ext = 'png'; break;
-                case 'image/gif': $ext = 'gif'; break;
-                case 'image/webp': $ext = 'webp'; break;
-                default:
-                    throw new Exception('Tipo de imagem não suportado: ' . $mimeType);
-            }
-            // Garantir que a pasta imagens existe
-            $imagesDir = __DIR__ . '/imagens';
-            if (!is_dir($imagesDir)) {
-                mkdir($imagesDir, 0777, true);
-            }
-            $localImagePath = 'imagens/' . $productId . '.' . $ext;
-            $fullImagePath = $imagesDir . '/' . $productId . '.' . $ext;
-            if (file_put_contents($fullImagePath, $imageContent) === false) {
-                throw new Exception('Erro ao salvar a imagem no servidor.');
+        // Se não houve upload local, verificar se é URL externo ou caminho local
+        elseif (!$imageUploaded && !empty($imageUrl)) {
+            // Verificar se é um URL externo (começa com http:// ou https://)
+            if (filter_var($imageUrl, FILTER_VALIDATE_URL) && (strpos($imageUrl, 'http://') === 0 || strpos($imageUrl, 'https://') === 0)) {
+                // É um URL externo - baixar e transferir para servidor local
+                $imageContent = @file_get_contents($imageUrl);
+                if ($imageContent === false) {
+                    throw new Exception('Não foi possível baixar a imagem do URL fornecido.');
+                }
+                
+                // Detectar extensão da imagem
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->buffer($imageContent);
+                $ext = '';
+                switch ($mimeType) {
+                    case 'image/jpeg': $ext = 'jpg'; break;
+                    case 'image/png': $ext = 'png'; break;
+                    case 'image/gif': $ext = 'gif'; break;
+                    case 'image/webp': $ext = 'webp'; break;
+                    default:
+                        throw new Exception('Tipo de imagem não suportado: ' . $mimeType);
+                }
+                
+                // Garantir que a pasta imagens existe
+                $imagesDir = __DIR__ . '/imagens';
+                if (!is_dir($imagesDir)) {
+                    mkdir($imagesDir, 0777, true);
+                }
+                
+                $localImagePath = 'imagens/' . $productId . '.' . $ext;
+                $fullImagePath = $imagesDir . '/' . $productId . '.' . $ext;
+                
+                if (file_put_contents($fullImagePath, $imageContent) === false) {
+                    throw new Exception('Erro ao salvar a imagem no servidor.');
+                }
+                
+                $imageUploaded = true; // Marcar que foi transferida com sucesso
+            } else {
+                // É um caminho local - usar diretamente
+                $localImagePath = $imageUrl;
             }
         }
 
@@ -132,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $product) {
             WHERE id = ?
         ");
         
-        $stmt->execute([$name, $price, $price2, $description, $localImagePath, $category, $stock, $productId]);
+        $stmt->execute([$name, $price, $price2, $description, $localImagePath ?: $imageUrl, $category, $stock, $productId]);
         
         // Redirecionar para a lista de produtos após sucesso
         header('Location: list_products.php?message=Produto atualizado com sucesso!&type=success');
@@ -598,11 +611,11 @@ $categories = getCategories($pdo);
                         </div>
 
                         <div class="image-option">
-                            <label for="imageUrl">🌐 URL da Imagem</label>
-                            <input type="url" id="imageUrl" name="imageUrl" 
+                            <label for="imageUrl">🌐 URL da Imagem ou Caminho Local</label>
+                            <input type="text" id="imageUrl" name="imageUrl" 
                                    value="<?php echo htmlspecialchars($product['imageUrl'] ?? ''); ?>" 
-                                   placeholder="https://exemplo.com/imagem.jpg">
-                            <div class="help-text">Link para a imagem do produto (opcional se carregar ficheiro local)</div>
+                                   placeholder="URL externo ou caminho local (ex: imagens/produto.jpg)">
+                            <div class="help-text">URL externo (será transferido para servidor) ou caminho local existente</div>
                         </div>
                     </div>
 

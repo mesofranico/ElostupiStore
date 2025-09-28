@@ -44,15 +44,27 @@ class MemberService {
         Uri.parse(ApiConfig.membersUrl),
         headers: ApiConfig.defaultHeaders,
         body: json.encode(member.toJson()),
-      );
+      ).timeout(const Duration(seconds: 30));
       
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
         return Member.fromJson(data);
       } else {
-        throw Exception('Falha ao criar membro: ${response.statusCode}');
+        // Parse da mensagem de erro da API
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['error'] ?? 'Erro desconhecido';
+        } catch (e) {
+          errorMessage = 'Erro ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
+      if (e.toString().contains('Exception:')) {
+        // Re-throw exceptions que já têm mensagens formatadas
+        rethrow;
+      }
       throw Exception('Erro de conexão: $e');
     }
   }
@@ -82,10 +94,27 @@ class MemberService {
     try {
       final response = await http.delete(Uri.parse('${ApiConfig.membersUrl}/$id'));
       
-      if (response.statusCode != 200) {
-        throw Exception('Falha ao deletar membro: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        // Sucesso - não precisa retornar nada
+        return;
+      } else if (response.statusCode == 404) {
+        throw Exception('Membro não encontrado');
+      } else {
+        // Parse da mensagem de erro da API
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = json.decode(response.body);
+          errorMessage = errorData['error'] ?? 'Erro desconhecido';
+        } catch (e) {
+          errorMessage = 'Erro ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
+      if (e.toString().contains('Exception:')) {
+        // Re-throw exceptions que já têm mensagens formatadas
+        rethrow;
+      }
       throw Exception('Erro de conexão: $e');
     }
   }

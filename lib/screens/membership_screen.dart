@@ -8,6 +8,7 @@ import '../models/member.dart';
 import '../models/payment.dart';
 import '../core/currency_formatter.dart';
 import '../core/membership_calculator.dart';
+import '../core/snackbar_helper.dart';
 
 class MembershipScreen extends StatelessWidget {
   const MembershipScreen({super.key});
@@ -35,9 +36,21 @@ class MembershipScreen extends StatelessWidget {
             ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () => _showAddMemberDialog(context, memberController),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddMemberDialog(context, memberController),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Novo Membro'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -116,9 +129,9 @@ class MembershipScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => controller.loadMembers(),
+                    onPressed: () => controller.refreshData(),
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Todos'),
+                    label: const Text('Atualizar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -310,51 +323,66 @@ class MembershipScreen extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              // Botão Pagamento (primeiro e maior)
+                              ElevatedButton.icon(
+                                onPressed: member.isActive ? () => _showPaymentDialog(context, member) : null,
+                                icon: Icon(
+                                  Icons.payment, 
+                                  size: 16,
+                                  color: member.isActive ? Colors.white : Colors.grey[400],
+                                ),
+                                label: Text(
+                                  'Pagamento',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: member.isActive ? Colors.white : Colors.grey[400],
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: member.isActive ? Colors.green : Colors.grey[300],
+                                  foregroundColor: member.isActive ? Colors.white : Colors.grey[400],
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: const Size(0, 28),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
                               // Botão Editar
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: IconButton(
-                                  onPressed: () => _showEditMemberDialog(context, member, controller),
-                                  icon: const Icon(Icons.edit, size: 16),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.blue,
-                                    padding: EdgeInsets.zero,
+                              ElevatedButton.icon(
+                                onPressed: () => _showEditMemberDialog(context, member, controller),
+                                icon: const Icon(Icons.edit, size: 14),
+                                label: const Text(
+                                  'Editar',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: const Size(0, 28),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              // Botão Pagamento
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: IconButton(
-                                  onPressed: member.isActive ? () => _showPaymentDialog(context, member) : null,
-                                  icon: Icon(
-                                    Icons.payment, 
-                                    size: 16,
-                                    color: member.isActive ? Colors.green : Colors.grey[400],
-                                  ),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: member.isActive ? Colors.green.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-                                    foregroundColor: member.isActive ? Colors.green : Colors.grey[400],
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               // Botão Excluir
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: IconButton(
-                                  onPressed: () => _showDeleteConfirmation(context, member, controller),
-                                  icon: const Icon(Icons.delete, size: 16),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: Colors.red.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.red,
-                                    padding: EdgeInsets.zero,
+                              ElevatedButton.icon(
+                                onPressed: () => _showDeleteConfirmation(context, member, controller),
+                                icon: const Icon(Icons.delete, size: 14),
+                                label: const Text(
+                                  'Excluir',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: const Size(0, 28),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
                                 ),
                               ),
@@ -1228,9 +1256,9 @@ class MembershipScreen extends StatelessWidget {
               TextField(
                 controller: phoneController,
                 decoration: const InputDecoration(
-                  labelText: 'Telefone',
+                  labelText: 'Telefone *',
                   border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.phone),
+                  prefixIcon: Icon(Icons.phone),
                   hintText: '(351) 999999999',
                 ),
                 keyboardType: TextInputType.phone,
@@ -1245,7 +1273,7 @@ class MembershipScreen extends StatelessWidget {
                             'Informações Financeiras',
                             [
               DropdownButtonFormField<String>(
-                value: selectedMembershipType,
+                initialValue: selectedMembershipType,
                 decoration: const InputDecoration(
                   labelText: 'Tipo de Mensalidade *',
                   border: OutlineInputBorder(),
@@ -1370,15 +1398,23 @@ class MembershipScreen extends StatelessWidget {
             onPressed: () async {
               // Validação
               if (nameController.text.trim().isEmpty) {
+                SnackBarHelper.showWarning(context, 'O nome é obrigatório');
+                return;
+              }
+              
+              if (phoneController.text.trim().isEmpty) {
+                SnackBarHelper.showWarning(context, 'O telefone é obrigatório');
                 return;
               }
               
               if (feeController.text.trim().isEmpty) {
+                SnackBarHelper.showWarning(context, 'O valor da mensalidade é obrigatório');
                 return;
               }
               
               final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
               if (fee == null || fee <= 0) {
+                SnackBarHelper.showWarning(context, 'O valor da mensalidade deve ser um número positivo');
                 return;
               }
               
@@ -1401,11 +1437,27 @@ class MembershipScreen extends StatelessWidget {
                 
                 if (success) {
                   Get.back(); // Fechar diálogo
-                                // Recarregar dados
-                                await controller.loadMembers();
+                  // Recarregar dados
+                  await controller.loadMembers();
+                  
+                  // Mostrar mensagem de sucesso
+                  if (context.mounted) {
+                    SnackBarHelper.showSuccess(context, 'Membro criado com sucesso!');
+                  }
+                } else {
+                  // Mostrar erro
+                  final errorMsg = controller.errorMessage.value.isNotEmpty 
+                      ? controller.errorMessage.value 
+                      : 'Erro desconhecido ao criar membro';
+                  if (context.mounted) {
+                    SnackBarHelper.showError(context, errorMsg);
+                  }
                 }
               } catch (e) {
-                              // Erro silencioso - o usuário pode tentar novamente
+                // Mostrar erro detalhado
+                if (context.mounted) {
+                  SnackBarHelper.showError(context, 'Erro inesperado: $e');
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -1551,7 +1603,7 @@ class MembershipScreen extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       DropdownButtonFormField<String>(
-                                        value: selectedMembershipType,
+                                        initialValue: selectedMembershipType,
                                         decoration: InputDecoration(
                                           labelText: 'Tipo de Mensalidade *',
                                           border: const OutlineInputBorder(),
@@ -2017,48 +2069,44 @@ class MembershipScreen extends StatelessWidget {
                           _buildEditSection(
                             'Tipo de Pagamento',
                             [
-                              // Pagamento em atraso (se houver)
-                              if (overdueMonths > 0)
-                                RadioListTile<String>(
-                                  title: const Text('Mensalidades em Atraso'),
-                                  subtitle: Text('$overdueMonths mensalidade${overdueMonths > 1 ? 's' : ''} - ${CurrencyFormatter.formatEuro(overdueAmount)}'),
-                                  value: 'overdue',
-                                  groupValue: paymentType,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      paymentType = value!;
-                                    });
-                                  },
-                                ),
-                              
-                              // Pagamento mensal regular (apenas se não há atrasos)
-                              if (overdueMonths == 0)
-                                RadioListTile<String>(
-                                  title: const Text('Mensalidade Regular'),
-                                  subtitle: Text('1 ${_capitalizeFirstLetter(member.membershipType).toLowerCase()} - ${CurrencyFormatter.formatEuro(member.monthlyFee)}'),
-                                  value: 'regular',
-                                  groupValue: paymentType,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      paymentType = value!;
+                              RadioGroup<String>(
+                                groupValue: paymentType,
+                                onChanged: (value) {
+                                  setState(() {
+                                    paymentType = value!;
+                                    if (value == 'regular') {
                                       numberOfMonths = 1;
-                                    });
-                                  },
+                                    }
+                                  });
+                                },
+                                child: Column(
+                                  children: [
+                                    // Pagamento em atraso (se houver)
+                                    if (overdueMonths > 0)
+                                      RadioListTile<String>(
+                                        title: const Text('Mensalidades em Atraso'),
+                                        subtitle: Text('$overdueMonths mensalidade${overdueMonths > 1 ? 's' : ''} - ${CurrencyFormatter.formatEuro(overdueAmount)}'),
+                                        value: 'overdue',
+                                      ),
+                                    
+                                    // Pagamento mensal regular (apenas se não há atrasos)
+                                    if (overdueMonths == 0)
+                                      RadioListTile<String>(
+                                        title: const Text('Mensalidade Regular'),
+                                        subtitle: Text('1 ${_capitalizeFirstLetter(member.membershipType).toLowerCase()} - ${CurrencyFormatter.formatEuro(member.monthlyFee)}'),
+                                        value: 'regular',
+                                      ),
+                                    
+                                    // Pagamento antecipado (apenas se não há atrasos)
+                                    if (overdueMonths == 0)
+                                      RadioListTile<String>(
+                                        title: const Text('Mensalidades Antecipadas'),
+                                        subtitle: Text('${_getAdvanceOptions(member.membershipType).firstWhere((opt) => opt['months'] == numberOfMonths)['label'].toLowerCase()} - ${CurrencyFormatter.formatEuro(_calculateTotalAmount(member.membershipType, member.monthlyFee, numberOfMonths))}'),
+                                        value: 'advance',
+                                      ),
+                                  ],
                                 ),
-                              
-                              // Pagamento antecipado (apenas se não há atrasos)
-                              if (overdueMonths == 0)
-                                RadioListTile<String>(
-                                  title: const Text('Mensalidades Antecipadas'),
-                                  subtitle: Text('${_getAdvanceOptions(member.membershipType).firstWhere((opt) => opt['months'] == numberOfMonths)['label'].toLowerCase()} - ${CurrencyFormatter.formatEuro(_calculateTotalAmount(member.membershipType, member.monthlyFee, numberOfMonths))}'),
-                                  value: 'advance',
-                                  groupValue: paymentType,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      paymentType = value!;
-                                    });
-                                  },
-                                ),
+                              ),
                             ],
                           ),
                           
@@ -2503,12 +2551,41 @@ class MembershipScreen extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () async {
                         try {
-                          await controller.deleteMember(member.id!);
+                          final success = await controller.deleteMember(member.id!);
                           Get.back(); // Fechar diálogo
-                          // Recarregar dados
-                          await controller.loadMembers();
+                          
+                          if (success) {
+                            // Recarregar dados
+                            await controller.loadMembers();
+                            
+                            // Mostrar mensagem de sucesso
+                            if (context.mounted) {
+                              SnackBarHelper.showSuccess(
+                                context, 
+                                'Membro "${member.name}" foi excluído com sucesso'
+                              );
+                            }
+                          } else {
+                            // Mostrar mensagem de erro
+                            if (context.mounted) {
+                              SnackBarHelper.showError(
+                                context, 
+                                controller.errorMessage.value.isNotEmpty 
+                                  ? controller.errorMessage.value
+                                  : 'Erro ao excluir membro. Tente novamente.'
+                              );
+                            }
+                          }
                         } catch (e) {
                           Get.back(); // Fechar diálogo
+                          
+                          // Mostrar mensagem de erro
+                          if (context.mounted) {
+                            SnackBarHelper.showError(
+                              context, 
+                              'Erro inesperado ao excluir membro: $e'
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -3026,7 +3103,7 @@ class MembershipScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
-                      onPressed: () => _copyReportToClipboard(reportContent),
+                      onPressed: () => _copyReportToClipboard(context, reportContent),
                       icon: const Icon(Icons.copy),
                       label: const Text('Copiar'),
                       style: ElevatedButton.styleFrom(
@@ -3131,38 +3208,30 @@ class MembershipScreen extends StatelessWidget {
     return report.toString();
   }
 
-  void _copyReportToClipboard(String content) async {
+  void _copyReportToClipboard(BuildContext context, String content) async {
     try {
       await Clipboard.setData(ClipboardData(text: content));
-      Get.snackbar(
-        'Sucesso',
-        'Relatório copiado para a área de transferência',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        icon: const Icon(
-          Icons.check_circle,
-          color: Colors.white,
-        ),
-      );
+      if (context.mounted) {
+        SnackBarHelper.showCustom(
+          context,
+          message: 'Relatório copiado para a área de transferência',
+          backgroundColor: Colors.green,
+          icon: Icons.check_circle,
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
+        );
+      }
     } catch (e) {
-      Get.snackbar(
-        'Erro',
-        'Não foi possível copiar o relatório',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        icon: const Icon(
-          Icons.error,
-          color: Colors.white,
-        ),
-      );
+      if (context.mounted) {
+        SnackBarHelper.showCustom(
+          context,
+          message: 'Não foi possível copiar o relatório',
+          backgroundColor: Colors.red,
+          icon: Icons.error,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+        );
+      }
     }
   }
 

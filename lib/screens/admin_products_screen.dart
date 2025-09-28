@@ -449,7 +449,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   String getFullImageUrl(String imageUrl) {
     if (imageUrl.isEmpty) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
-    return 'https://elostupi.pt/loja/$imageUrl';
+    return 'https://gestao.elostupi.pt/$imageUrl';
   }
 
   // Função para obter produtos filtrados por categoria e ordenados por stock
@@ -527,7 +527,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                             child: Obx(() {
                               final categories = ['Todas', ...productController.categories.where((c) => c != 'Todas')];
                               return DropdownButtonFormField<String>(
-                                value: _selectedCategory ?? 'Todas',
+                                initialValue: _selectedCategory ?? 'Todas',
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
@@ -605,7 +605,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                                 });
                               });
                             },
-                            activeColor: Colors.orange[600],
+                            activeThumbColor: Colors.orange[600],
                             activeTrackColor: Colors.orange[200],
                           ),
                           const SizedBox(width: 8),
