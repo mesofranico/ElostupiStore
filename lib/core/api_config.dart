@@ -7,6 +7,8 @@ class ApiConfig {
   static const String pendingOrders = '/pending-orders';
   static const String members = '/members';
   static const String payments = '/payments';
+  static const String consulentes = '/consulentes';
+  static const String attendance = '/attendance';
   
   // Headers padrão
   static Map<String, String> get defaultHeaders => {
@@ -22,4 +24,6 @@ class ApiConfig {
   static String get pendingOrdersUrl => '$baseUrl$pendingOrders';
   static String get membersUrl => '$baseUrl$members';
   static String get paymentsUrl => '$baseUrl$payments';
+  static String get consulentesUrl => '$baseUrl$consulentes';
+  static String get attendanceUrl => '$baseUrl$attendance';
 } 

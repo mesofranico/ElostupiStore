@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/product_controller.dart';
-import '../controllers/cart_controller.dart';
 import '../widgets/product_card.dart';
-import 'cart_screen.dart';
-import 'settings_screen.dart';
+import '../widgets/standard_appbar.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -17,6 +15,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   late ScrollController _scrollController;
   final ProductController productController = Get.find<ProductController>();
+  late Worker _productsWorker;
 
   @override
   void initState() {
@@ -25,12 +24,14 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     _scrollController = ScrollController();
     
     // Observar mudanças nas categorias para atualizar o TabController
-    ever(productController.products, (_) {
+    _productsWorker = ever(productController.products, (_) {
       _updateTabController();
     });
   }
 
   void _updateTabController() {
+    if (!mounted) return;
+    
     final categories = productController.categories;
     if (categories.length != _tabController.length) {
       _tabController.dispose();
@@ -38,58 +39,45 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       
       // Adicionar listener para detectar mudanças de tab
       _tabController.addListener(() {
-        if (_tabController.indexIsChanging) {
-          final selectedCategory = categories[_tabController.index];
-          productController.setCategory(selectedCategory);
+        if (_tabController.indexIsChanging && mounted) {
+          final currentIndex = _tabController.index;
+          if (currentIndex >= 0 && currentIndex < categories.length) {
+            final selectedCategory = categories[currentIndex];
+            productController.setCategory(selectedCategory);
+          }
         }
       });
       
-      // Definir categoria inicial como "Todas" apenas se não houver categoria selecionada
-      if (categories.isNotEmpty && productController.selectedCategory.value == 'Todas') {
+      // Definir índice inicial baseado na categoria selecionada
+      if (categories.isNotEmpty) {
+        final selectedCategory = productController.selectedCategory.value;
+        final categoryIndex = categories.indexOf(selectedCategory);
+        
+        // Se a categoria selecionada existe na lista, usar seu índice
+        if (categoryIndex >= 0 && categoryIndex < categories.length) {
+          _tabController.index = categoryIndex;
+        } else {
+          // Caso contrário, usar índice 0 (primeira categoria)
+          _tabController.index = 0;
+          productController.setCategory(categories[0]);
+        }
+        
         // Forçar rebuild do widget
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       }
     }
   }
 
   @override
   void dispose() {
+    _productsWorker.dispose();
     _tabController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  // Calcula o número de colunas baseado no tamanho da tela
-  int _getCrossAxisCount(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    
-    if (screenWidth >= 1200) {
-      return 5; // Desktop grande
-    } else if (screenWidth >= 900) {
-      return 4; // Desktop pequeno / Tablet grande
-    } else if (screenWidth >= 600) {
-      return 3; // Tablet
-    } else {
-      return 2; // Smartphone
-    }
-  }
-
-  // Calcula o aspect ratio baseado no tamanho da tela
-  double _getChildAspectRatio(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    
-    if (screenWidth >= 1200) {
-      return 0.85; // Desktop grande - cards mais altos
-    } else if (screenWidth >= 900) {
-      return 0.8; // Desktop pequeno / Tablet grande
-    } else if (screenWidth >= 600) {
-      return 0.75; // Tablet
-    } else {
-      return 0.75; // Smartphone
-    }
-  }
-
-  // Calcula o padding baseado no tamanho da tela
   double _getPadding(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     
@@ -99,21 +87,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       return 12; // Desktop pequeno / Tablet grande
     } else if (screenWidth >= 600) {
       return 10; // Tablet
-    } else {
-      return 8; // Smartphone
-    }
-  }
-
-  // Calcula o espaçamento entre cards baseado no tamanho da tela
-  double _getSpacing(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    
-    if (screenWidth >= 1200) {
-      return 12; // Desktop grande
-    } else if (screenWidth >= 900) {
-      return 10; // Desktop pequeno / Tablet grande
-    } else if (screenWidth >= 600) {
-      return 8; // Tablet
     } else {
       return 8; // Smartphone
     }
@@ -257,7 +230,11 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                   ElevatedButton.icon(
                     onPressed: () {
                       productController.setCategory('Todas');
-                      _tabController.animateTo(0);
+                      
+                      // Verificar se o índice é válido antes de definir
+                      if (_tabController.length > 0) {
+                        _tabController.index = 0;
+                      }
                     },
                     icon: const Icon(Icons.grid_view),
                     label: const Text('Ver Todos os Produtos'),
@@ -272,26 +249,18 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           );
         }
 
+        final padding = _getPadding(Get.context!);
         return GridView.builder(
-          padding: EdgeInsets.fromLTRB(
-            _getPadding(Get.context!),
-            _getPadding(Get.context!),
-            _getPadding(Get.context!),
-            _getPadding(Get.context!) + 20, // Padding extra na parte inferior
-          ),
+          padding: EdgeInsets.fromLTRB(padding, padding, padding, padding + 100),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: _getCrossAxisCount(Get.context!),
-            childAspectRatio: _getChildAspectRatio(Get.context!),
-            crossAxisSpacing: _getSpacing(Get.context!),
-            mainAxisSpacing: _getSpacing(Get.context!),
+            crossAxisCount: 2,
+            childAspectRatio: 2.7,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
           ),
           itemCount: filteredProducts.length,
           itemBuilder: (context, index) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: ProductCard(product: filteredProducts[index]),
-            );
+            return ProductCard(product: filteredProducts[index]);
           },
         );
       });
@@ -327,10 +296,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                       icon: const Icon(Icons.chevron_left, color: Colors.blue),
                       onPressed: () {
                         // Scroll para a esquerda
-                        _scrollController.animateTo(
+                        _scrollController.jumpTo(
                           (_scrollController.offset - 150).clamp(0.0, _scrollController.position.maxScrollExtent),
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
                         );
                       },
                     ),
@@ -352,10 +319,13 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                           child: GestureDetector(
                             onTap: () {
                               productController.setCategory(category);
-                              _tabController.animateTo(index);
                               
-                              // Scroll para centralizar a tab selecionada
-                              _scrollToSelectedTab(index);
+                              // Verificar se o índice é válido antes de definir
+                              if (index >= 0 && index < _tabController.length) {
+                                _tabController.index = index;
+                                // Scroll para centralizar a tab selecionada
+                                _scrollToSelectedTab(index);
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -398,10 +368,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                       icon: const Icon(Icons.chevron_right, color: Colors.blue),
                       onPressed: () {
                         // Scroll para a direita
-                        _scrollController.animateTo(
+                        _scrollController.jumpTo(
                           (_scrollController.offset + 150).clamp(0.0, _scrollController.position.maxScrollExtent),
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
                         );
                       },
                     ),
@@ -425,20 +393,16 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     final viewportWidth = _scrollController.position.viewportDimension;
     final scrollTo = (targetOffset - (viewportWidth / 2) + (tabWidth / 2)).clamp(0.0, maxScroll);
     
-    _scrollController.animateTo(
-      scrollTo,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    _scrollController.jumpTo(scrollTo);
   }
 
   @override
   Widget build(BuildContext context) {
-    final CartController cartController = Get.find<CartController>();
-    
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
+      appBar: StandardAppBar(
+        title: 'ElosTupi - Gestão',
+        backgroundColor: Colors.blue,
+        customTitle: Row(
           children: [
             const Text(
               'ElosTupi - Gestão',
@@ -447,8 +411,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                 color: Colors.white,
               ),
             ),
-                         Obx(() {
-               if (productController.isOfflineMode) {
+            Obx(() {
+              if (productController.isOfflineMode) {
                 return Container(
                   margin: const EdgeInsets.only(left: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -470,113 +434,10 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
             }),
           ],
         ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: _buildTabBar(),
         ),
-        actions: [
-          Obx(() {
-            return Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.shopping_cart),
-                  onPressed: () {
-                    final future = Get.to(() => const CartScreen());
-                    if (future != null) {
-                      future.then((_) {
-                        final productController = Get.find<ProductController>();
-                        final cartController = Get.find<CartController>();
-                        productController.refreshProducts();
-                        cartController.updatePendingOrders();
-                      });
-                    }
-                  },
-                ),
-                if (cartController.totalItems > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 20,
-                        minHeight: 20,
-                      ),
-                      child: Text(
-                        '${cartController.totalItems}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          }),
-         Obx(() {
-           final pendingCount = cartController.pendingOrders.length;
-           return Stack(
-             clipBehavior: Clip.none,
-             children: [
-               IconButton(
-                 icon: const Icon(Icons.pending_actions),
-                 tooltip: 'Pedidos Pendentes',
-                 onPressed: () {
-                   final future = Get.toNamed('/pendentes');
-                   if (future != null) {
-                     future.then((_) {
-                       final productController = Get.find<ProductController>();
-                       final cartController = Get.find<CartController>();
-                       productController.refreshProducts();
-                       cartController.updatePendingOrders();
-                     });
-                   }
-                 },
-               ),
-               if (pendingCount > 0)
-                 Positioned(
-                   right: 2,
-                   top: 8,
-                   child: Container(
-                     padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0),
-                     decoration: BoxDecoration(
-                       color: Colors.orange,
-                       borderRadius: BorderRadius.circular(10),
-                       border: Border.all(color: Colors.white, width: 1),
-                     ),
-                     constraints: const BoxConstraints(
-                       minWidth: 14,
-                       minHeight: 14,
-                     ),
-                     child: Text(
-                       pendingCount > 99 ? '99+' : '$pendingCount',
-                       style: const TextStyle(
-                         color: Colors.white,
-                         fontSize: 9,
-                         fontWeight: FontWeight.bold,
-                         height: 1,
-                       ),
-                       textAlign: TextAlign.center,
-                     ),
-                   ),
-                 ),
-             ],
-           );
-         }),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => Get.to(() => const SettingsScreen()),
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {

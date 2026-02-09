@@ -8,6 +8,8 @@ const electricityReadingsRouter = require('./electricity_readings');
 const electricitySettingsRouter = require('./electricity_settings');
 const categoriesRouter = require('./categories');
 const girasRouter = require('./giras');
+const consulentesRouter = require('./consulentes');
+const attendanceRouter = require('./attendance');
 
 const app = express();
 app.use(cors());
@@ -28,6 +30,8 @@ app.use('/api', electricityReadingsRouter);
 app.use('/api', electricitySettingsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/giras', girasRouter);
+app.use('/api/consulentes', consulentesRouter);
+app.use('/api/attendance', attendanceRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {
@@ -35,4 +39,6 @@ app.listen(PORT, () => {
   console.log(`API de Membros: http://localhost:${PORT}/api/members`);
   console.log(`API de Pagamentos: http://localhost:${PORT}/api/payments`);
   console.log(`API de Giras: http://localhost:${PORT}/api/giras`);
+  console.log(`API de Consulentes: http://localhost:${PORT}/api/consulentes`);
+  console.log(`API de Presenças: http://localhost:${PORT}/api/attendance`);
 }); 

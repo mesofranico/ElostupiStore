@@ -1,0 +1,237 @@
+import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
+import '../models/attendance_record.dart';
+import '../models/consulente.dart';
+import '../models/consulente_session.dart';
+import '../services/attendance_service.dart';
+import 'consulente_controller.dart';
+
+class AttendanceController extends GetxController {
+  final RxList<AttendanceRecord> attendanceRecords = <AttendanceRecord>[].obs;
+  final RxList<Consulente> consulentesWithoutAttendance = <Consulente>[].obs;
+  final RxList<Consulente> allConsulentes = <Consulente>[].obs;
+  final RxList<ConsulenteSession> sessionsWithAcompanhantes = <ConsulenteSession>[].obs;
+  final RxBool isLoading = false.obs;
+  final RxString errorMessage = ''.obs;
+  final Rx<DateTime> selectedDate = DateTime.now().obs;
+  final RxMap<String, int> attendanceStats = <String, int>{}.obs;
+
+
+  Future<void> loadAttendanceForDate(DateTime date) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      debugPrint('=== DEBUG LOAD ATTENDANCE ===');
+      debugPrint('Carregando dados para: ${date.toIso8601String().split('T')[0]}');
+
+      // Limpar dados antigos antes de carregar novos
+      attendanceRecords.clear();
+      consulentesWithoutAttendance.clear();
+      allConsulentes.clear();
+      sessionsWithAcompanhantes.clear();
+      attendanceStats.clear();
+      
+      selectedDate.value = date;
+      
+      // Carregar presenças do dia
+      final records = await AttendanceService.getAttendanceByDate(date);
+      attendanceRecords.value = records;
+      debugPrint('Registos de presença carregados: ${records.length}');
+      
+      // Carregar sessões com acompanhantes do dia
+      final sessions = await AttendanceService.getSessionsWithAcompanhantesByDate(date);
+      sessionsWithAcompanhantes.value = sessions;
+      debugPrint('Sessões com acompanhantes carregadas: ${sessions.length}');
+      for (final session in sessions) {
+        debugPrint('Sessão ${session.id}: Consulente ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}');
+      }
+      
+      // Carregar estatísticas
+      final stats = await AttendanceService.getAttendanceStats(date);
+      attendanceStats.value = stats;
+      
+      // Carregar todos os consulentes
+      final allConsulentesList = await AttendanceService.getAllConsulentes();
+      allConsulentes.value = allConsulentesList;
+      debugPrint('Todos os consulentes carregados: ${allConsulentesList.length}');
+      
+      // Carregar consulentes sem presença registada
+      final consulentes = await AttendanceService.getConsulentesWithoutAttendance(date);
+      consulentesWithoutAttendance.value = consulentes;
+      
+      debugPrint('=== FIM DEBUG LOAD ATTENDANCE ===');
+      
+    } catch (e) {
+      errorMessage.value = 'Erro ao carregar presenças: $e';
+      debugPrint('Erro ao carregar presenças: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> markAttendance(int consulenteId, String status, {String? notes}) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final record = AttendanceRecord(
+        consulenteId: consulenteId,
+        attendanceDate: selectedDate.value,
+        status: status,
+        notes: notes,
+      );
+      
+      await AttendanceService.createOrUpdateAttendance(record);
+      
+      // Recarregar todos os dados da base de dados em vez de atualizar localmente
+      await loadAttendanceForDate(selectedDate.value);
+      
+      return true;
+    } catch (e) {
+      errorMessage.value = 'Erro ao marcar presença: $e';
+      debugPrint('Erro ao marcar presença: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> updateAttendanceStatus(int recordId, String newStatus, {String? notes}) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      final record = attendanceRecords.firstWhere((r) => r.id == recordId);
+      final updatedRecord = record.copyWith(status: newStatus, notes: notes);
+      
+      await AttendanceService.updateAttendance(recordId, updatedRecord);
+      
+      // Recarregar todos os dados da base de dados
+      await loadAttendanceForDate(selectedDate.value);
+      
+      return true;
+    } catch (e) {
+      errorMessage.value = 'Erro ao atualizar presença: $e';
+      debugPrint('Erro ao atualizar presença: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> deleteAttendance(int recordId) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      // Buscar o registo de presença para obter informações
+      final record = attendanceRecords.firstWhere((r) => r.id == recordId);
+      
+      debugPrint('=== DEBUG DELETE ATTENDANCE ===');
+      debugPrint('Eliminando marcação ID: $recordId');
+      debugPrint('Consulente ID: ${record.consulenteId}');
+      debugPrint('Data: ${record.attendanceDate}');
+      
+      // Eliminar a marcação de presença e sessões correspondentes (API faz tudo)
+      await AttendanceService.deleteAttendance(recordId);
+      
+      debugPrint('Marcação e sessões eliminadas com sucesso via API');
+      
+      // Notificar o ConsulentesController para atualizar os dados
+      try {
+        final consulentesController = Get.find<ConsulentesController>();
+        // Recarregar consulentes e estatísticas
+        await consulentesController.loadConsulentes();
+        // Forçar atualização das estatísticas
+        await consulentesController.loadDetailedStatistics();
+        debugPrint('ConsulentesController atualizado com sucesso');
+      } catch (e) {
+        debugPrint('Erro ao notificar ConsulentesController: $e');
+      }
+      
+      // Recarregar todos os dados da base de dados
+      await loadAttendanceForDate(selectedDate.value);
+      
+      debugPrint('=== FIM DEBUG DELETE ATTENDANCE ===');
+      
+      return true;
+    } catch (e) {
+      errorMessage.value = 'Erro ao deletar presença: $e';
+      debugPrint('Erro ao deletar presença: $e');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> createBulkAttendance(List<int> consulenteIds) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+      
+      await AttendanceService.createBulkAttendance(selectedDate.value, consulenteIds);
+      
+      // Recarregar todos os dados da base de dados
+      await loadAttendanceForDate(selectedDate.value);
+      
+    } catch (e) {
+      errorMessage.value = 'Erro ao criar presenças em massa: $e';
+      debugPrint('Erro ao criar presenças em massa: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void changeDate(DateTime newDate) {
+    loadAttendanceForDate(newDate);
+  }
+
+  void goToPreviousDay() {
+    final previousDay = selectedDate.value.subtract(const Duration(days: 1));
+    changeDate(previousDay);
+  }
+
+  void goToNextDay() {
+    final nextDay = selectedDate.value.add(const Duration(days: 1));
+    changeDate(nextDay);
+  }
+
+  void goToToday() {
+    changeDate(DateTime.now());
+  }
+
+  List<AttendanceRecord> getPresentRecords() {
+    return attendanceRecords.where((r) => r.isPresent).toList();
+  }
+
+  List<AttendanceRecord> getAbsentRecords() {
+    return attendanceRecords.where((r) => r.isAbsent).toList();
+  }
+
+  List<AttendanceRecord> getPendingRecords() {
+    return attendanceRecords.where((r) => r.isPending).toList();
+  }
+
+  AttendanceRecord? getRecordForConsulente(int consulenteId) {
+    try {
+      return attendanceRecords.firstWhere((r) => r.consulenteId == consulenteId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String getStatusForConsulente(int consulenteId) {
+    final record = getRecordForConsulente(consulenteId);
+    return record?.status ?? 'pending';
+  }
+
+  bool hasAttendanceForConsulente(int consulenteId) {
+    return getRecordForConsulente(consulenteId) != null;
+  }
+
+  void clearError() {
+    errorMessage.value = '';
+  }
+
+}

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/electricity_controller.dart';
 import '../services/electricity_service.dart';
 import '../core/currency_formatter.dart';
+import '../widgets/standard_appbar.dart';
 
 class ElectricitySettingsScreen extends StatelessWidget {
   const ElectricitySettingsScreen({super.key});
@@ -24,11 +25,9 @@ class ElectricitySettingsScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configurações de Eletricidade'),
+      appBar: StandardAppBar(
+        title: 'Configurações de Eletricidade',
         backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

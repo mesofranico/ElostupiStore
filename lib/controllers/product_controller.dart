@@ -86,29 +86,29 @@ class ProductController extends GetxController {
     }
   }
 
-  // Verificar se há produtos com stock baixo (considerando carrinho)
-  int getLowStockCount(String category) {
+  List<Product> getLowStockProducts([String category = 'Todas']) {
     try {
       if (category == 'Todas') {
         return products.where((p) {
           final availableStock = getAvailableStock(p);
           return availableStock <= 5 && availableStock > 0;
-        }).length;
-      } else {
-        return products.where((p) {
-          if (p.category != category) return false;
-          final availableStock = getAvailableStock(p);
-          return availableStock <= 5 && availableStock > 0;
-        }).length;
+        }).toList();
       }
+      return products.where((p) {
+        if (p.category != category) return false;
+        final availableStock = getAvailableStock(p);
+        return availableStock <= 5 && availableStock > 0;
+      }).toList();
     } catch (e) {
-      // Fallback para cálculo sem carrinho
       if (category == 'Todas') {
-        return products.where((p) => (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).length;
-      } else {
-        return products.where((p) => p.category == category && (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).length;
+        return products.where((p) => (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).toList();
       }
+      return products.where((p) => p.category == category && (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).toList();
     }
+  }
+
+  int getLowStockCount(String category) {
+    return getLowStockProducts(category).length;
   }
 
   // Verificar se há produtos sem stock (considerando carrinho)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../widgets/standard_appbar.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -7,11 +8,9 @@ class AdminScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administração'),
+      appBar: StandardAppBar(
+        title: 'Administração',
         backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -90,20 +89,65 @@ class AdminScreen extends StatelessWidget {
                 ),
               ),
               title: const Text(
-                'Gestão de Mensalidades',
+                'Gestão de Consulentes',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               subtitle: const Text(
-                'Gerir pagamentos da corrente mediúnica',
+                'Registar e acompanhar consulentes e consultas',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey,
                 ),
               ),
-              onTap: () => Get.toNamed('/membership'),
+              onTap: () => Get.toNamed('/consulentes'),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(20),
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.checklist,
+                  color: Colors.blue[600],
+                  size: 24,
+                ),
+              ),
+              title: const Text(
+                'Marcação de Presenças',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: const Text(
+                'Marcar presenças e faltas por data',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              onTap: () => Get.toNamed('/attendance'),
             ),
           ),
           Container(
@@ -155,4 +199,4 @@ class AdminScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

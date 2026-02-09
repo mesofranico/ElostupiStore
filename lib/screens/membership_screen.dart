@@ -9,6 +9,7 @@ import '../models/payment.dart';
 import '../core/currency_formatter.dart';
 import '../core/membership_calculator.dart';
 import '../core/snackbar_helper.dart';
+import '../widgets/standard_appbar.dart';
 
 class MembershipScreen extends StatelessWidget {
   const MembershipScreen({super.key});
@@ -18,18 +19,19 @@ class MembershipScreen extends StatelessWidget {
     final MemberController memberController = Get.put(MemberController());
     final PaymentController paymentController = Get.put(PaymentController());
 
+    final theme = Theme.of(context);
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gestão de Mensalidades'),
-          backgroundColor: Colors.blue,
-          foregroundColor: Colors.white,
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
+        appBar: StandardAppBar(
+          title: 'Gestão de mensalidades',
+          backgroundColor: theme.colorScheme.primary,
+          showBackButton: true,
+          bottom: TabBar(
+            indicatorColor: theme.colorScheme.onPrimary,
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+            tabs: const [
               Tab(icon: Icon(Icons.people), text: 'Membros'),
               Tab(icon: Icon(Icons.payment), text: 'Pagamentos'),
               Tab(icon: Icon(Icons.analytics), text: 'Relatórios'),
@@ -37,18 +39,16 @@ class MembershipScreen extends StatelessWidget {
           ),
           actions: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-              child: ElevatedButton.icon(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: FilledButton.icon(
                 onPressed: () => _showAddMemberDialog(context, memberController),
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Novo Membro'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                label: const Text('Novo membro'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.surface,
+                  foregroundColor: theme.colorScheme.primary,
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ),
@@ -56,107 +56,96 @@ class MembershipScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            _buildMembersTab(memberController),
-            _buildPaymentsTab(paymentController),
-            _buildReportsTab(memberController, paymentController),
+            _buildMembersTab(context, memberController),
+            _buildPaymentsTab(context, paymentController),
+            _buildReportsTab(context, memberController, paymentController),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMembersTab(MemberController controller) {
+  Widget _buildMembersTab(BuildContext context, MemberController controller) {
+    final theme = Theme.of(context);
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
       }
-
-      // Carregar membros ativos por padrão se a lista estiver vazia
       if (controller.members.isEmpty) {
         controller.loadActiveMembers();
       }
-
       if (controller.errorMessage.isNotEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error, size: 64, color: Colors.red[300]),
-              const SizedBox(height: 16),
+              Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
+              const SizedBox(height: 12),
               Text(
-                'Erro: ${controller.errorMessage.value}',
-                style: const TextStyle(fontSize: 16),
+                controller.errorMessage.value,
+                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () => controller.loadMembers(),
-                child: const Text('Tentar Novamente'),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 40), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                child: const Text('Tentar novamente'),
               ),
             ],
           ),
         );
       }
-
       final stats = controller.getStatistics();
-      
       return Column(
         children: [
-          // Estatísticas
-          Container(
-            padding: const EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             child: Row(
               children: [
-                Expanded(
-                  child: _buildStatCard('Total', stats['total'].toString(), Colors.blue),
-                ),
+                Expanded(child: _buildStatCard(context, 'Total', stats['total'].toString(), theme.colorScheme.primary)),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _buildStatCard('Ativos', stats['active'].toString(), Colors.green),
-                ),
+                Expanded(child: _buildStatCard(context, 'Ativos', stats['active'].toString(), Colors.green)),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _buildStatCard('Em Atraso', stats['overdue'].toString(), Colors.red),
-                ),
+                Expanded(child: _buildStatCard(context, 'Em atraso', stats['overdue'].toString(), theme.colorScheme.error)),
               ],
             ),
           ),
-          
-          // Filtros
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => controller.refreshData(),
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(Icons.refresh, size: 18),
                     label: const Text('Atualizar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
+                    style: FilledButton.styleFrom(minimumSize: const Size(0, 40), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => controller.loadOverdueMembers(),
-                    icon: const Icon(Icons.warning),
-                    label: const Text('Em Atraso'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                    icon: const Icon(Icons.warning_amber, size: 18),
+                    label: const Text('Em atraso'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      backgroundColor: theme.colorScheme.error,
+                      foregroundColor: theme.colorScheme.onError,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => controller.loadActiveMembers(),
-                    icon: const Icon(Icons.check_circle),
+                    icon: const Icon(Icons.check_circle, size: 18),
                     label: const Text('Ativos'),
-                    style: ElevatedButton.styleFrom(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                     ),
@@ -165,230 +154,182 @@ class MembershipScreen extends StatelessWidget {
               ],
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Lista de membros
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
               itemCount: controller.members.length,
               itemBuilder: (context, index) {
                 final member = controller.members[index];
                 final isOverdue = controller.isMemberOverdue(member);
                 final daysOverdue = controller.getDaysOverdue(member);
-                
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  elevation: 1,
-                  shadowColor: Colors.grey.withValues(alpha: 0.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    boxShadow: [
+                      BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                      BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+                    ],
                   ),
-                  child: InkWell(
-                    onTap: () => _showMemberDetails(context, member),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Row(
-                        children: [
-                          // Avatar e informações principais
-                          CircleAvatar(
-                            backgroundColor: !member.isActive ? Colors.grey : (isOverdue ? Colors.red : Colors.green),
-                            child: Text(
-                              member.name[0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showMemberDetails(context, member),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: !member.isActive
+                                  ? theme.colorScheme.outline
+                                  : (isOverdue ? theme.colorScheme.error : Colors.green),
+                              child: Text(
+                                member.name[0].toUpperCase(),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          
-                          // Informações centrais
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Nome e badge INATIVO
-                                Wrap(
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    Text(
-                                      member.name,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                        color: !member.isActive ? Colors.grey[600] : null,
-                                      ),
-                                    ),
-                                    if (!member.isActive) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          'INATIVO',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.grey[700],
-                                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    children: [
+                                      Text(
+                                        member.name,
+                                        style: theme.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: !member.isActive ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface,
                                         ),
                                       ),
-                                    ],
-                                  ],
-                                ),
-                                
-                                const SizedBox(height: 3),
-                                
-                                // Valor e próxima data
-                                Row(
-                                  children: [
-                                    Text(
-                                      CurrencyFormatter.formatEuro(member.monthlyFee),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    if (member.nextPaymentDate != null)
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            isOverdue ? Icons.warning : Icons.calendar_today,
-                                            color: isOverdue ? Colors.red : Colors.green,
-                                            size: 14,
+                                      if (!member.isActive) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme.surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: theme.colorScheme.outlineVariant),
                                           ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            _formatDate(member.nextPaymentDate!),
-                                            style: TextStyle(
-                                              color: isOverdue ? Colors.red : Colors.grey[600],
-                                              fontSize: 12,
-                                              fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+                                          child: Text(
+                                            'INATIVO',
+                                            style: theme.textTheme.labelSmall?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.onSurfaceVariant,
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                                
-                                // Informações de atraso (se houver)
-                                if (isOverdue) ...[
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                   const SizedBox(height: 3),
                                   Row(
                                     children: [
-                                      Icon(Icons.schedule, color: Colors.red, size: 12),
-                                      const SizedBox(width: 4),
                                       Text(
-                                        '$daysOverdue dias',
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        CurrencyFormatter.formatEuro(member.monthlyFee),
+                                        style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                                       ),
-                                      if (member.overdueMonths != null && member.overdueMonths! > 0) ...[
-                                        const SizedBox(width: 8),
+                                      const SizedBox(width: 14),
+                                      if (member.nextPaymentDate != null)
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              isOverdue ? Icons.warning_amber : Icons.calendar_today,
+                                              color: isOverdue ? theme.colorScheme.error : Colors.green,
+                                              size: 14,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _formatDate(member.nextPaymentDate!),
+                                              style: theme.textTheme.bodySmall?.copyWith(
+                                                color: isOverdue ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
+                                                fontWeight: isOverdue ? FontWeight.w600 : FontWeight.normal,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                  if (isOverdue) ...[
+                                    const SizedBox(height: 3),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.schedule, color: theme.colorScheme.error, size: 12),
+                                        const SizedBox(width: 4),
                                         Text(
-                                          '• ${member.overdueMonths} mens.',
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 12,
+                                          '$daysOverdue dias',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.error,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
-                                      ],
-                                      if (member.totalOverdue != null && member.totalOverdue! > 0) ...[
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '• ${CurrencyFormatter.formatEuro(member.totalOverdue!)}',
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
+                                        if (member.overdueMonths != null && member.overdueMonths! > 0) ...[
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '• ${member.overdueMonths} mens.',
+                                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w600),
                                           ),
-                                        ),
+                                        ],
+                                        if (member.totalOverdue != null && member.totalOverdue! > 0) ...[
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '• ${CurrencyFormatter.formatEuro(member.totalOverdue!)}',
+                                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w600),
+                                          ),
+                                        ],
                                       ],
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FilledButton.icon(
+                                  onPressed: member.isActive ? () => _showPaymentDialog(context, member) : null,
+                                  icon: const Icon(Icons.payment, size: 14),
+                                  label: const Text('Pagamento', style: TextStyle(fontSize: 11)),
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size(0, 28),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                    backgroundColor: Colors.green,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                FilledButton.icon(
+                                  onPressed: () => _showEditMemberDialog(context, member, controller),
+                                  icon: const Icon(Icons.edit, size: 14),
+                                  label: const Text('Editar', style: TextStyle(fontSize: 11)),
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size(0, 28),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                FilledButton.icon(
+                                  onPressed: () => _showDeleteConfirmation(context, member, controller),
+                                  icon: const Icon(Icons.delete_outline, size: 14),
+                                  label: const Text('Excluir', style: TextStyle(fontSize: 11)),
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size(0, 28),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                    backgroundColor: theme.colorScheme.error,
+                                    foregroundColor: theme.colorScheme.onError,
+                                  ),
+                                ),
                               ],
                             ),
-                          ),
-                          
-                          // Botões de ação
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Botão Pagamento (primeiro e maior)
-                              ElevatedButton.icon(
-                                onPressed: member.isActive ? () => _showPaymentDialog(context, member) : null,
-                                icon: Icon(
-                                  Icons.payment, 
-                                  size: 16,
-                                  color: member.isActive ? Colors.white : Colors.grey[400],
-                                ),
-                                label: Text(
-                                  'Pagamento',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: member.isActive ? Colors.white : Colors.grey[400],
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: member.isActive ? Colors.green : Colors.grey[300],
-                                  foregroundColor: member.isActive ? Colors.white : Colors.grey[400],
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  minimumSize: const Size(0, 28),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              // Botão Editar
-                              ElevatedButton.icon(
-                                onPressed: () => _showEditMemberDialog(context, member, controller),
-                                icon: const Icon(Icons.edit, size: 14),
-                                label: const Text(
-                                  'Editar',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  minimumSize: const Size(0, 28),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              // Botão Excluir
-                              ElevatedButton.icon(
-                                onPressed: () => _showDeleteConfirmation(context, member, controller),
-                                icon: const Icon(Icons.delete, size: 14),
-                                label: const Text(
-                                  'Excluir',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  minimumSize: const Size(0, 28),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -401,238 +342,185 @@ class MembershipScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildPaymentsTab(PaymentController controller) {
+  Widget _buildPaymentsTab(BuildContext context, PaymentController controller) {
+    final theme = Theme.of(context);
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
       }
-
       final stats = controller.getPaymentStatistics();
-      
       return Column(
         children: [
-          // Estatísticas de pagamentos
-          Container(
-            padding: const EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             child: Row(
               children: [
-                Expanded(
-                  child: _buildStatCard('Total', stats['total'].toString(), Colors.blue),
-                ),
+                Expanded(child: _buildStatCard(context, 'Total', stats['total'].toString(), theme.colorScheme.primary)),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: _buildStatCard('Concluídos', stats['completed'].toString(), Colors.green),
-                ),
-
+                Expanded(child: _buildStatCard(context, 'Concluídos', stats['completed'].toString(), Colors.green)),
               ],
             ),
           ),
-          
-          // Filtros de pagamentos
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => controller.loadPayments(),
-                    icon: const Icon(Icons.refresh),
+                    icon: const Icon(Icons.refresh, size: 18),
                     label: const Text('Todos'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
-
-          
-          // Lista de pagamentos
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
               itemCount: controller.payments.length,
               itemBuilder: (context, index) {
                 final payment = controller.payments[index];
-                
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  elevation: 1,
-                  shadowColor: Colors.grey.withValues(alpha: 0.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    boxShadow: [
+                      BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                      BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+                    ],
                   ),
-                  child: InkWell(
-                    onTap: () => _showPaymentDetails(context, payment),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Column(
-                        children: [
-                          // Linha principal
-                          Row(
-                            children: [
-                              // Status (ícone)
-                              SizedBox(
-                                width: 40,
-                                child: Icon(
-                                  _getPaymentStatusIcon(payment.status),
-                                  color: _getPaymentStatusColor(payment.status),
-                                  size: 20,
-                                ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showPaymentDetails(context, payment),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 36,
+                              child: Icon(
+                                _getPaymentStatusIcon(payment.status),
+                                color: _getPaymentStatusColor(payment.status),
+                                size: 20,
                               ),
-                              
-                              // Membro
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Membro',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Membro',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    Text(
-                                      payment.memberName ?? 'Membro não encontrado',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  Text(
+                                    payment.memberName ?? 'Membro não encontrado',
+                                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              
-                              // Valor
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Valor',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Valor',
+                                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    CurrencyFormatter.formatEuro(payment.amount),
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.colorScheme.primary,
                                     ),
-                                    Text(
-                                      CurrencyFormatter.formatEuro(payment.amount),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              
-                              // Data
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Data',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDate(payment.paymentDate),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Data',
+                                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                                  ),
+                                  Text(
+                                    _formatDate(payment.paymentDate),
+                                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                  ),
+                                ],
                               ),
-                              
-                              // Tipo de Pagamento
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Tipo',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _getPaymentTypeColor(payment.paymentType).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        _getPaymentTypeText(payment.paymentType),
-                                        style: TextStyle(
-                                          color: _getPaymentTypeColor(payment.paymentType),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Tipo',
+                                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                                 ),
-                              ),
-                              
-                              // Status (texto)
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Status',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: _getPaymentTypeColor(payment.paymentType).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _getPaymentTypeText(payment.paymentType),
+                                    style: TextStyle(
+                                      color: _getPaymentTypeColor(payment.paymentType),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: _getPaymentStatusColor(payment.status).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        _getPaymentStatusText(payment.status),
-                                        style: TextStyle(
-                                          color: _getPaymentStatusColor(payment.status),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              
-
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Status',
+                                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(height: 2),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: _getPaymentStatusColor(payment.status).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _getPaymentStatusText(payment.status),
+                                    style: TextStyle(
+                                      color: _getPaymentStatusColor(payment.status),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -645,43 +533,44 @@ class MembershipScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildReportsTab(MemberController memberController, PaymentController paymentController) {
-    return Builder(
-      builder: (context) => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+  Widget _buildReportsTab(BuildContext context, MemberController memberController, PaymentController paymentController) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Cabeçalho
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[200]!),
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+                ],
               ),
               child: Row(
                 children: [
-                  Icon(Icons.analytics, color: Colors.blue[700], size: 32),
-                  const SizedBox(width: 16),
+                  Icon(Icons.analytics, color: theme.colorScheme.primary, size: 28),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-              'Relatórios de Mensalidades',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
+                          'Relatórios de mensalidades',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          'Análise completa do sistema de mensalidades',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.blue[600],
-                          ),
+                          'Análise do sistema de mensalidades',
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -697,32 +586,26 @@ class MembershipScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange[200]!),
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.filter_alt, color: Colors.orange[700], size: 20),
+                      Icon(Icons.filter_alt, color: theme.colorScheme.primary, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Filtro ativo: ${_formatDate(memberController.filterStartDate.value!)} a ${_formatDate(memberController.filterEndDate.value!)}',
-                          style: TextStyle(
-                            color: Colors.orange[700],
+                          'Filtro: ${_formatDate(memberController.filterStartDate.value!)} a ${_formatDate(memberController.filterEndDate.value!)}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                       TextButton(
                         onPressed: () => _clearDateFilter(memberController),
-                        child: Text(
-                          'Limpar',
-                          style: TextStyle(
-                            color: Colors.orange[700],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: const Text('Limpar'),
                       ),
                     ],
                   ),
@@ -800,28 +683,34 @@ class MembershipScreen extends StatelessWidget {
             const SizedBox(height: 20),
             
             // Relatório Detalhado de Membros
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.people, color: Colors.blue[700], size: 24),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Análise de Membros',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
-                          ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.people, color: theme.colorScheme.primary, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Análise de membros',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                     const SizedBox(height: 16),
                     Obx(() {
                       final filteredMembers = memberController.getFilteredMembers();
@@ -845,34 +734,37 @@ class MembershipScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 16),
-            
+            const SizedBox(height: 12),
             // Relatório Detalhado de Pagamentos
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.payment, color: Colors.green[700], size: 24),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Análise de Pagamentos',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[700],
-                          ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                  BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.payment, color: Colors.green.shade700, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Análise de pagamentos',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                     Obx(() {
                       final filteredPayments = paymentController.getFilteredPayments();
                       final total = filteredPayments.length;
@@ -899,36 +791,30 @@ class MembershipScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Botões de Ação
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => _generateReport(context, memberController, paymentController),
-                    icon: const Icon(Icons.download),
-                    label: const Text('Exportar Relatório'),
-                    style: ElevatedButton.styleFrom(
+                    icon: const Icon(Icons.download, size: 18),
+                    label: const Text('Exportar relatório'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: FilledButton.icon(
                     onPressed: () => _showDateRangeDialog(context, paymentController),
-                    icon: const Icon(Icons.date_range),
-                    label: const Text('Filtrar Período'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    icon: const Icon(Icons.date_range, size: 18),
+                    label: const Text('Filtrar período'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                   ),
@@ -939,34 +825,39 @@ class MembershipScreen extends StatelessWidget {
             const SizedBox(height: 32),
           ],
         ),
-      ),
-    );
+      );
   }
 
-  Widget _buildStatCard(String title, String value, Color color) {
-    return Card(
-      color: color,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+  Widget _buildStatCard(BuildContext context, String title, String value, Color color) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1163,58 +1054,161 @@ class MembershipScreen extends StatelessWidget {
     final feeController = TextEditingController();
     String selectedMembershipType = 'Mensal';
     bool isActive = true;
-    
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-                  // Cabeçalho
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.green,
-                          child: Icon(
-                            Icons.person_add,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
+                        Icon(Icons.person_add, color: Colors.green.shade700, size: 24),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Novo Membro',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                'Novo membro',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 'Adicionar novo membro à corrente',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
+                                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildEditSection(
+                      'Informações pessoais',
+                      [
+                        TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nome completo *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.email),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: phoneController,
+                          decoration: const InputDecoration(
+                            labelText: 'Telefone *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.phone),
+                            hintText: '(351) 999999999',
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildEditSection(
+                      'Informações financeiras',
+                      [
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedMembershipType,
+                          decoration: const InputDecoration(
+                            labelText: 'Tipo de mensalidade *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.category),
+                          ),
+                          items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
+                              .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                              .toList(),
+                          onChanged: (value) => setState(() => selectedMembershipType = value!),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: feeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Valor da mensalidade (€) *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.euro),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildEditSection(
+                      'Status do membro',
+                      [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                          ),
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: isActive,
+                                onChanged: (value) => setState(() => isActive = value!),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Membro ativo',
+                                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                    ),
+                                    Text(
+                                      isActive ? 'Membro pode realizar pagamentos' : 'Membro suspenso de pagamentos',
+                                      style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isActive ? Colors.green.shade50 : theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isActive ? Colors.green.shade200 : theme.colorScheme.outlineVariant,
+                                  ),
+                                ),
+                                child: Text(
+                                  isActive ? 'ATIVO' : 'INATIVO',
+                                  style: TextStyle(
+                                    color: isActive ? Colors.green.shade700 : theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1222,258 +1216,83 @@ class MembershipScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  ),
-                  
-                  // Conteúdo
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Informações pessoais
-                          _buildEditSection(
-                            'Informações Pessoais',
-                            [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome Completo *',
-                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Telefone *',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                  hintText: '(351) 999999999',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 20),
-                          
-                          // Informações financeiras
-                          _buildEditSection(
-                            'Informações Financeiras',
-                            [
-              DropdownButtonFormField<String>(
-                initialValue: selectedMembershipType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de Mensalidade *',
-                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.category),
-                ),
-                items: ['Mensal', 'Trimestral', 'Semestral', 'Anual']
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                                  setState(() {
-                  selectedMembershipType = value!;
-                                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: feeController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor da Mensalidade (€) *',
-                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.euro),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 20),
-                          
-                          // Status do membro
-                          _buildEditSection(
-                            'Status do Membro',
-                            [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey[200]!),
-                                ),
-                                child: Row(
-                children: [
-                  Checkbox(
-                    value: isActive,
-                    onChanged: (value) {
-                                        setState(() {
-                      isActive = value!;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Membro Ativo',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          Text(
-                                            isActive 
-                                                ? 'Membro pode realizar pagamentos'
-                                                : 'Membro suspenso de pagamentos',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: isActive ? Colors.green[100] : Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        isActive ? 'ATIVO' : 'INATIVO',
-                                        style: TextStyle(
-                                          color: isActive ? Colors.green[700] : Colors.grey[700],
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-              ),
-            ],
-          ),
-        ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Botões de ação
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    const SizedBox(height: 20),
+                    Row(
                       children: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
+                        TextButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          child: const Text('Cancelar'),
+                        ),
                         const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () async {
-              // Validação
-              if (nameController.text.trim().isEmpty) {
-                SnackBarHelper.showWarning(context, 'O nome é obrigatório');
-                return;
-              }
-              
-              if (phoneController.text.trim().isEmpty) {
-                SnackBarHelper.showWarning(context, 'O telefone é obrigatório');
-                return;
-              }
-              
-              if (feeController.text.trim().isEmpty) {
-                SnackBarHelper.showWarning(context, 'O valor da mensalidade é obrigatório');
-                return;
-              }
-              
-              final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
-              if (fee == null || fee <= 0) {
-                SnackBarHelper.showWarning(context, 'O valor da mensalidade deve ser um número positivo');
-                return;
-              }
-              
-              try {
-                // Criar novo membro
-                final newMember = Member(
-                  name: nameController.text.trim(),
-                  email: emailController.text.trim(),
-                  phone: phoneController.text.trim(),
-                  membershipType: selectedMembershipType,
-                  monthlyFee: fee,
-                  joinDate: DateTime.now(),
-                  isActive: isActive,
-                  paymentStatus: 'pending',
-                  nextPaymentDate: MembershipCalculator.calculateFirstPaymentDate(DateTime.now()),
-                );
-                
-                // Salvar membro
-                final success = await controller.createMember(newMember);
-                
-                if (success) {
-                  Get.back(); // Fechar diálogo
-                  // Recarregar dados
-                  await controller.loadMembers();
-                  
-                  // Mostrar mensagem de sucesso
-                  if (context.mounted) {
-                    SnackBarHelper.showSuccess(context, 'Membro criado com sucesso!');
-                  }
-                } else {
-                  // Mostrar erro
-                  final errorMsg = controller.errorMessage.value.isNotEmpty 
-                      ? controller.errorMessage.value 
-                      : 'Erro desconhecido ao criar membro';
-                  if (context.mounted) {
-                    SnackBarHelper.showError(context, errorMsg);
-                  }
-                }
-              } catch (e) {
-                // Mostrar erro detalhado
-                if (context.mounted) {
-                  SnackBarHelper.showError(context, 'Erro inesperado: $e');
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-            ),
-                          child: const Text('Adicionar Membro'),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () async {
+                              if (nameController.text.trim().isEmpty) {
+                                SnackBarHelper.showWarning(context, 'O nome é obrigatório');
+                                return;
+                              }
+                              if (phoneController.text.trim().isEmpty) {
+                                SnackBarHelper.showWarning(context, 'O telefone é obrigatório');
+                                return;
+                              }
+                              if (feeController.text.trim().isEmpty) {
+                                SnackBarHelper.showWarning(context, 'O valor da mensalidade é obrigatório');
+                                return;
+                              }
+                              final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
+                              if (fee == null || fee <= 0) {
+                                SnackBarHelper.showWarning(context, 'O valor da mensalidade deve ser um número positivo');
+                                return;
+                              }
+                              try {
+                                final newMember = Member(
+                                  name: nameController.text.trim(),
+                                  email: emailController.text.trim(),
+                                  phone: phoneController.text.trim(),
+                                  membershipType: selectedMembershipType,
+                                  monthlyFee: fee,
+                                  joinDate: DateTime.now(),
+                                  isActive: isActive,
+                                  paymentStatus: 'pending',
+                                  nextPaymentDate: MembershipCalculator.calculateFirstPaymentDate(DateTime.now()),
+                                );
+                                final success = await controller.createMember(newMember);
+                                if (!sheetContext.mounted) return;
+                                if (success) {
+                                  Navigator.of(sheetContext).pop();
+                                  await controller.loadMembers();
+                                  if (context.mounted) {
+                                    SnackBarHelper.showSuccess(context, 'Membro criado com sucesso!');
+                                  }
+                                } else {
+                                  final errorMsg = controller.errorMessage.value.isNotEmpty
+                                      ? controller.errorMessage.value
+                                      : 'Erro ao criar membro';
+                                  if (context.mounted) SnackBarHelper.showError(context, errorMsg);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  SnackBarHelper.showError(context, 'Erro inesperado: $e');
+                                }
+                              }
+                            },
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 40),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Adicionar membro'),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -1485,74 +1304,44 @@ class MembershipScreen extends StatelessWidget {
     final feeController = TextEditingController(text: member.monthlyFee.toString());
     String selectedMembershipType = member.membershipType;
     bool isActive = member.isActive;
-    
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cabeçalho
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.blue,
-                          child: Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Editar Membro',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                member.name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
+                        Icon(Icons.edit, color: theme.colorScheme.primary, size: 24),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Editar membro',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  
-                  // Conteúdo
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Informações pessoais
+                    const SizedBox(height: 4),
+                    Text(
+                      member.name,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 16),
                           _buildEditSection(
                             'Informações Pessoais',
                             [
@@ -1746,90 +1535,56 @@ class MembershipScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Botões de ação
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                    const SizedBox(height: 20),
+                    Row(
                       children: [
                         TextButton(
-                          onPressed: () => Get.back(),
+                          onPressed: () => Navigator.of(sheetContext).pop(),
                           child: const Text('Cancelar'),
                         ),
                         const SizedBox(width: 12),
-                        ElevatedButton(
-                          onPressed: () async {
-                            // Validação
-                            if (nameController.text.trim().isEmpty) {
-                              return;
-                            }
-                            
-                            if (feeController.text.trim().isEmpty) {
-                              return;
-                            }
-                            
-                            final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
-                            if (fee == null || fee <= 0) {
-                              return;
-                            }
-                            
-                            // Verificar se está tentando alterar o tipo de mensalidade com pagamentos em atraso
-                            final isOverdue = member.overdueMonths != null && member.overdueMonths! > 0;
-                            final isChangingMembershipType = selectedMembershipType != member.membershipType;
-                            
-                            if (isOverdue && isChangingMembershipType) {
-                              return;
-                            }
-                            
-                            try {
-                              // Atualizar membro
-                              final updatedMember = member.copyWith(
-                                name: nameController.text.trim(),
-                                email: emailController.text.trim(),
-                                phone: phoneController.text.trim(),
-                                membershipType: selectedMembershipType,
-                                monthlyFee: fee,
-                                isActive: isActive,
-                              );
-                              
-                              // Salvar alterações
-                              final success = await controller.updateMember(updatedMember);
-                              
-                              if (success) {
-                                Get.back(); // Fechar diálogo
-                                // Recarregar dados
-                                await controller.loadMembers();
-                              }
-                            } catch (e) {
-                              // Erro silencioso - o usuário pode tentar novamente
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () async {
+                              if (nameController.text.trim().isEmpty) return;
+                              if (feeController.text.trim().isEmpty) return;
+                              final fee = double.tryParse(feeController.text.replaceAll(',', '.'));
+                              if (fee == null || fee <= 0) return;
+                              final isOverdue = member.overdueMonths != null && member.overdueMonths! > 0;
+                              final isChangingMembershipType = selectedMembershipType != member.membershipType;
+                              if (isOverdue && isChangingMembershipType) return;
+                              try {
+                                final updatedMember = member.copyWith(
+                                  name: nameController.text.trim(),
+                                  email: emailController.text.trim(),
+                                  phone: phoneController.text.trim(),
+                                  membershipType: selectedMembershipType,
+                                  monthlyFee: fee,
+                                  isActive: isActive,
+                                );
+                                final success = await controller.updateMember(updatedMember);
+                                if (!sheetContext.mounted) return;
+                                if (success) {
+                                  Navigator.of(sheetContext).pop();
+                                  await controller.loadMembers();
+                                }
+                              } catch (_) {}
+                            },
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 40),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Atualizar'),
                           ),
-                          child: const Text('Atualizar'),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -1838,106 +1593,54 @@ class MembershipScreen extends StatelessWidget {
     final PaymentController paymentController = Get.find<PaymentController>();
     final MemberController memberController = Get.find<MemberController>();
     
-    // Verificar se membro está ativo
+    final theme = Theme.of(context);
     if (!member.isActive) {
-      Get.dialog(
-        Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: theme.colorScheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+        ),
+        builder: (sheetContext) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Cabeçalho
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
+                Row(
+                  children: [
+                    Icon(Icons.person_off, color: theme.colorScheme.outline, size: 28),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Membro inativo',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey,
-                        child: Icon(
-                          Icons.person_off,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Membro Inativo',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              member.name,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-                
-                // Conteúdo
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Text(
-                        'O membro ${member.name} está inativo.',
-                        style: const TextStyle(fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Membros inativos não podem realizar pagamentos de mensalidades.',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 8),
+                Text(
+                  member.name,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
-                
-                // Botão de fechar
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+                const SizedBox(height: 16),
+                Text(
+                  'Membros inativos não podem realizar pagamentos de mensalidades.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ),
-                  child: Center(
-                    child: ElevatedButton(
-                      onPressed: () => Get.back(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      ),
-                      child: const Text('Fechar'),
-                    ),
+                    child: const Text('Fechar'),
                   ),
                 ),
               ],
@@ -1984,77 +1687,51 @@ class MembershipScreen extends StatelessWidget {
       }
     }
     
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          updateTotalAmount();
-          
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Cabeçalho
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.green[50],
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: SafeArea(
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              updateTotalAmount();
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.green,
-                          child: Icon(
-                            Icons.payment,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
+                        Icon(Icons.payment, color: Colors.green.shade700, size: 24),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Registar Pagamento',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                'Registar pagamento',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 member.name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
+                                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  
-                  // Conteúdo
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Informações do membro
-                          _buildEditSection(
+                    const SizedBox(height: 16),
+                    _buildEditSection(
                             'Informações do Membro',
                             [
                               _buildInfoRow(Icons.person, 'Nome', member.name),
@@ -2187,30 +1864,16 @@ class MembershipScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                        ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: const Text('Cancelar'),
                       ),
-                    ),
-                  ),
-                  
-                  // Botões de ação
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Get.back(),
-                          child: const Text('Cancelar'),
-                        ),
-                        const SizedBox(width: 12),
-                        ElevatedButton(
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
                           onPressed: () async {
                             try {
                               int monthsToAdvance;
@@ -2306,95 +1969,119 @@ class MembershipScreen extends StatelessWidget {
                                 );
                                 
                                 await memberController.updateMember(updatedMember);
-                                
-                                Get.back(); // Fechar diálogo
-                                
-                                // Recarregar dados
+                                if (!sheetContext.mounted) return;
+                                Navigator.of(sheetContext).pop();
                                 await memberController.loadMembers();
                                 await paymentController.loadPayments();
                               } else {
-                                Get.back(); // Fechar diálogo
+                                if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                               }
-                            } catch (e) {
-                              Get.back(); // Fechar diálogo
+                            } catch (_) {
+                              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                             }
                           },
-                          style: ElevatedButton.styleFrom(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 40),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
                           ),
-                          child: const Text('Confirmar Pagamento'),
+                          child: const Text('Confirmar pagamento'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Member member, MemberController controller) {
+    final PaymentController paymentController = Get.find<PaymentController>();
+    final memberPayments = paymentController.payments.where((p) => p.memberId == member.id).toList();
+    final totalPayments = memberPayments.length;
+    final totalAmount = memberPayments.fold<double>(0, (sum, p) => sum + p.amount);
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.warning_amber, color: theme.colorScheme.error, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Confirmar exclusão',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Esta ação não pode ser desfeita',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.error,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context, Member member, MemberController controller) {
-    // Buscar informações sobre pagamentos do membro
-    final PaymentController paymentController = Get.find<PaymentController>();
-    final memberPayments = paymentController.payments.where((p) => p.memberId == member.id).toList();
-    final totalPayments = memberPayments.length;
-    final totalAmount = memberPayments.fold<double>(0, (sum, p) => sum + p.amount);
-    
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 450),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Cabeçalho
+              const SizedBox(height: 16),
+              Text(
+                'Tens a certeza que queres excluir o membro:',
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.red,
-                      child: Icon(
-                        Icons.warning,
-                        color: Colors.white,
-                        size: 24,
+                      backgroundColor: theme.colorScheme.primary,
+                      child: Text(
+                        member.name[0].toUpperCase(),
+                        style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Confirmar Exclusão',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            member.name,
+                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                           ),
-                          const SizedBox(height: 4),
                           Text(
-                            'Esta ação não pode ser desfeita',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.red[700],
-                              fontWeight: FontWeight.w500,
-                            ),
+                            _capitalizeFirstLetter(member.membershipType),
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -2402,200 +2089,115 @@ class MembershipScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
-              // Conteúdo
-              Padding(
-                padding: const EdgeInsets.all(20),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Tem certeza que deseja excluir o membro:',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Informações do membro
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.blue,
-                                child: Text(
-                                  member.name[0].toUpperCase(),
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      member.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    Text(
-                                      _capitalizeFirstLetter(member.membershipType),
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    Row(
+                      children: [
+                        Icon(Icons.delete_forever, color: theme.colorScheme.error, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Dados que serão removidos:',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.error,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Aviso sobre dados que serão removidos
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red[200]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.delete_forever, color: Colors.red, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Dados que serão removidos:',
-                                style: TextStyle(
-                                  color: Colors.red[700],
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildInfoRow(Icons.person, 'Perfil do membro', 'Completamente removido', Colors.red),
-                          _buildInfoRow(Icons.payment, 'Histórico de pagamentos', '$totalPayments pagamento(s)', Colors.red),
-                          _buildInfoRow(Icons.euro, 'Valor total em pagamentos', CurrencyFormatter.formatEuro(totalAmount), Colors.red),
-                          _buildInfoRow(Icons.schedule, 'Datas e status', 'Todas as informações temporais', Colors.red),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Aviso final
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.orange[700], size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Esta ação é irreversível. Todos os dados relacionados ao membro serão permanentemente removidos da base de dados.',
-                              style: TextStyle(
-                                color: Colors.orange[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 10),
+                    _buildInfoRow(Icons.person, 'Perfil do membro', 'Completamente removido', theme.colorScheme.error),
+                    _buildInfoRow(Icons.payment, 'Histórico de pagamentos', '$totalPayments pagamento(s)', theme.colorScheme.error),
+                    _buildInfoRow(Icons.euro, 'Valor total em pagamentos', CurrencyFormatter.formatEuro(totalAmount), theme.colorScheme.error),
+                    _buildInfoRow(Icons.schedule, 'Datas e status', 'Todas as informações temporais', theme.colorScheme.error),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: theme.colorScheme.primary, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Esta ação é irreversível. Todos os dados do membro serão removidos permanentemente.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              
-              // Botões de ação
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    child: const Text('Cancelar'),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
                       onPressed: () async {
                         try {
                           final success = await controller.deleteMember(member.id!);
-                          Get.back(); // Fechar diálogo
-                          
+                          if (!sheetContext.mounted) return;
+                          Navigator.of(sheetContext).pop();
                           if (success) {
-                            // Recarregar dados
                             await controller.loadMembers();
-                            
-                            // Mostrar mensagem de sucesso
                             if (context.mounted) {
                               SnackBarHelper.showSuccess(
-                                context, 
-                                'Membro "${member.name}" foi excluído com sucesso'
+                                context,
+                                'Membro "${member.name}" foi excluído com sucesso',
                               );
                             }
                           } else {
-                            // Mostrar mensagem de erro
                             if (context.mounted) {
                               SnackBarHelper.showError(
-                                context, 
-                                controller.errorMessage.value.isNotEmpty 
-                                  ? controller.errorMessage.value
-                                  : 'Erro ao excluir membro. Tente novamente.'
+                                context,
+                                controller.errorMessage.value.isNotEmpty
+                                    ? controller.errorMessage.value
+                                    : 'Erro ao excluir membro. Tenta novamente.',
                               );
                             }
                           }
                         } catch (e) {
-                          Get.back(); // Fechar diálogo
-                          
-                          // Mostrar mensagem de erro
+                          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                           if (context.mounted) {
                             SnackBarHelper.showError(
-                              context, 
-                              'Erro inesperado ao excluir membro: $e'
+                              context,
+                              'Erro inesperado ao excluir membro: $e',
                             );
                           }
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: theme.colorScheme.error,
+                        foregroundColor: theme.colorScheme.onError,
+                        minimumSize: const Size(0, 40),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text('Confirmar Exclusão'),
+                      child: const Text('Confirmar exclusão'),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -3318,7 +2920,7 @@ class MembershipScreen extends StatelessWidget {
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime.now(),
                                 );
-                                if (date != null) {
+                                if (context.mounted && date != null) {
                                   setState(() {
                                     startDate = date;
                                   });
@@ -3372,7 +2974,7 @@ class MembershipScreen extends StatelessWidget {
                                   firstDate: startDate ?? DateTime(2020),
                                   lastDate: DateTime.now(),
                                 );
-                                if (date != null) {
+                                if (context.mounted && date != null) {
                                   setState(() {
                                     endDate = date;
                                   });

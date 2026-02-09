@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/cart_controller.dart';
 import '../models/product.dart';
+import '../widgets/standard_appbar.dart';
 
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({super.key});
@@ -27,11 +28,12 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pedidos Pendentes'),
-        backgroundColor: Colors.orange[700],
-        foregroundColor: Colors.white,
+      appBar: StandardAppBar(
+        title: 'Pedidos pendentes',
+        backgroundColor: theme.colorScheme.primary,
+        showBackButton: true,
       ),
       body: Obx(() {
         final pendingOrders = cartController.pendingOrders;
@@ -39,63 +41,74 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (pendingOrders.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.inbox_outlined,
-                  size: 80,
-                  color: Colors.orange,
+                  size: 56,
+                  color: theme.colorScheme.outline,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'Nenhum pedido pendente',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Os pedidos guardados aparecem aqui',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
                 ),
               ],
             ),
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           itemCount: pendingOrders.length,
           itemBuilder: (context, index) {
             final order = pendingOrders[index];
             final List<dynamic> items = order['items'] ?? [];
             final total = double.tryParse(order['total'].toString()) ?? 0.0;
-            final createdAt = order['createdAt'] ?? '';
-            final note = order['note'] as String?;
+            final note = order['note']?.toString().trim();
             return Container(
+              margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha((0.08 * 255).toInt()),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+                    blurRadius: 2,
+                    offset: const Offset(0, 0),
                   ),
                 ],
               ),
-              margin: const EdgeInsets.only(bottom: 16),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Pedido #${order['id']}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        Text(
-                          createdAt.toString(),
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
+                    Text(
+                      (note != null && note.isNotEmpty) ? note : 'Pedido',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     ...items.map((item) {
@@ -109,296 +122,129 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                               Expanded(
                                 child: Text(
                                   product.name,
-                                  style: const TextStyle(fontSize: 14),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Text(
                                 'x$quantity',
-                                style: const TextStyle(fontSize: 14, color: Colors.grey),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ],
                           ),
                         );
                       } catch (e) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 2),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Text(
                             'Produto inválido',
-                            style: TextStyle(color: Colors.red, fontSize: 14),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.error,
+                            ),
                           ),
                         );
                       }
                     }),
-                                         const SizedBox(height: 8),
-                     Row(
-                       children: [
-                         Icon(
-                           Icons.note,
-                           size: 14,
-                           color: Colors.grey[600],
-                         ),
-                         const SizedBox(width: 4),
-                         Expanded(
-                           child: Text(
-                             note ?? '',
-                             style: TextStyle(
-                               fontSize: 13,
-                               color: Colors.grey[600],
-                               fontStyle: FontStyle.italic,
-                             ),
-                             maxLines: 1,
-                             overflow: TextOverflow.ellipsis,
-                           ),
-                         ),
-                       ],
-                     ),
-                    const Divider(height: 20),
+                    Divider(height: 20, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total: €${total.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange),
+                          'Total',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        Text(
+                          '€${total.toStringAsFixed(2)}',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            icon: const Icon(Icons.check_circle),
-                            label: const Text('Finalizar'),
+                          child: FilledButton.icon(
                             onPressed: () async {
                               final ok = await cartController.finalizePendingOrderAPI(order['id']);
                               if (ok) refreshOrders();
                             },
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 40),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            icon: const Icon(Icons.check_circle, size: 18),
+                            label: const Text('Finalizar'),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            icon: const Icon(Icons.delete),
-                            label: const Text('Apagar'),
+                          child: OutlinedButton.icon(
                             onPressed: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
-                                builder: (context) => Dialog(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(24),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [
-                                          Colors.white,
-                                          Colors.grey[50]!,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withValues(alpha: 0.15),
-                                          spreadRadius: 2,
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                        BoxShadow(
-                                          color: Colors.grey.withValues(alpha: 0.1),
-                                          spreadRadius: 1,
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                      border: Border.all(
-                                        color: Colors.grey[200]!,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
+                                builder: (ctx) {
+                                  final t = Theme.of(ctx);
+                                  return AlertDialog(
+                                    backgroundColor: t.colorScheme.surface,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    title: Row(
                                       children: [
-                                        // Header com ícone
-                                        Container(
-                                          padding: const EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(
-                                              color: Colors.red.withValues(alpha: 0.3),
-                                              width: 1,
-                                            ),
+                                        Icon(Icons.delete_outline, color: t.colorScheme.error, size: 24),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          'Remover pedido',
+                                          style: t.textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: t.colorScheme.onSurface,
                                           ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                padding: const EdgeInsets.all(8),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.red,
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.delete,
-                                                  color: Colors.white,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              const Expanded(
-                                                child: Text(
-                                                  'Remover Pedido',
-                                                  style: TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.red,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        // Conteúdo
-                                        const Text(
-                                          'Tem certeza que deseja remover este pedido pendente?',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.grey,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        // Botões
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Container(
-                                                height: 48,
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    begin: Alignment.centerLeft,
-                                                    end: Alignment.centerRight,
-                                                    colors: [
-                                                      Colors.grey[400]!,
-                                                      Colors.grey[600]!,
-                                                    ],
-                                                  ),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.grey.withAlpha((0.3 * 255).toInt()),
-                                                      spreadRadius: 1,
-                                                      blurRadius: 4,
-                                                      offset: const Offset(0, 2),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Material(
-                                                  color: Colors.transparent,
-                                                  child: InkWell(
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    onTap: () => Navigator.of(context).pop(false),
-                                                    child: const Center(
-                                                      child: Text(
-                                                        'Cancelar',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.white,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: Container(
-                                                height: 48,
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    begin: Alignment.centerLeft,
-                                                    end: Alignment.centerRight,
-                                                    colors: [
-                                                      Colors.red,
-                                                      Colors.red[700]!,
-                                                    ],
-                                                  ),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.red.withAlpha((0.4 * 255).toInt()),
-                                                      spreadRadius: 1,
-                                                      blurRadius: 6,
-                                                      offset: const Offset(0, 3),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Material(
-                                                  color: Colors.transparent,
-                                                  child: InkWell(
-                                                    borderRadius: BorderRadius.circular(12),
-                                                    onTap: () => Navigator.of(context).pop(true),
-                                                    child: const Center(
-                                                      child: Row(
-                                                        mainAxisAlignment: MainAxisAlignment.center,
-                                                        children: [
-                                                          Icon(
-                                                            Icons.delete,
-                                                            color: Colors.white,
-                                                            size: 18,
-                                                          ),
-                                                          SizedBox(width: 8),
-                                                          Text(
-                                                            'Remover',
-                                                            style: TextStyle(
-                                                              fontSize: 16,
-                                                              fontWeight: FontWeight.bold,
-                                                              color: Colors.white,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ),
+                                    content: Text(
+                                      'Queres apagar este pedido pendente?',
+                                      style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(ctx).pop(false),
+                                        child: const Text('Cancelar'),
+                                      ),
+                                      FilledButton(
+                                        onPressed: () => Navigator.of(ctx).pop(true),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: t.colorScheme.error,
+                                          minimumSize: const Size(0, 40),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        child: const Text('Apagar'),
+                                      ),
+                                    ],
+                                  );
+                                },
                               );
                               if (confirm == true) {
                                 await cartController.removePendingOrderAPI(order['id']);
                                 refreshOrders();
                               }
                             },
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 40),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              side: BorderSide(color: theme.colorScheme.error),
+                              foregroundColor: theme.colorScheme.error,
+                            ),
+                            icon: const Icon(Icons.delete_outline, size: 18),
+                            label: const Text('Apagar'),
                           ),
                         ),
                       ],

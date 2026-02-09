@@ -21,12 +21,12 @@ router.get('/', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -84,12 +84,12 @@ router.get('/overdue', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -104,7 +104,7 @@ router.get('/overdue', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN m.next_payment_date < CURDATE() THEN 
+          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -314,28 +314,79 @@ router.put('/:id', async (req, res) => {
       payment_status
     } = req.body;
 
+    // Buscar dados atuais do membro para verificar mudança de status
+    const [currentMember] = await pool.execute(
+      'SELECT is_active, next_payment_date FROM members WHERE id = ?',
+      [req.params.id]
+    );
 
+    if (currentMember.length === 0) {
+      return res.status(404).json({ error: 'Membro não encontrado' });
+    }
 
-    await pool.execute(`
-      UPDATE members SET 
-        name = ?, email = ?, phone = ?, membership_type = ?, 
-        monthly_fee = ?, join_date = ?, is_active = ?, 
-        last_payment_date = ?, next_payment_date = ?, 
-        payment_status = ?, updated_at = NOW()
-      WHERE id = ?
-    `, [
-      name, 
-      email && email.trim() !== '' ? email : null, // Usar NULL em vez de string vazia
-      phone, 
-      membership_type, 
-      monthly_fee,
-      join_date, 
-      is_active ? 1 : 0, 
-      last_payment_date,
-      next_payment_date, 
-      payment_status, 
-      req.params.id
-    ]);
+    const wasActive = currentMember[0].is_active;
+    const willBeActive = is_active ? 1 : 0;
+
+    // Se o membro estava inativo e agora vai ficar ativo, reiniciar contagem
+    if (!wasActive && willBeActive) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1; // getMonth() retorna 0-11
+      
+      // Calcular próxima data de pagamento (dia 1 do próximo mês)
+      let nextMonth = month + 1;
+      let nextYear = year;
+      
+      if (nextMonth > 12) {
+        nextMonth = 1;
+        nextYear++;
+      }
+      
+      const newNextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01 00:00:00`;
+      
+      await pool.execute(`
+        UPDATE members SET 
+          name = ?, email = ?, phone = ?, membership_type = ?, 
+          monthly_fee = ?, join_date = ?, is_active = ?, 
+          last_payment_date = ?, next_payment_date = ?, 
+          payment_status = ?, updated_at = NOW()
+        WHERE id = ?
+      `, [
+        name, 
+        email && email.trim() !== '' ? email : null,
+        phone, 
+        membership_type, 
+        monthly_fee,
+        join_date, 
+        willBeActive, 
+        null, // Limpar último pagamento ao reativar
+        newNextPaymentDate, // Nova data de pagamento
+        'pending', // Status pendente ao reativar
+        req.params.id
+      ]);
+    } else {
+      // Atualização normal sem mudança de status ativo/inativo
+      await pool.execute(`
+        UPDATE members SET 
+          name = ?, email = ?, phone = ?, membership_type = ?, 
+          monthly_fee = ?, join_date = ?, is_active = ?, 
+          last_payment_date = ?, next_payment_date = ?, 
+          payment_status = ?, updated_at = NOW()
+        WHERE id = ?
+      `, [
+        name, 
+        email && email.trim() !== '' ? email : null,
+        phone, 
+        membership_type, 
+        monthly_fee,
+        join_date, 
+        willBeActive, 
+        last_payment_date,
+        next_payment_date, 
+        payment_status, 
+        req.params.id
+      ]);
+    }
 
     const [updatedMember] = await pool.execute(
       'SELECT * FROM members WHERE id = ?',
@@ -345,8 +396,6 @@ router.put('/:id', async (req, res) => {
     if (updatedMember.length === 0) {
       return res.status(404).json({ error: 'Membro não encontrado' });
     }
-
-
 
     res.json(updatedMember[0]);
   } catch (error) {
@@ -450,6 +499,90 @@ router.get('/verify-deletion/:id', async (req, res) => {
     res.json(verification);
   } catch (error) {
     console.error('Erro ao verificar exclusão:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// PUT /api/members/:id/toggle-status - Ativar/Desativar membro
+router.put('/:id/toggle-status', async (req, res) => {
+  try {
+    const { is_active } = req.body;
+    
+    if (typeof is_active !== 'boolean') {
+      return res.status(400).json({ error: 'is_active deve ser true ou false' });
+    }
+
+    // Buscar dados atuais do membro
+    const [currentMember] = await pool.execute(
+      'SELECT id, name, is_active, next_payment_date FROM members WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (currentMember.length === 0) {
+      return res.status(404).json({ error: 'Membro não encontrado' });
+    }
+
+    const member = currentMember[0];
+    const wasActive = member.is_active;
+    const willBeActive = is_active ? 1 : 0;
+
+    // Se não há mudança de status, retornar sem fazer nada
+    if (wasActive === willBeActive) {
+      return res.json({ 
+        message: `Membro já está ${is_active ? 'ativo' : 'inativo'}`,
+        member: member
+      });
+    }
+
+    if (!wasActive && willBeActive) {
+      // Reativar membro - reiniciar contagem como novo membro
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      
+      let nextMonth = month + 1;
+      let nextYear = year;
+      
+      if (nextMonth > 12) {
+        nextMonth = 1;
+        nextYear++;
+      }
+      
+      const newNextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01 00:00:00`;
+      
+      await pool.execute(`
+        UPDATE members SET 
+          is_active = ?, 
+          last_payment_date = NULL,
+          next_payment_date = ?,
+          payment_status = 'pending',
+          updated_at = NOW()
+        WHERE id = ?
+      `, [willBeActive, newNextPaymentDate, req.params.id]);
+
+      res.json({ 
+        message: 'Membro reativado com sucesso. Contagem de mensalidades reiniciada.',
+        action: 'reactivated',
+        newNextPaymentDate: newNextPaymentDate
+      });
+    } else {
+      // Desativar membro - suspender contagem
+      await pool.execute(`
+        UPDATE members SET 
+          is_active = ?, 
+          payment_status = 'suspended',
+          updated_at = NOW()
+        WHERE id = ?
+      `, [willBeActive, req.params.id]);
+
+      res.json({ 
+        message: 'Membro desativado com sucesso. Contagem de mensalidades suspensa.',
+        action: 'deactivated'
+      });
+    }
+
+  } catch (error) {
+    console.error('Erro ao alterar status do membro:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

@@ -23,6 +23,7 @@ class CartController extends GetxController {
   void onInit() {
     super.onInit();
     loadCartFromStorage();
+    updatePendingOrders();
   }
 
   void addToCart(Product product) {

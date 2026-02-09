@@ -4,6 +4,7 @@ import '../controllers/admin_controller.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/app_controller.dart';
 import '../models/product.dart';
+import '../widgets/standard_appbar.dart';
 
 // Widget para reordenar categorias
 class CategoryReorderDialog extends StatefulWidget {
@@ -31,53 +32,43 @@ class _CategoryReorderDialogState extends State<CategoryReorderDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+      backgroundColor: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       title: Row(
         children: [
-          Icon(
-            Icons.sort_by_alpha,
-            color: Colors.blue[600],
-            size: 28,
-          ),
-          const SizedBox(width: 12),
+          Icon(Icons.sort_by_alpha, color: theme.colorScheme.primary, size: 24),
+          const SizedBox(width: 10),
           Text(
-            'Reordenar Categorias',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: Colors.blue[700],
+            'Reordenar categorias',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ],
       ),
       content: SizedBox(
-        width: 400,
-        height: 400,
+        width: 360,
+        height: 360,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Arrasta as categorias para reordená-las:',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
+              'Arrasta para alterar a ordem:',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Expanded(
               child: ReorderableListView.builder(
                 itemCount: _categories.length,
                 onReorder: (oldIndex, newIndex) {
                   setState(() {
-                    // Ajustar índices para o onReorder
-                    if (oldIndex < newIndex) {
-                      newIndex -= 1;
-                    }
-                    
-                    // Reordenar a lista
+                    if (oldIndex < newIndex) newIndex -= 1;
                     final item = _categories.removeAt(oldIndex);
                     _categories.insert(newIndex, item);
                   });
@@ -86,36 +77,30 @@ class _CategoryReorderDialogState extends State<CategoryReorderDialog> {
                   final category = _categories[index];
                   return Container(
                     key: ValueKey(category),
-                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    margin: const EdgeInsets.only(bottom: 6),
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[200]!),
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     ),
                     child: ListTile(
-                      leading: Icon(
-                        Icons.drag_handle,
-                        color: Colors.grey[400],
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      leading: Icon(Icons.drag_handle, color: theme.colorScheme.outline, size: 22),
                       title: Text(
                         category,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                        ),
+                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
                       ),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.blue[100],
-                          borderRadius: BorderRadius.circular(12),
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '${index + 1}',
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -132,19 +117,13 @@ class _CategoryReorderDialogState extends State<CategoryReorderDialog> {
           onPressed: () => Get.back(),
           child: const Text('Cancelar'),
         ),
-        ElevatedButton.icon(
-          onPressed: () {
-            widget.onSave(_categories);
-          },
-          icon: const Icon(Icons.save),
-          label: const Text('Guardar Ordem'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[600],
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-            textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        FilledButton(
+          onPressed: () => widget.onSave(_categories),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 40),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
+          child: const Text('Guardar ordem'),
         ),
       ],
     );
@@ -208,161 +187,174 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     // O campo de stock passa a ser um AJUSTE (delta). Deixar vazio por omissão.
     _stockController.text = '';
     
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        title: Row(
-          children: [
-            Icon(
-              Icons.edit,
-              color: Colors.blue[600],
-              size: 28,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Editar Produto',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.blue[700],
-              ),
-            ),
-          ],
-        ),
-                 content: SizedBox(
-           width: 350,
-           child: Form(
-             key: _formKey,
-             child: Column(
-               mainAxisSize: MainAxisSize.min,
-               crossAxisAlignment: CrossAxisAlignment.stretch,
-               children: [
-                 // Informação do produto (apenas para referência)
-                 Container(
-                   padding: const EdgeInsets.all(16),
-                   decoration: BoxDecoration(
-                     color: Colors.grey[50],
-                     borderRadius: BorderRadius.circular(8),
-                     border: Border.all(color: Colors.grey[200]!),
-                   ),
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       Text(
-                         'Produto: ${editProduct.name}',
-                         style: const TextStyle(
-                           fontWeight: FontWeight.bold,
-                           fontSize: 16,
-                         ),
-                       ),
-                       const SizedBox(height: 4),
-                       Text(
-                         'ID: ${editProduct.id}',
-                         style: TextStyle(
-                           fontSize: 12,
-                           color: Colors.grey[600],
-                         ),
-                       ),
-                     ],
-                   ),
-                 ),
-                 const SizedBox(height: 24),
-                 
-                 // Preço principal
-                 TextFormField(
-                   controller: _priceController,
-                   decoration: const InputDecoration(
-                     labelText: 'Preço (€) *',
-                     border: OutlineInputBorder(),
-                     prefixText: '€',
-                   ),
-                   keyboardType: TextInputType.number,
-                   validator: (value) {
-                     if (value == null || value.trim().isEmpty) {
-                       return 'Preço é obrigatório';
-                     }
-                     if (double.tryParse(value) == null) {
-                       return 'Preço deve ser um número válido';
-                     }
-                     return null;
-                   },
-                 ),
-                 const SizedBox(height: 16),
-                 
-                 // Preço de Revenda
-                 TextFormField(
-                   controller: _price2Controller,
-                   decoration: const InputDecoration(
-                     labelText: 'Preço de Revenda (€)',
-                     border: OutlineInputBorder(),
-                     prefixText: '€',
-                   ),
-                   keyboardType: TextInputType.number,
-                   validator: (value) {
-                     if (value != null && value.trim().isNotEmpty) {
-                       if (double.tryParse(value) == null) {
-                         return 'Preço deve ser um número válido';
-                       }
-                     }
-                     return null;
-                   },
-                 ),
-                 const SizedBox(height: 16),
-                 
-                 // Stock
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.edit, color: theme.colorScheme.primary, size: 24),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Editar produto',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          editProduct.name,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'ID: ${editProduct.id}',
+                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _priceController,
+                          decoration: InputDecoration(
+                            labelText: 'Preço (€) *',
+                            prefixText: '€ ',
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) return 'Preço é obrigatório';
+                            if (double.tryParse(value) == null) return 'Preço deve ser um número válido';
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _price2Controller,
+                          decoration: InputDecoration(
+                            labelText: 'Revenda (€)',
+                            prefixText: '€ ',
+                            filled: true,
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                            ),
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value != null && value.trim().isNotEmpty && double.tryParse(value) == null) {
+                              return 'Número inválido';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _stockController,
                     decoration: InputDecoration(
-                      labelText: 'Ajuste de Stock (+/-)',
-                      helperText: 'Stock atual: ${editProduct.stock ?? 0}. Ex.: 10 para adicionar, -10 para remover',
-                      border: const OutlineInputBorder(),
+                      labelText: 'Ajuste de stock (+/-)',
+                      helperText: 'Stock atual: ${editProduct.stock ?? 0}. Ex.: 10 ou -10',
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+                      ),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value != null && value.trim().isNotEmpty) {
-                        if (int.tryParse(value) == null) {
-                          return 'Stock deve ser um número inteiro';
-                        }
+                      if (value != null && value.trim().isNotEmpty && int.tryParse(value) == null) {
+                        return 'Stock deve ser um número inteiro';
                       }
                       return null;
                     },
                   ),
-                 const SizedBox(height: 24),
-               ],
-             ),
-           ),
-         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton.icon(
-            onPressed: adminController.isLoading.value ? null : () async {
-              // Fechar o modal imediatamente
-              Navigator.of(context).pop();
-              
-              // Processar a operação em background
-              await _saveProduct();
-            },
-            icon: adminController.isLoading.value
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.save),
-            label: const Text('Atualizar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: adminController.isLoading.value
+                              ? null
+                              : () async {
+                                  Navigator.of(sheetContext).pop();
+                                  await _saveProduct();
+                                },
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 40),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: adminController.isLoading.value
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: theme.colorScheme.onPrimary,
+                                  ),
+                                )
+                              : const Text('Atualizar'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -479,11 +471,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gestão'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+      appBar: StandardAppBar(
+        title: 'Gestão de produtos',
+        backgroundColor: theme.colorScheme.primary,
+        showBackButton: true,
         actions: [
           IconButton(
             onPressed: () => _showCategoryReorderDialog(),
@@ -501,27 +494,21 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         children: [
           Column(
             children: [
-              // Filtro de categorias e ordenação por stock
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  ),
                 ),
-                                child: Row(
+                child: Row(
                   children: [
-                    // Filtro de categorias
                     Expanded(
                       flex: 2,
                       child: Row(
                         children: [
-                          Icon(Icons.filter_list, color: Colors.blue[600], size: 24),
+                          Icon(Icons.filter_list, color: theme.colorScheme.primary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Obx(() {
@@ -529,93 +516,58 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                               return DropdownButtonFormField<String>(
                                 initialValue: _selectedCategory ?? 'Todas',
                                 decoration: InputDecoration(
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.grey[300]!),
-                                  ),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.grey[300]!),
+                                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(color: Colors.blue[600]!),
+                                    borderSide: BorderSide(color: theme.colorScheme.primary),
                                   ),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                                 ),
                                 items: categories.map((category) => DropdownMenuItem(
                                   value: category,
-                                  child: Text(category),
+                                  child: Text(category, style: theme.textTheme.bodyMedium),
                                 )).toList(),
                                 onChanged: (value) {
-                                  // Usar Future.microtask para evitar conflitos durante o build
-                                  Future.microtask(() {
-                                    setState(() {
-                                      _selectedCategory = value;
-                                    });
-                                  });
+                                  Future.microtask(() => setState(() => _selectedCategory = value));
                                 },
                               );
                             }),
                           ),
-                          const SizedBox(width: 8),
-                          // Botão para limpar filtro
-                          if (_selectedCategory != null && _selectedCategory != 'Todas')
+                          if (_selectedCategory != null && _selectedCategory != 'Todas') ...[
+                            const SizedBox(width: 4),
                             IconButton(
-                              onPressed: () {
-                                // Usar Future.microtask para evitar conflitos durante o build
-                                Future.microtask(() {
-                                  setState(() {
-                                    _selectedCategory = null;
-                                  });
-                                });
-                              },
-                              icon: Icon(Icons.clear, color: Colors.red[600]),
+                              onPressed: () => Future.microtask(() => setState(() => _selectedCategory = null)),
+                              icon: Icon(Icons.clear, size: 18, color: theme.colorScheme.error),
                               tooltip: 'Limpar filtro',
                             ),
+                          ],
                         ],
                       ),
                     ),
-                    
-                    // Separador vertical
                     Container(
                       width: 1,
-                      height: 40,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      color: Colors.grey[300],
+                      height: 32,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
-                    
-                    // Controlo de ordenação por stock
                     Expanded(
                       flex: 1,
                       child: Row(
                         children: [
-                          Icon(Icons.sort, color: Colors.orange[600], size: 24),
-                          const SizedBox(width: 8),
-                          // Switch para ativar/desativar ordenação por stock
+                          Icon(Icons.sort, color: Colors.orange.shade700, size: 20),
+                          const SizedBox(width: 6),
                           Switch(
                             value: _sortByStock,
-                            onChanged: (value) {
-                              // Usar Future.microtask para evitar conflitos durante o build
-                              Future.microtask(() {
-                                setState(() {
-                                  _sortByStock = value;
-                                });
-                              });
-                            },
-                            activeThumbColor: Colors.orange[600],
-                            activeTrackColor: Colors.orange[200],
+                            onChanged: (value) => Future.microtask(() => setState(() => _sortByStock = value)),
                           ),
-                          const SizedBox(width: 8),
-                          // Informação sobre a ordenação (apenas ícone quando ativado)
                           if (_sortByStock)
-                            Icon(
-                              Icons.trending_up,
-                              size: 20,
-                              color: Colors.orange[600],
-                            ),
+                            Icon(Icons.trending_up, size: 18, color: Colors.orange.shade700),
                         ],
                       ),
                     ),
@@ -638,281 +590,178 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey[400],
+                            Icons.inventory_2_outlined,
+                            size: 56,
+                            color: theme.colorScheme.outline,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Text(
                             _selectedCategory != null && _selectedCategory != 'Todas'
-                                ? 'Nenhum produto encontrado na categoria "$_selectedCategory"'
-                                : 'Nenhum produto encontrado',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
+                                ? 'Nenhum produto em "$_selectedCategory"'
+                                : 'Nenhum produto',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                                                     if (_selectedCategory != null && _selectedCategory != 'Todas') ...[
-                             const SizedBox(height: 16),
-                             ElevatedButton.icon(
-                               onPressed: () {
-                                 // Usar Future.microtask para evitar conflitos durante o build
-                                 Future.microtask(() {
-                                   setState(() {
-                                     _selectedCategory = null;
-                                   });
-                                 });
-                               },
-                               icon: const Icon(Icons.clear),
-                               label: const Text('Limpar Filtro'),
-                               style: ElevatedButton.styleFrom(
-                                 backgroundColor: Colors.blue[600],
-                                 foregroundColor: Colors.white,
-                               ),
-                             ),
-                           ],
+                          if (_selectedCategory != null && _selectedCategory != 'Todas') ...[
+                            const SizedBox(height: 12),
+                            TextButton.icon(
+                              onPressed: () => Future.microtask(() => setState(() => _selectedCategory = null)),
+                              icon: Icon(Icons.clear, size: 18, color: theme.colorScheme.primary),
+                              label: const Text('Limpar filtro'),
+                            ),
+                          ],
                         ],
                       ),
                     );
                   }
 
                   return GridView.builder(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 40),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3, // 3 colunas
-                      crossAxisSpacing: 8, // Espaçamento horizontal entre cards
-                      mainAxisSpacing: 8, // Espaçamento vertical entre cards
-                      childAspectRatio: 0.75, // Proporção largura/altura dos cards
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 2.7,
                     ),
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
+                      final stock = product.stock ?? 0;
+                      final stockColor = stock == 0
+                          ? Colors.red.shade700
+                          : (stock <= 5 ? Colors.orange.shade700 : Colors.green.shade700);
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          final cardW = constraints.maxWidth;
+                          final cardH = constraints.maxHeight;
+                          const imageWidthFraction = 0.4;
+                          final imageW = cardW * imageWidthFraction;
+                          return Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Imagem do produto
-                                Expanded(
-                                  flex: 3,
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(16),
-                                      ),
-                                    ),
-                                    child: Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: const BorderRadius.vertical(
-                                            top: Radius.circular(16),
-                                          ),
-                                          child: Image.network(
-                                            getFullImageUrl(product.imageUrl),
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
-                                                color: Colors.grey[100],
-                                                child: const Icon(
-                                                  Icons.image_not_supported,
-                                                  size: 50,
-                                                  color: Colors.grey,
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                        // Indicador de stock no canto superior direito
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: (product.stock ?? 0) > 0 ? Colors.green : Colors.red,
-                                              borderRadius: BorderRadius.circular(12),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.2),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Text(
-                                              (product.stock ?? 0) > 0 ? 'Stock: ${product.stock}' : 'Sem Stock',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        // Overlay gradiente sutil
-                                        Positioned(
-                                          bottom: 0,
-                                          left: 0,
-                                          right: 0,
-                                          child: Container(
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  Colors.transparent,
-                                                  Colors.black.withValues(alpha: 0.1),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                              color: theme.colorScheme.surface,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: theme.colorScheme.outlineVariant),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
-                                // Informações do produto
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: const BorderRadius.vertical(
-                                      bottom: Radius.circular(16),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Nome do produto
-                                      Text(
-                                        product.name,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.grey[800],
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      // Descrição do produto
-                                      Text(
-                                        product.description,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey[500],
-                                          height: 1.2,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Separador visual
-                                      Container(
-                                        height: 1,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.grey[200]!,
-                                              Colors.grey[300]!,
-                                              Colors.grey[200]!,
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Botão Editar (preenche a largura)
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[50],
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.grey[200]!),
-                                        ),
-                                        child: SizedBox(
-                                          width: double.infinity,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [Colors.blue[400]!, Colors.blue[600]!],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              ),
-                                              borderRadius: BorderRadius.circular(10),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.blue.withValues(alpha: 0.3),
-                                                  blurRadius: 6,
-                                                  offset: const Offset(0, 3),
-                                                ),
-                                              ],
-                                            ),
-                                            child: Material(
-                                              color: Colors.transparent,
-                                              borderRadius: BorderRadius.circular(10),
-                                              child: InkWell(
-                                                borderRadius: BorderRadius.circular(10),
-                                                onTap: () => _showEditProductForm(product),
-                                                child: Container(
-                                                  height: 40,
-                                                  alignment: Alignment.center,
-                                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                                  child: Row(
-                                                    mainAxisSize: MainAxisSize.min,
-                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: const [
-                                                      Icon(
-                                                        Icons.edit,
-                                                        size: 18,
-                                                        color: Colors.white,
-                                                      ),
-                                                      SizedBox(width: 8),
-                                                      Text(
-                                                        'Editar',
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 14,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                BoxShadow(
+                                  color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 0),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(6)),
+                                    child: SizedBox(
+                                      width: imageW,
+                                      height: cardH,
+                                      child: Image.network(
+                                        getFullImageUrl(product.imageUrl),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) => Container(
+                                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                          child: Icon(Icons.image_not_supported, size: 22, color: theme.colorScheme.outline),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                product.name,
+                                                style: theme.textTheme.titleSmall?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: theme.colorScheme.onSurface,
+                                                  height: 1.15,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (product.description.isNotEmpty) ...[
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  product.description,
+                                                  style: theme.textTheme.bodySmall?.copyWith(
+                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                    height: 1.15,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: stockColor,
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  boxShadow: [BoxShadow(color: stockColor.withValues(alpha: 0.3), blurRadius: 1, offset: const Offset(0, 0))],
+                                                ),
+                                                child: Text(
+                                                  stock == 0 ? 'Sem stock' : 'Stock: $stock',
+                                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600, height: 1.0),
+                                                ),
+                                              ),
+                                              Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  onTap: () => _showEditProductForm(product),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                                    decoration: BoxDecoration(
+                                                      color: theme.colorScheme.primary,
+                                                      borderRadius: BorderRadius.circular(6),
+                                                      boxShadow: [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: 0.25), blurRadius: 2, offset: const Offset(0, 1))],
+                                                    ),
+                                                    child: const Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Icon(Icons.edit, size: 14, color: Colors.white),
+                                                        SizedBox(width: 4),
+                                                        Text('Editar', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   );

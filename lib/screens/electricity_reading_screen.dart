@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/electricity_controller.dart';
 import '../core/currency_formatter.dart';
+import '../widgets/standard_appbar.dart';
 
 class ElectricityReadingScreen extends StatelessWidget {
   const ElectricityReadingScreen({super.key});
@@ -11,11 +12,9 @@ class ElectricityReadingScreen extends StatelessWidget {
     final ElectricityController controller = Get.put(ElectricityController());
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Contagem de Luz'),
+      appBar: StandardAppBar(
+        title: 'Contagem de Luz',
         backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),

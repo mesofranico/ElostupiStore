@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/bluetooth_print_service.dart';
+import '../widgets/standard_appbar.dart';
 
 class BluetoothPrinterScreen extends StatelessWidget {
   BluetoothPrinterScreen({super.key});
@@ -10,10 +11,9 @@ class BluetoothPrinterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Impressora Bluetooth'),
+      appBar: StandardAppBar(
+        title: 'Impressora Bluetooth',
         backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
