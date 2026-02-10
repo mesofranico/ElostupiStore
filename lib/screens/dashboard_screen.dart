@@ -47,7 +47,7 @@ class DashboardScreen extends StatelessWidget {
                     Expanded(
                       child: _SectionCard(
                         icon: Icons.pending_actions_outlined,
-                        title: 'Pedidos pendentes',
+                        title: 'Pagamentos pendentes',
                         count: cartController.pendingOrders.length,
                         onTap: () => Get.to(() => const PendingOrdersScreen()),
                         child: cartController.pendingOrders.isEmpty

@@ -20,16 +20,20 @@ class StandardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onAppBar = theme.colorScheme.primary == backgroundColor
+        ? Colors.white
+        : theme.colorScheme.onSurface;
     return AppBar(
       title: customTitle ?? Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: onAppBar,
         ),
       ),
       backgroundColor: backgroundColor,
-      foregroundColor: Colors.white,
+      foregroundColor: onAppBar,
       elevation: 0,
       centerTitle: true,
       automaticallyImplyLeading: showBackButton,

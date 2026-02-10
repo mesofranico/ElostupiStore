@@ -31,6 +31,7 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final ConsulentesController controller = Get.find<ConsulentesController>();
 
     return DefaultTabController(
@@ -38,12 +39,13 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
       child: Scaffold(
         appBar: StandardAppBar(
           title: widget.consulente.name,
-          backgroundColor: Colors.green,
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            tabs: [
+          backgroundColor: theme.colorScheme.primary,
+          showBackButton: true,
+          bottom: TabBar(
+            indicatorColor: theme.colorScheme.onPrimary,
+            labelColor: theme.colorScheme.onPrimary,
+            unselectedLabelColor: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+            tabs: const [
               Tab(icon: Icon(Icons.person), text: 'Informações'),
               Tab(icon: Icon(Icons.event), text: 'Histórico'),
             ],
@@ -62,13 +64,13 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                     ],
                   ),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
                       Icon(Icons.delete, size: 20, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      const SizedBox(width: 8),
+                      const Text('Eliminar', style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -84,8 +86,8 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _addNewSession(controller),
-          backgroundColor: Colors.green,
-          child: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: theme.colorScheme.primary,
+          child: Icon(Icons.add, color: theme.colorScheme.onPrimary),
         ),
       ),
     );
@@ -108,34 +110,31 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildHistoryTab(ConsulentesController controller) {
+    final theme = Theme.of(context);
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
       }
 
       final sessions = controller.sessions;
-      
+
       if (sessions.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
+              Icon(Icons.event_busy, size: 56, color: theme.colorScheme.outline),
+              const SizedBox(height: 12),
               Text(
                 'Nenhuma sessão registada',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[600],
-                ),
+                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Toque no botão + para adicionar a primeira sessão',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -143,7 +142,7 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
       }
 
       return ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         itemCount: sessions.length,
         itemBuilder: (context, index) {
           final session = sessions[index];
@@ -154,17 +153,16 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildConsulenteCard() {
+    final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
         ],
       ),
       child: Padding(
@@ -175,12 +173,12 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.green[100],
+                  backgroundColor: theme.colorScheme.primaryContainer,
                   radius: 30,
                   child: Text(
                     widget.consulente.name.isNotEmpty ? widget.consulente.name[0].toUpperCase() : '?',
                     style: TextStyle(
-                      color: Colors.green[700],
+                      color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
                     ),
@@ -193,22 +191,19 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                     children: [
                       Text(
                         widget.consulente.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+                          Icon(Icons.phone, size: 16, color: theme.colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
                             widget.consulente.phone,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
+                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -216,13 +211,13 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.email, size: 16, color: Colors.grey[600]),
+                            Icon(Icons.email, size: 16, color: theme.colorScheme.onSurfaceVariant),
                             const SizedBox(width: 4),
-                            Text(
-                              widget.consulente.email!,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
+                            Expanded(
+                              child: Text(
+                                widget.consulente.email!,
+                                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -236,14 +231,11 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                Icon(Icons.calendar_today, size: 16, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
                 Text(
                   'Registado em ${_formatDate(widget.consulente.createdAt!)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -254,22 +246,17 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildQuickStats(ConsulentesController controller) {
+    final theme = Theme.of(context);
     return FutureBuilder<Map<String, dynamic>>(
       future: _getConsulenteStats(widget.consulente.id!, controller),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            margin: const EdgeInsets.all(16),
+            margin: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
             ),
             child: const Padding(
               padding: EdgeInsets.all(16),
@@ -277,21 +264,19 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             ),
           );
         }
-        
+
         final sessionCount = snapshot.data?['sessionCount'] ?? 0;
         final lastSession = snapshot.data?['lastSession'] as ConsulenteSession?;
 
         return Container(
-          margin: const EdgeInsets.all(16),
+          margin: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
             boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
+              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
             ],
           ),
           child: Padding(
@@ -301,10 +286,9 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
               children: [
                 Text(
                   'Estatísticas',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -333,23 +317,22 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {
+    final theme = Theme.of(context);
     return Column(
       children: [
-        Icon(icon, color: Colors.green[600], size: 24),
+        Icon(icon, color: theme.colorScheme.primary, size: 24),
         const SizedBox(height: 8),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.green[700],
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.primary,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.green[600],
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
         ),
@@ -358,43 +341,32 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildRecentSessions(ConsulentesController controller) {
+    final theme = Theme.of(context);
     final recentSessions = controller.sessions.take(3).toList();
 
     if (recentSessions.isEmpty) {
       return Container(
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+                Icon(Icons.event_busy, size: 48, color: theme.colorScheme.outline),
                 const SizedBox(height: 12),
                 Text(
                   'Nenhuma sessão registada',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Toque no botão + para adicionar a primeira sessão',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -405,16 +377,14 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
         ],
       ),
       child: Padding(
@@ -423,11 +393,10 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sessões Recentes',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[700],
+              'Sessões recentes',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 12),
@@ -439,37 +408,32 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   }
 
   Widget _buildSessionPreview(ConsulenteSession session) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+              Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
               Text(
                 _formatDateTime(session.sessionDate),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             session.description,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -515,142 +479,135 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             statusText = 'Sem registo';
         }
 
+        final theme = Theme.of(context);
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
             boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
+              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
             ],
           ),
-          child: InkWell(
-            onTap: () => _editSession(session),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _formatDateTime(session.sessionDate),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.grey[900],
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              session.description,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              statusIcon,
-                              size: 16,
-                              color: statusColor,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              statusText,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: statusColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      PopupMenuButton<String>(
-                        onSelected: (value) => _handleSessionMenuAction(value, session, controller),
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(Icons.edit, size: 20),
-                                SizedBox(width: 8),
-                                Text('Editar'),
-                              ],
-                            ),
-                          ),
-                        ],
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _editSession(session),
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
+                            color: statusColor,
+                            borderRadius: BorderRadius.circular(2),
                           ),
-                          child: Icon(
-                            Icons.more_vert,
-                            color: Colors.grey[600],
-                            size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _formatDateTime(session.sessionDate),
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                session.description,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(statusIcon, size: 14, color: statusColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusText,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        PopupMenuButton<String>(
+                          onSelected: (value) => _handleSessionMenuAction(value, session, controller),
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Editar'),
+                                ],
+                              ),
+                            ),
+                          ],
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.more_vert,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (session.notes != null && session.notes!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          session.notes!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            height: 1.5,
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  if (session.notes != null && session.notes!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.blue[200]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        session.notes!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.blue[800],
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -701,13 +658,15 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     if (widget.consulente.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Não é possível editar consulente: ID não encontrado'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Não é possível editar consulente: ID não encontrado',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
     }
-    
     Get.to(() => ConsulenteFormScreen(consulente: widget.consulente));
   }
 
@@ -715,13 +674,15 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     if (widget.consulente.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Não é possível editar sessão: ID do consulente não encontrado'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Não é possível editar sessão: ID do consulente não encontrado',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
     }
-    
     Get.to(() => ConsulenteSessionFormScreen(
       consulenteId: widget.consulente.id!,
       session: session,
@@ -732,20 +693,23 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     if (widget.consulente.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Não é possível adicionar sessão: ID do consulente não encontrado'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Não é possível adicionar sessão: ID do consulente não encontrado',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
     }
-    
     Get.to(() => ConsulenteSessionFormScreen(consulenteId: widget.consulente.id!));
   }
 
   void _showDeleteDialog(ConsulentesController controller) {
+    final theme = Theme.of(context);
     Get.dialog(
       AlertDialog(
-        title: const Text('Eliminar Consulente'),
+        title: const Text('Eliminar consulente'),
         content: Text('Tem a certeza que deseja eliminar ${widget.consulente.name}?\n\nEsta ação não pode ser desfeita.'),
         actions: [
           TextButton(
@@ -757,12 +721,15 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
               Get.back();
               final success = await controller.deleteConsulente(widget.consulente.id!);
               if (success) {
-                Get.back(); // Voltar para a lista
+                Get.back();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Consulente eliminado com sucesso'),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: Text(
+                        'Consulente eliminado com sucesso',
+                        style: TextStyle(color: theme.colorScheme.onPrimary),
+                      ),
+                      backgroundColor: theme.colorScheme.primary,
                     ),
                   );
                 }
@@ -770,14 +737,17 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(controller.errorMessage.value),
-                      backgroundColor: Colors.red,
+                      content: Text(
+                        controller.errorMessage.value,
+                        style: TextStyle(color: theme.colorScheme.onError),
+                      ),
+                      backgroundColor: theme.colorScheme.error,
                     ),
                   );
                 }
               }
             },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+            child: Text('Eliminar', style: TextStyle(color: theme.colorScheme.error)),
           ),
         ],
       ),

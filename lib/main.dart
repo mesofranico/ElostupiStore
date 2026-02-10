@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'core/storage_init.dart';
 import 'core/locale_config.dart';
@@ -47,6 +48,15 @@ class MyApp extends StatelessWidget {
       title: 'ElosTupi',
       theme: appController.lightTheme,
       locale: LocaleConfig.defaultLocale,
+      supportedLocales: const [
+        Locale('pt', 'PT'),
+        Locale('en'),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const MainNavigationScreen(),
       debugShowCheckedModeBanner: false,
       defaultTransition: Transition.noTransition,

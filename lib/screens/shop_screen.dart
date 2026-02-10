@@ -267,43 +267,32 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildTabBar() {
+    final theme = Theme.of(context);
     return Obx(() {
       final categories = productController.categories;
-      
       if (categories.length <= 1) {
-        return const SizedBox.shrink(); // Não mostrar tabs se só há "Todas"
+        return const SizedBox.shrink();
       }
-      
       return Container(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         child: SafeArea(
           child: SizedBox(
-            height: 60,
+            height: 56,
             child: Row(
               children: [
-                // Botão de scroll para a esquerda
                 if (categories.length > 4)
                   Container(
                     width: 40,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.white, Colors.white.withValues(alpha: 0.8)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
+                    color: theme.colorScheme.surface,
                     child: IconButton(
-                      icon: const Icon(Icons.chevron_left, color: Colors.blue),
+                      icon: Icon(Icons.chevron_left, color: theme.colorScheme.primary),
                       onPressed: () {
-                        // Scroll para a esquerda
                         _scrollController.jumpTo(
                           (_scrollController.offset - 150).clamp(0.0, _scrollController.position.maxScrollExtent),
                         );
                       },
                     ),
                   ),
-                
-                // Lista de tabs com scroll horizontal
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
@@ -313,35 +302,29 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                         final index = entry.key;
                         final category = entry.value;
                         final isSelected = productController.selectedCategory.value == category;
-                        
                         return Container(
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           child: GestureDetector(
                             onTap: () {
                               productController.setCategory(category);
-                              
-                              // Verificar se o índice é válido antes de definir
                               if (index >= 0 && index < _tabController.length) {
                                 _tabController.index = index;
-                                // Scroll para centralizar a tab selecionada
                                 _scrollToSelectedTab(index);
                               }
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.blue : Colors.transparent,
+                                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected ? Colors.blue : Colors.grey[300]!,
-                                  width: 1,
+                                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
                                 ),
                               ),
                               child: Text(
                                 category,
-                                style: TextStyle(
-                                  color: isSelected ? Colors.white : Colors.grey[700],
-                                  fontSize: 14,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                 ),
                               ),
@@ -352,22 +335,13 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                
-                // Botão de scroll para a direita
                 if (categories.length > 4)
                   Container(
                     width: 40,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.white.withValues(alpha: 0.8), Colors.white],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
+                    color: theme.colorScheme.surface,
                     child: IconButton(
-                      icon: const Icon(Icons.chevron_right, color: Colors.blue),
+                      icon: Icon(Icons.chevron_right, color: theme.colorScheme.primary),
                       onPressed: () {
-                        // Scroll para a direita
                         _scrollController.jumpTo(
                           (_scrollController.offset + 150).clamp(0.0, _scrollController.position.maxScrollExtent),
                         );
@@ -398,42 +372,35 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: StandardAppBar(
-        title: 'ElosTupi - Gestão',
-        backgroundColor: Colors.blue,
-        customTitle: Row(
-          children: [
-            const Text(
-              'ElosTupi - Gestão',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Obx(() {
-              if (productController.isOfflineMode) {
-                return Container(
-                  margin: const EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        title: 'Loja',
+        backgroundColor: theme.colorScheme.primary,
+        actions: [
+          Obx(() {
+            if (productController.isOfflineMode) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.orange.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     'OFFLINE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onPrimary,
                     ),
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ],
-        ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: _buildTabBar(),

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/consulente_controller.dart';
 import '../models/consulente_session.dart';
 import '../models/consulente.dart';
+import '../widgets/standard_appbar.dart';
 
 class ConsulenteSessionFormScreen extends StatefulWidget {
   final int consulenteId;
@@ -36,9 +37,12 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       controller = Get.find<ConsulentesController>();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao inicializar formulário de sessão'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            'Erro ao inicializar formulário de sessão',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       Get.back();
@@ -73,17 +77,21 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       );
     }
     
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Editar Sessão' : 'Nova Sessão'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+      appBar: StandardAppBar(
+        title: isEditing ? 'Editar sessão' : 'Nova sessão',
+        backgroundColor: theme.colorScheme.primary,
+        showBackButton: true,
         actions: [
           TextButton(
             onPressed: _saveSession,
-            child: const Text(
+            child: Text(
               'Guardar',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -109,21 +117,22 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green[200]!),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.green[100],
+            backgroundColor: theme.colorScheme.primaryContainer,
             radius: 30,
             child: Icon(
               isEditing ? Icons.edit_calendar : Icons.event,
-              color: Colors.green[700],
+              color: theme.colorScheme.onPrimaryContainer,
               size: 30,
             ),
           ),
@@ -133,21 +142,19 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isEditing ? 'Editar Sessão' : 'Nova Sessão',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
+                  isEditing ? 'Editar sessão' : 'Nova sessão',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isEditing 
+                  isEditing
                       ? 'Atualize os detalhes da sessão'
                       : 'Registe uma nova sessão de consulta (hora padrão: 20:00)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.green[600],
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -169,42 +176,42 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildDateField() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: _selectDate,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[50],
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, color: Colors.green[600]),
+            Icon(Icons.calendar_today, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Data da Sessão',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                    'Data da sessão',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+            Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -212,42 +219,42 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildTimeField() {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: _selectTime,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.grey[50],
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(10),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         ),
         child: Row(
           children: [
-            Icon(Icons.access_time, color: Colors.green[600]),
+            Icon(Icons.access_time, color: theme.colorScheme.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Hora da Sessão',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                    'Hora da sessão',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _selectedTime!.format(context),
-                    style: const TextStyle(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+            Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -255,16 +262,17 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildNotesField() {
+    final theme = Theme.of(context);
     return TextFormField(
       controller: _notesController,
       decoration: InputDecoration(
         labelText: 'Notas adicionais',
         prefixIcon: const Icon(Icons.note),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       ),
       maxLines: 4,
       textCapitalization: TextCapitalization.sentences,
@@ -272,34 +280,31 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildSaveButton() {
+    final theme = Theme.of(context);
     return Obx(() {
       return SizedBox(
         width: double.infinity,
         height: 50,
-        child: ElevatedButton(
+        child: FilledButton(
           onPressed: controller!.isLoading.value ? null : _saveSession,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
+          style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            elevation: 2,
           ),
           child: controller!.isLoading.value
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
                   ),
                 )
               : Text(
-                  isEditing ? 'Atualizar Sessão' : 'Criar Sessão',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  isEditing ? 'Atualizar sessão' : 'Criar sessão',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
         ),
@@ -367,8 +372,11 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Sessão atualizada com sucesso' : 'Sessão criada com sucesso'),
-            backgroundColor: Colors.green,
+            content: Text(
+              isEditing ? 'Sessão atualizada com sucesso' : 'Sessão criada com sucesso',
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -376,8 +384,11 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(controller!.errorMessage.value),
-            backgroundColor: Colors.red,
+            content: Text(
+              controller!.errorMessage.value,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -385,24 +396,24 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   }
 
   Widget _buildAcompanhantesField() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Acompanhantes',
-          style: TextStyle(
-            fontSize: 16,
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
+            color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
           child: Column(
             children: [
@@ -411,9 +422,8 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                 children: [
                   Text(
                     'Selecionar consulentes acompanhantes',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   TextButton.icon(
@@ -421,7 +431,7 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Adicionar'),
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.green[600],
+                      foregroundColor: theme.colorScheme.primary,
                     ),
                   ),
                 ],
@@ -444,8 +454,8 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                           _selectedAcompanhantes.remove(id);
                         });
                       },
-                      backgroundColor: Colors.green[100],
-                      deleteIconColor: Colors.green[700],
+                      backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                      deleteIconColor: theme.colorScheme.onPrimaryContainer,
                     );
                   }).toList(),
                 ),
@@ -464,9 +474,12 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
 
     if (availableConsulentes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não há consulentes disponíveis para adicionar como acompanhantes'),
-          backgroundColor: Colors.blue,
+        SnackBar(
+          content: Text(
+            'Não há consulentes disponíveis para adicionar como acompanhantes',
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
       return;
@@ -536,43 +549,42 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
       ),
       child: Column(
         children: [
-          // Handle do BottomSheet
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: theme.colorScheme.outlineVariant,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Cabeçalho
           Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
                 Icon(
                   Icons.group_add,
-                  color: Colors.green[600],
+                  color: theme.colorScheme.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Selecionar Acompanhantes',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                Text(
+                  'Selecionar acompanhantes',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const Spacer(),
@@ -583,7 +595,6 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
               ],
             ),
           ),
-          // Campo de pesquisa
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TextField(
@@ -592,14 +603,15 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                 hintText: 'Pesquisar por nome...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
             ),
           ),
           const SizedBox(height: 16),
-          // Lista de consulentes
           Expanded(
             child: _filteredConsulentes.isEmpty
                 ? Center(
@@ -609,14 +621,13 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                         Icon(
                           Icons.search_off,
                           size: 48,
-                          color: Colors.grey[400],
+                          color: theme.colorScheme.outline,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Nenhum consulente encontrado',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -630,12 +641,12 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[200]!),
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withValues(alpha: 0.1),
+                              color: theme.colorScheme.shadow.withValues(alpha: 0.06),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -644,22 +655,22 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
-                            backgroundColor: Colors.green[100],
+                            backgroundColor: theme.colorScheme.primaryContainer,
                             child: Text(
                               consulente.name.isNotEmpty ? consulente.name[0].toUpperCase() : '?',
                               style: TextStyle(
-                                color: Colors.green[700],
+                                color: theme.colorScheme.onPrimaryContainer,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                           title: Text(
                             consulente.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           trailing: Icon(
                             Icons.add_circle_outline,
-                            color: Colors.green[600],
+                            color: theme.colorScheme.primary,
                           ),
                           onTap: () {
                             widget.onConsulenteSelected(consulente);

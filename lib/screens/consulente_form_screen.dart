@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/consulente_controller.dart';
 import '../models/consulente.dart';
+import '../widgets/standard_appbar.dart';
 
 class ConsulenteFormScreen extends StatefulWidget {
   final Consulente? consulente;
@@ -43,17 +44,21 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Editar Consulente' : 'Novo Consulente'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+      appBar: StandardAppBar(
+        title: isEditing ? 'Editar consulente' : 'Novo consulente',
+        backgroundColor: theme.colorScheme.primary,
+        showBackButton: true,
         actions: [
           TextButton(
             onPressed: _saveConsulente,
-            child: const Text(
+            child: Text(
               'Guardar',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -79,21 +84,22 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.green[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green[200]!),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.green[100],
+            backgroundColor: theme.colorScheme.primaryContainer,
             radius: 30,
             child: Icon(
               isEditing ? Icons.edit : Icons.person_add,
-              color: Colors.green[700],
+              color: theme.colorScheme.onPrimaryContainer,
               size: 30,
             ),
           ),
@@ -103,21 +109,19 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isEditing ? 'Editar Consulente' : 'Novo Consulente',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
+                  isEditing ? 'Editar consulente' : 'Novo consulente',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isEditing 
+                  isEditing
                       ? 'Atualize as informações do consulente'
                       : 'Preencha os dados do novo consulente',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.green[600],
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -129,6 +133,7 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
   }
 
   Widget _buildNameField() {
+    final theme = Theme.of(context);
     return TextFormField(
       controller: _nameController,
       decoration: InputDecoration(
@@ -136,10 +141,10 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
         hintText: 'Nome completo do consulente',
         prefixIcon: const Icon(Icons.person),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -152,6 +157,7 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
   }
 
   Widget _buildPhoneField() {
+    final theme = Theme.of(context);
     return TextFormField(
       controller: _phoneController,
       decoration: InputDecoration(
@@ -159,10 +165,10 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
         hintText: '(351) 999999999',
         prefixIcon: const Icon(Icons.phone),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       ),
       keyboardType: TextInputType.phone,
       validator: (value) {
@@ -175,6 +181,7 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
   }
 
   Widget _buildEmailField() {
+    final theme = Theme.of(context);
     return TextFormField(
       controller: _emailController,
       decoration: InputDecoration(
@@ -182,10 +189,10 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
         hintText: 'email@exemplo.com',
         prefixIcon: const Icon(Icons.email),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       ),
       keyboardType: TextInputType.emailAddress,
       validator: (value) {
@@ -200,34 +207,31 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
   }
 
   Widget _buildSaveButton() {
+    final theme = Theme.of(context);
     return Obx(() {
       return SizedBox(
         width: double.infinity,
         height: 50,
-        child: ElevatedButton(
+        child: FilledButton(
           onPressed: controller.isLoading.value ? null : _saveConsulente,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
+          style: FilledButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            elevation: 2,
           ),
           child: controller.isLoading.value
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
                   ),
                 )
               : Text(
-                  isEditing ? 'Atualizar Consulente' : 'Criar Consulente',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  isEditing ? 'Atualizar consulente' : 'Criar consulente',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
         ),
@@ -260,8 +264,11 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Consulente atualizado com sucesso' : 'Consulente criado com sucesso'),
-            backgroundColor: Colors.green,
+            content: Text(
+              isEditing ? 'Consulente atualizado com sucesso' : 'Consulente criado com sucesso',
+              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -269,8 +276,11 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(controller.errorMessage.value),
-            backgroundColor: Colors.red,
+            content: Text(
+              controller.errorMessage.value,
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

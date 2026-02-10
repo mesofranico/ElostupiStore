@@ -70,31 +70,55 @@ class AttendanceController extends GetxController {
     }
   }
 
-  Future<bool> markAttendance(int consulenteId, String status, {String? notes}) async {
-    try {
-      isLoading.value = true;
-      errorMessage.value = '';
-      
-      final record = AttendanceRecord(
+  void _recomputeStatsFromRecords() {
+    int presentes = 0;
+    int faltas = 0;
+    int pendentes = 0;
+    for (final r in attendanceRecords) {
+      if (r.status == 'present') presentes++;
+      else if (r.status == 'absent') faltas++;
+      else pendentes++;
+    }
+    attendanceStats.value = {
+      'presentes': presentes,
+      'faltas': faltas,
+      'pendentes': pendentes,
+      'total_records': attendanceRecords.length,
+    };
+  }
+
+  void markAttendance(int consulenteId, String status, {String? notes}) {
+    errorMessage.value = '';
+    final previousRecords = List<AttendanceRecord>.from(attendanceRecords);
+    final previousStats = Map<String, int>.from(attendanceStats);
+
+    final newList = List<AttendanceRecord>.from(attendanceRecords);
+    final existingIndex = newList.indexWhere((r) => r.consulenteId == consulenteId);
+    if (existingIndex >= 0) {
+      newList[existingIndex] = newList[existingIndex].copyWith(status: status, notes: notes);
+    } else {
+      newList.add(AttendanceRecord(
         consulenteId: consulenteId,
         attendanceDate: selectedDate.value,
         status: status,
         notes: notes,
-      );
-      
-      await AttendanceService.createOrUpdateAttendance(record);
-      
-      // Recarregar todos os dados da base de dados em vez de atualizar localmente
-      await loadAttendanceForDate(selectedDate.value);
-      
-      return true;
-    } catch (e) {
-      errorMessage.value = 'Erro ao marcar presença: $e';
-      debugPrint('Erro ao marcar presença: $e');
-      return false;
-    } finally {
-      isLoading.value = false;
+      ));
     }
+    attendanceRecords.assignAll(newList);
+    _recomputeStatsFromRecords();
+
+    final record = AttendanceRecord(
+      consulenteId: consulenteId,
+      attendanceDate: selectedDate.value,
+      status: status,
+      notes: notes,
+    );
+    AttendanceService.createOrUpdateAttendance(record).then((_) {}).catchError((e) {
+      debugPrint('Erro ao marcar presença: $e');
+      attendanceRecords.assignAll(previousRecords);
+      attendanceStats.assignAll(previousStats);
+      Get.snackbar('Erro', 'Não foi possível atualizar a presença. Tente novamente.');
+    });
   }
 
   Future<bool> updateAttendanceStatus(int recordId, String newStatus, {String? notes}) async {

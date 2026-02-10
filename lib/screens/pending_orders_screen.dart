@@ -31,7 +31,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: StandardAppBar(
-        title: 'Pedidos pendentes',
+        title: 'Pagamentos pendentes',
         backgroundColor: theme.colorScheme.primary,
         showBackButton: true,
       ),
@@ -223,6 +223,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                                         onPressed: () => Navigator.of(ctx).pop(true),
                                         style: FilledButton.styleFrom(
                                           backgroundColor: t.colorScheme.error,
+                                          foregroundColor: t.colorScheme.onError,
                                           minimumSize: const Size(0, 40),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                         ),
