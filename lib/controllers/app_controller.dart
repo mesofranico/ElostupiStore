@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../core/app_style.dart';
 
 class AppController extends GetxController {
   final GetStorage _storage = GetStorage();
-  
+
   final RxBool showResalePrice = false.obs;
   final RxBool keepScreenOn = false.obs;
 
@@ -27,14 +28,14 @@ class AppController extends GetxController {
     try {
       showResalePrice.value = _storage.read('show_resale_price') ?? false;
       keepScreenOn.value = _storage.read('keep_screen_on') ?? false;
-      
+
       // Aplicar configuração de wake lock ao carregar
       if (keepScreenOn.value) {
         WakelockPlus.enable();
       } else {
         WakelockPlus.disable();
       }
-      
+
       if (kDebugMode) {
         print('Configurações carregadas:');
         print('- Preço de revenda: ${showResalePrice.value}');
@@ -50,17 +51,17 @@ class AppController extends GetxController {
   Future<void> toggleResalePrice() async {
     showResalePrice.value = !showResalePrice.value;
     await _storage.write('show_resale_price', showResalePrice.value);
-    
+
     if (kDebugMode) {
       print('Preço de revenda alterado para: ${showResalePrice.value}');
     }
-    
+
     // Feedback visual
     Get.snackbar(
       'Configuração Atualizada',
-      showResalePrice.value 
-        ? 'Preços de revenda ativados' 
-        : 'Preços de revenda desativados',
+      showResalePrice.value
+          ? 'Preços de revenda ativados'
+          : 'Preços de revenda desativados',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.green.withValues(alpha: 0.8),
       colorText: Colors.white,
@@ -73,23 +74,23 @@ class AppController extends GetxController {
   Future<void> toggleKeepScreenOn() async {
     keepScreenOn.value = !keepScreenOn.value;
     await _storage.write('keep_screen_on', keepScreenOn.value);
-    
+
     if (keepScreenOn.value) {
       WakelockPlus.enable();
     } else {
       WakelockPlus.disable();
     }
-    
+
     if (kDebugMode) {
       print('Manter tela ligada alterado para: ${keepScreenOn.value}');
     }
-    
+
     // Feedback visual
     Get.snackbar(
       'Configuração Atualizada',
-      keepScreenOn.value 
-        ? 'Tela manterá ligada' 
-        : 'Tela pode apagar normalmente',
+      keepScreenOn.value
+          ? 'Tela manterá ligada'
+          : 'Tela pode apagar normalmente',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.orange.withValues(alpha: 0.8),
       colorText: Colors.white,
@@ -130,16 +131,16 @@ class AppController extends GetxController {
     try {
       showResalePrice.value = false;
       keepScreenOn.value = false;
-      
+
       await _storage.write('show_resale_price', false);
       await _storage.write('keep_screen_on', false);
-      
+
       WakelockPlus.disable();
-      
+
       if (kDebugMode) {
         print('Configurações resetadas para valores padrão');
       }
-      
+
       Get.snackbar(
         'Configurações Resetadas',
         'Todas as configurações foram restauradas para os valores padrão',
@@ -159,26 +160,60 @@ class AppController extends GetxController {
 
   ThemeData get lightTheme {
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppStyle.primary,
+        surface: AppStyle.background,
+      ),
       useMaterial3: true,
+      scaffoldBackgroundColor: AppStyle.background,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.blue,
+        backgroundColor: AppStyle.primary,
         foregroundColor: Colors.white,
-        elevation: 2,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
       cardTheme: CardThemeData(
-        elevation: 4,
+        elevation: 0,
+        color: AppStyle.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          backgroundColor: AppStyle.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppStyle.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.all(16),
       ),
     );
   }
-} 
+}

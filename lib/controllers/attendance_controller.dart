@@ -10,12 +10,12 @@ class AttendanceController extends GetxController {
   final RxList<AttendanceRecord> attendanceRecords = <AttendanceRecord>[].obs;
   final RxList<Consulente> consulentesWithoutAttendance = <Consulente>[].obs;
   final RxList<Consulente> allConsulentes = <Consulente>[].obs;
-  final RxList<ConsulenteSession> sessionsWithAcompanhantes = <ConsulenteSession>[].obs;
+  final RxList<ConsulenteSession> sessionsWithAcompanhantes =
+      <ConsulenteSession>[].obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final RxMap<String, int> attendanceStats = <String, int>{}.obs;
-
 
   Future<void> loadAttendanceForDate(DateTime date) async {
     try {
@@ -23,7 +23,9 @@ class AttendanceController extends GetxController {
       errorMessage.value = '';
 
       debugPrint('=== DEBUG LOAD ATTENDANCE ===');
-      debugPrint('Carregando dados para: ${date.toIso8601String().split('T')[0]}');
+      debugPrint(
+        'Carregando dados para: ${date.toIso8601String().split('T')[0]}',
+      );
 
       // Limpar dados antigos antes de carregar novos
       attendanceRecords.clear();
@@ -31,37 +33,42 @@ class AttendanceController extends GetxController {
       allConsulentes.clear();
       sessionsWithAcompanhantes.clear();
       attendanceStats.clear();
-      
+
       selectedDate.value = date;
-      
+
       // Carregar presenças do dia
       final records = await AttendanceService.getAttendanceByDate(date);
       attendanceRecords.value = records;
       debugPrint('Registos de presença carregados: ${records.length}');
-      
+
       // Carregar sessões com acompanhantes do dia
-      final sessions = await AttendanceService.getSessionsWithAcompanhantesByDate(date);
+      final sessions =
+          await AttendanceService.getSessionsWithAcompanhantesByDate(date);
       sessionsWithAcompanhantes.value = sessions;
       debugPrint('Sessões com acompanhantes carregadas: ${sessions.length}');
       for (final session in sessions) {
-        debugPrint('Sessão ${session.id}: Consulente ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}');
+        debugPrint(
+          'Sessão ${session.id}: Consulente ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}',
+        );
       }
-      
+
       // Carregar estatísticas
       final stats = await AttendanceService.getAttendanceStats(date);
       attendanceStats.value = stats;
-      
+
       // Carregar todos os consulentes
       final allConsulentesList = await AttendanceService.getAllConsulentes();
       allConsulentes.value = allConsulentesList;
-      debugPrint('Todos os consulentes carregados: ${allConsulentesList.length}');
-      
+      debugPrint(
+        'Todos os consulentes carregados: ${allConsulentesList.length}',
+      );
+
       // Carregar consulentes sem presença registada
-      final consulentes = await AttendanceService.getConsulentesWithoutAttendance(date);
+      final consulentes =
+          await AttendanceService.getConsulentesWithoutAttendance(date);
       consulentesWithoutAttendance.value = consulentes;
-      
+
       debugPrint('=== FIM DEBUG LOAD ATTENDANCE ===');
-      
     } catch (e) {
       errorMessage.value = 'Erro ao carregar presenças: $e';
       debugPrint('Erro ao carregar presenças: $e');
@@ -75,9 +82,13 @@ class AttendanceController extends GetxController {
     int faltas = 0;
     int pendentes = 0;
     for (final r in attendanceRecords) {
-      if (r.status == 'present') presentes++;
-      else if (r.status == 'absent') faltas++;
-      else pendentes++;
+      if (r.status == 'present') {
+        presentes++;
+      } else if (r.status == 'absent') {
+        faltas++;
+      } else {
+        pendentes++;
+      }
     }
     attendanceStats.value = {
       'presentes': presentes,
@@ -93,16 +104,23 @@ class AttendanceController extends GetxController {
     final previousStats = Map<String, int>.from(attendanceStats);
 
     final newList = List<AttendanceRecord>.from(attendanceRecords);
-    final existingIndex = newList.indexWhere((r) => r.consulenteId == consulenteId);
+    final existingIndex = newList.indexWhere(
+      (r) => r.consulenteId == consulenteId,
+    );
     if (existingIndex >= 0) {
-      newList[existingIndex] = newList[existingIndex].copyWith(status: status, notes: notes);
-    } else {
-      newList.add(AttendanceRecord(
-        consulenteId: consulenteId,
-        attendanceDate: selectedDate.value,
+      newList[existingIndex] = newList[existingIndex].copyWith(
         status: status,
         notes: notes,
-      ));
+      );
+    } else {
+      newList.add(
+        AttendanceRecord(
+          consulenteId: consulenteId,
+          attendanceDate: selectedDate.value,
+          status: status,
+          notes: notes,
+        ),
+      );
     }
     attendanceRecords.assignAll(newList);
     _recomputeStatsFromRecords();
@@ -113,27 +131,36 @@ class AttendanceController extends GetxController {
       status: status,
       notes: notes,
     );
-    AttendanceService.createOrUpdateAttendance(record).then((_) {}).catchError((e) {
+    AttendanceService.createOrUpdateAttendance(record).then((_) {}).catchError((
+      e,
+    ) {
       debugPrint('Erro ao marcar presença: $e');
       attendanceRecords.assignAll(previousRecords);
       attendanceStats.assignAll(previousStats);
-      Get.snackbar('Erro', 'Não foi possível atualizar a presença. Tente novamente.');
+      Get.snackbar(
+        'Erro',
+        'Não foi possível atualizar a presença. Tente novamente.',
+      );
     });
   }
 
-  Future<bool> updateAttendanceStatus(int recordId, String newStatus, {String? notes}) async {
+  Future<bool> updateAttendanceStatus(
+    int recordId,
+    String newStatus, {
+    String? notes,
+  }) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final record = attendanceRecords.firstWhere((r) => r.id == recordId);
       final updatedRecord = record.copyWith(status: newStatus, notes: notes);
-      
+
       await AttendanceService.updateAttendance(recordId, updatedRecord);
-      
+
       // Recarregar todos os dados da base de dados
       await loadAttendanceForDate(selectedDate.value);
-      
+
       return true;
     } catch (e) {
       errorMessage.value = 'Erro ao atualizar presença: $e';
@@ -148,20 +175,20 @@ class AttendanceController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       // Buscar o registo de presença para obter informações
       final record = attendanceRecords.firstWhere((r) => r.id == recordId);
-      
+
       debugPrint('=== DEBUG DELETE ATTENDANCE ===');
       debugPrint('Eliminando marcação ID: $recordId');
       debugPrint('Consulente ID: ${record.consulenteId}');
       debugPrint('Data: ${record.attendanceDate}');
-      
+
       // Eliminar a marcação de presença e sessões correspondentes (API faz tudo)
       await AttendanceService.deleteAttendance(recordId);
-      
+
       debugPrint('Marcação e sessões eliminadas com sucesso via API');
-      
+
       // Notificar o ConsulentesController para atualizar os dados
       try {
         final consulentesController = Get.find<ConsulentesController>();
@@ -173,12 +200,12 @@ class AttendanceController extends GetxController {
       } catch (e) {
         debugPrint('Erro ao notificar ConsulentesController: $e');
       }
-      
+
       // Recarregar todos os dados da base de dados
       await loadAttendanceForDate(selectedDate.value);
-      
+
       debugPrint('=== FIM DEBUG DELETE ATTENDANCE ===');
-      
+
       return true;
     } catch (e) {
       errorMessage.value = 'Erro ao deletar presença: $e';
@@ -193,12 +220,14 @@ class AttendanceController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      await AttendanceService.createBulkAttendance(selectedDate.value, consulenteIds);
-      
+
+      await AttendanceService.createBulkAttendance(
+        selectedDate.value,
+        consulenteIds,
+      );
+
       // Recarregar todos os dados da base de dados
       await loadAttendanceForDate(selectedDate.value);
-      
     } catch (e) {
       errorMessage.value = 'Erro ao criar presenças em massa: $e';
       debugPrint('Erro ao criar presenças em massa: $e');
@@ -239,7 +268,9 @@ class AttendanceController extends GetxController {
 
   AttendanceRecord? getRecordForConsulente(int consulenteId) {
     try {
-      return attendanceRecords.firstWhere((r) => r.consulenteId == consulenteId);
+      return attendanceRecords.firstWhere(
+        (r) => r.consulenteId == consulenteId,
+      );
     } catch (e) {
       return null;
     }
@@ -257,5 +288,4 @@ class AttendanceController extends GetxController {
   void clearError() {
     errorMessage.value = '';
   }
-
 }

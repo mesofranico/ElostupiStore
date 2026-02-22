@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../models/payment.dart';
 import '../services/payment_service.dart';
+import '../core/utils/ui_utils.dart';
 import 'member_controller.dart';
 
 class PaymentController extends GetxController {
@@ -8,7 +9,9 @@ class PaymentController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final Rx<Payment?> selectedPayment = Rx<Payment?>(null);
-  final Rx<DateTime> selectedStartDate = DateTime.now().subtract(const Duration(days: 30)).obs;
+  final Rx<DateTime> selectedStartDate = DateTime.now()
+      .subtract(const Duration(days: 30))
+      .obs;
   final Rx<DateTime> selectedEndDate = DateTime.now().obs;
 
   @override
@@ -22,11 +25,13 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final List<Payment> loadedPayments = await PaymentService.getAllPayments();
+
+      final List<Payment> loadedPayments =
+          await PaymentService.getAllPayments();
       payments.assignAll(loadedPayments);
     } catch (e) {
       errorMessage.value = e.toString();
+      UiUtils.showError('Erro ao carregar pagamentos: $e');
     } finally {
       isLoading.value = false;
     }
@@ -37,8 +42,9 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final List<Payment> memberPayments = await PaymentService.getPaymentsByMember(memberId);
+
+      final List<Payment> memberPayments =
+          await PaymentService.getPaymentsByMember(memberId);
       payments.assignAll(memberPayments);
     } catch (e) {
       errorMessage.value = e.toString();
@@ -48,12 +54,16 @@ class PaymentController extends GetxController {
   }
 
   // Carregar pagamentos por período
-  Future<void> loadPaymentsByPeriod(DateTime startDate, DateTime endDate) async {
+  Future<void> loadPaymentsByPeriod(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final List<Payment> periodPayments = await PaymentService.getPaymentsByPeriod(startDate, endDate);
+
+      final List<Payment> periodPayments =
+          await PaymentService.getPaymentsByPeriod(startDate, endDate);
       payments.assignAll(periodPayments);
     } catch (e) {
       errorMessage.value = e.toString();
@@ -67,8 +77,9 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final List<Payment> statusPayments = await PaymentService.getPaymentsByStatus(status);
+
+      final List<Payment> statusPayments =
+          await PaymentService.getPaymentsByStatus(status);
       payments.assignAll(statusPayments);
     } catch (e) {
       errorMessage.value = e.toString();
@@ -82,12 +93,16 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final Payment createdPayment = await PaymentService.createPayment(payment);
+
+      final Payment createdPayment = await PaymentService.createPayment(
+        payment,
+      );
       payments.add(createdPayment);
+      UiUtils.showSuccess('Pagamento registado com sucesso!');
       return true;
     } catch (e) {
       errorMessage.value = e.toString();
+      UiUtils.showError('Erro ao registar pagamento: $e');
       return false;
     } finally {
       isLoading.value = false;
@@ -99,8 +114,10 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
-      final Payment updatedPayment = await PaymentService.updatePayment(payment);
+
+      final Payment updatedPayment = await PaymentService.updatePayment(
+        payment,
+      );
       final int index = payments.indexWhere((p) => p.id == payment.id);
       if (index != -1) {
         payments[index] = updatedPayment;
@@ -119,7 +136,7 @@ class PaymentController extends GetxController {
     try {
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       await PaymentService.deletePayment(id);
       payments.removeWhere((payment) => payment.id == id);
       return true;
@@ -150,41 +167,51 @@ class PaymentController extends GetxController {
   // Obter relatório de pagamentos
   Future<Map<String, dynamic>?> getPaymentReport() async {
     try {
+      UiUtils.showLoadingOverlay(message: 'Gerando relatório...');
       isLoading.value = true;
       errorMessage.value = '';
-      
+
       final report = await PaymentService.getPaymentReport(
-        selectedStartDate.value, 
-        selectedEndDate.value
+        selectedStartDate.value,
+        selectedEndDate.value,
       );
       return report;
     } catch (e) {
       errorMessage.value = e.toString();
+      UiUtils.showError('Erro ao gerar relatório: $e');
       return null;
     } finally {
       isLoading.value = false;
+      UiUtils.hideLoading();
     }
   }
 
   // Filtrar pagamentos por período
   List<Payment> filterPaymentsByPeriod(DateTime startDate, DateTime endDate) {
-    return payments.where((payment) => 
-      payment.paymentDate.isAfter(startDate) && 
-      payment.paymentDate.isBefore(endDate)
-    ).toList();
+    return payments
+        .where(
+          (payment) =>
+              payment.paymentDate.isAfter(startDate) &&
+              payment.paymentDate.isBefore(endDate),
+        )
+        .toList();
   }
 
   // Obter estatísticas de pagamentos
   Map<String, dynamic> getPaymentStatistics() {
     final total = payments.length;
-    final totalAmount = payments.fold<double>(0, (sum, payment) => sum + payment.amount);
+    final totalAmount = payments.fold<double>(
+      0,
+      (sum, payment) => sum + payment.amount,
+    );
     final completed = payments.where((p) => p.status == 'completed').length;
     final failed = payments.where((p) => p.status == 'failed').length;
 
     // Agrupar por mês
     final Map<String, double> byMonth = {};
     for (final payment in payments) {
-      final monthKey = '${payment.paymentDate.year}-${payment.paymentDate.month.toString().padLeft(2, '0')}';
+      final monthKey =
+          '${payment.paymentDate.year}-${payment.paymentDate.month.toString().padLeft(2, '0')}';
       byMonth[monthKey] = (byMonth[monthKey] ?? 0) + payment.amount;
     }
 
@@ -202,14 +229,15 @@ class PaymentController extends GetxController {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
-    
-    return payments.where((payment) => 
-      payment.paymentDate.isAfter(startOfMonth) && 
-      payment.paymentDate.isBefore(endOfMonth)
-    ).toList();
+
+    return payments
+        .where(
+          (payment) =>
+              payment.paymentDate.isAfter(startOfMonth) &&
+              payment.paymentDate.isBefore(endOfMonth),
+        )
+        .toList();
   }
-
-
 
   // Obter pagamentos com falha
   List<Payment> getFailedPayments() {
@@ -219,17 +247,18 @@ class PaymentController extends GetxController {
   // Obter pagamentos filtrados por data (para relatórios)
   List<Payment> getFilteredPayments() {
     final memberController = Get.find<MemberController>();
-    if (memberController.filterStartDate.value == null || memberController.filterEndDate.value == null) {
+    if (memberController.filterStartDate.value == null ||
+        memberController.filterEndDate.value == null) {
       return payments;
     }
-    
+
     final startDate = memberController.filterStartDate.value!;
     final endDate = memberController.filterEndDate.value!;
-    
+
     return payments.where((payment) {
       final paymentDate = payment.paymentDate;
-      return paymentDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
-             paymentDate.isBefore(endDate.add(const Duration(days: 1)));
+      return paymentDate.isAfter(startDate.subtract(const Duration(days: 1))) &&
+          paymentDate.isBefore(endDate.add(const Duration(days: 1)));
     }).toList();
   }
-} 
+}

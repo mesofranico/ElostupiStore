@@ -5,9 +5,10 @@ import '../controllers/cart_controller.dart';
 import '../controllers/product_controller.dart';
 import '../controllers/recado_controller.dart';
 import '../core/currency_formatter.dart';
+import '../core/app_style.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
 import 'pending_orders_screen.dart';
-import 'membership_screen.dart';
 import 'shop_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -38,159 +39,220 @@ class DashboardScreen extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator()),
               );
             }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _SectionCard(
-                        icon: Icons.pending_actions_outlined,
-                        title: 'Pagamentos pendentes',
-                        count: cartController.pendingOrders.length,
-                        onTap: () => Get.to(() => const PendingOrdersScreen()),
-                        child: cartController.pendingOrders.isEmpty
-                            ? _emptyState(theme, Icons.inbox_outlined, 'Nenhum pedido')
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                mainAxisSize: MainAxisSize.min,
-                                children: cartController.pendingOrders.map((order) {
-                                  final total = double.tryParse(order['total'].toString()) ?? 0.0;
-                                  final nota = order['note']?.toString().trim();
-                                  return _ListItem(
-                                    leading: (nota != null && nota.isNotEmpty) ? nota : '—',
-                                    primary: CurrencyFormatter.formatEuro(total),
-                                    alignPrimaryRight: true,
-                                  );
-                                }).toList(),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _SectionCard(
-                        icon: Icons.warning_amber_outlined,
-                        title: 'Mensalidades em atraso',
-                        count: dashboardController.overdueMembers.length,
-                        accent: dashboardController.overdueMembers.isNotEmpty,
-                        onTap: () => Get.to(() => const MembershipScreen()),
-                        child: dashboardController.overdueMembers.isEmpty
-                            ? _emptyState(theme, Icons.people_outline, 'Nenhuma em atraso')
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                mainAxisSize: MainAxisSize.min,
-                                children: dashboardController.overdueMembers.map((m) {
-                                  final months = m.overdueMonths ?? 0;
-                                  final total = m.totalOverdue ?? 0.0;
-                                  return _ListItem(
-                                    leading: m.name,
-                                    primary: '$months mens. · ${CurrencyFormatter.formatEuro(total)}',
-                                  );
-                                }).toList(),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Obx(() {
-                        final _ = productController.products;
-                        final lowStock = productController.getLowStockProducts('Todas');
-                        return _SectionCard(
-                          icon: Icons.inventory_2_outlined,
-                          title: 'Stock baixo',
-                          count: lowStock.length,
-                          accent: lowStock.isNotEmpty,
-                          onTap: () => Get.to(() => const ShopScreen()),
-                          child: lowStock.isEmpty
-                              ? _emptyState(theme, Icons.inventory_2_outlined, 'Nenhum')
+            return UiUtils.animatedFadeIn(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _SectionCard(
+                          icon: Icons.pending_actions_outlined,
+                          title: 'Pagamentos pendentes',
+                          count: cartController.pendingOrders.length,
+                          onTap: () =>
+                              Get.to(() => const PendingOrdersScreen()),
+                          child: cartController.pendingOrders.isEmpty
+                              ? _emptyState(
+                                  theme,
+                                  Icons.inbox_outlined,
+                                  'Nenhum pedido',
+                                )
                               : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   mainAxisSize: MainAxisSize.min,
-                                  children: lowStock.map((p) {
-                                    final stock = productController.getAvailableStock(p);
+                                  children: cartController.pendingOrders.map((
+                                    order,
+                                  ) {
+                                    final total =
+                                        double.tryParse(
+                                          order['total'].toString(),
+                                        ) ??
+                                        0.0;
+                                    final nota = order['note']
+                                        ?.toString()
+                                        .trim();
                                     return _ListItem(
-                                      leading: p.name,
-                                      primary: 'Stock: $stock',
-                                      accent: true,
+                                      leading: (nota != null && nota.isNotEmpty)
+                                          ? nota
+                                          : '—',
+                                      primary: CurrencyFormatter.formatEuro(
+                                        total,
+                                      ),
                                       alignPrimaryRight: true,
                                     );
                                   }).toList(),
                                 ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _SectionCard(
-                        icon: Icons.bolt_outlined,
-                        title: 'Última contagem',
-                        count: dashboardController.lastReading.value == null ? 0 : 1,
-                        onTap: () => Get.toNamed('/electricity'),
-                        child: dashboardController.lastReading.value == null
-                            ? _emptyState(theme, Icons.bolt_outlined, 'Sem leitura')
-                            : _ListItem(
-                                leading: '${dashboardController.lastReading.value!.counterValue.toInt()} kWh',
-                                primary: _formatDate(dashboardController.lastReading.value!.readingDate),
-                                highlight: true,
-                                alignPrimaryRight: true,
-                              ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Obx(() {
-                        final recadoController = Get.find<RecadoController>();
-                        final list = recadoController.recados;
-                        final temAlerta = recadoController.comAlerta.isNotEmpty;
-                        return _SectionCard(
-                          icon: Icons.note_alt_outlined,
-                          title: 'Recados e avisos',
-                          count: list.length,
-                          accent: temAlerta,
-                          accentColor: theme.colorScheme.tertiary,
-                          onTap: () => Get.toNamed('/recados'),
-                          child: list.isEmpty
-                              ? _emptyState(theme, Icons.note_add_outlined, 'Nenhum recado')
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SectionCard(
+                          icon: Icons.warning_amber_outlined,
+                          title: 'Mensalidades em atraso',
+                          count: dashboardController.overdueMembers.length,
+                          accent: dashboardController.overdueMembers.isNotEmpty,
+                          onTap: () => Get.toNamed('/membership'),
+                          child: dashboardController.overdueMembers.isEmpty
+                              ? _emptyState(
+                                  theme,
+                                  Icons.people_outline,
+                                  'Nenhuma em atraso',
+                                )
                               : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   mainAxisSize: MainAxisSize.min,
-                                  children: list.map((r) {
-                                    final dias = r.diasRestantes;
-                                    String? trailing;
-                                    if (r.dataLimite != null || dias != null) {
-                                      final dataStr = r.dataLimite != null ? _formatDate(r.dataLimite!) : null;
-                                      final diasStr = dias != null
-                                          ? (dias == 1 ? '1 dia restante' : '$dias dias restantes')
-                                          : null;
-                                      trailing = [
-                                        if (dataStr != null) dataStr,
-                                        if (diasStr != null) diasStr,
-                                      ].join(' · ');
-                                    }
-                                    return _RecadoListItem(
-                                      text: r.titulo,
-                                      trailing: trailing,
-                                      accent: r.alerta || (dias != null && dias <= 7),
-                                      accentColor: theme.colorScheme.tertiary,
+                                  children: dashboardController.overdueMembers.map((
+                                    m,
+                                  ) {
+                                    final months = m.overdueMonths ?? 0;
+                                    final total = m.totalOverdue ?? 0.0;
+                                    return _ListItem(
+                                      leading: m.name,
+                                      primary:
+                                          '$months mens. · ${CurrencyFormatter.formatEuro(total)}',
+                                      alignPrimaryRight: true,
                                     );
                                   }).toList(),
                                 ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Obx(() {
+                          final _ = productController.products;
+                          final lowStock = productController
+                              .getLowStockProducts('Todas');
+                          return _SectionCard(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'Stock baixo',
+                            count: lowStock.length,
+                            accent: lowStock.isNotEmpty,
+                            onTap: () => Get.to(() => const ShopScreen()),
+                            child: lowStock.isEmpty
+                                ? _emptyState(
+                                    theme,
+                                    Icons.inventory_2_outlined,
+                                    'Nenhum',
+                                  )
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: lowStock.map((p) {
+                                      final stock = productController
+                                          .getAvailableStock(p);
+                                      return _ListItem(
+                                        leading: p.name,
+                                        primary: 'Stock: $stock',
+                                        accent: true,
+                                        alignPrimaryRight: true,
+                                      );
+                                    }).toList(),
+                                  ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SectionCard(
+                          icon: Icons.bolt_outlined,
+                          title: 'Última contagem',
+                          count: dashboardController.lastReading.value == null
+                              ? 0
+                              : 1,
+                          onTap: () => Get.toNamed('/electricity'),
+                          child: dashboardController.lastReading.value == null
+                              ? _emptyState(
+                                  theme,
+                                  Icons.bolt_outlined,
+                                  'Sem leitura',
+                                )
+                              : _ListItem(
+                                  leading:
+                                      '${dashboardController.lastReading.value!.counterValue.toInt()} kWh',
+                                  primary: _formatDate(
+                                    dashboardController
+                                        .lastReading
+                                        .value!
+                                        .readingDate,
+                                  ),
+                                  highlight: true,
+                                  alignPrimaryRight: true,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Obx(() {
+                          final recadoController = Get.find<RecadoController>();
+                          final list = recadoController.recados;
+                          final temAlerta =
+                              recadoController.comAlerta.isNotEmpty;
+                          return _SectionCard(
+                            icon: Icons.note_alt_outlined,
+                            title: 'Recados e avisos',
+                            count: list.length,
+                            accent: temAlerta,
+                            accentColor: theme.colorScheme.tertiary,
+                            onTap: () => Get.toNamed('/recados'),
+                            child: list.isEmpty
+                                ? _emptyState(
+                                    theme,
+                                    Icons.note_add_outlined,
+                                    'Nenhum recado',
+                                  )
+                                : Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: list.map((r) {
+                                      final dias = r.diasRestantes;
+                                      String? trailing;
+                                      if (r.dataLimite != null ||
+                                          dias != null) {
+                                        final dataStr = r.dataLimite != null
+                                            ? _formatDate(r.dataLimite!)
+                                            : null;
+                                        final diasStr = dias != null
+                                            ? (dias == 1
+                                                  ? '1 dia restante'
+                                                  : '$dias dias restantes')
+                                            : null;
+                                        trailing = [
+                                          if (dataStr != null) dataStr,
+                                          if (diasStr != null) diasStr,
+                                        ].join(' · ');
+                                      }
+                                      return _RecadoListItem(
+                                        text: r.titulo,
+                                        trailing: trailing,
+                                        accent:
+                                            r.alerta ||
+                                            (dias != null && dias <= 7),
+                                        accentColor: theme.colorScheme.tertiary,
+                                      );
+                                    }).toList(),
+                                  ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             );
           }),
         ),
@@ -217,7 +279,6 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
-
 
   String _formatDate(DateTime d) {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -247,94 +308,116 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final effectiveAccent = accent ? (accentColor ?? Colors.orange) : null;
-    final iconBg = effectiveAccent != null
-        ? effectiveAccent.withValues(alpha: 0.12)
-        : theme.colorScheme.primaryContainer.withValues(alpha: 0.6);
-    final iconFg = effectiveAccent ?? theme.colorScheme.primary;
-    final badgeBg = effectiveAccent != null ? effectiveAccent.withValues(alpha: 0.15) : theme.colorScheme.primaryContainer;
-    final badgeFg = effectiveAccent ?? theme.colorScheme.onPrimaryContainer;
+    final effectiveAccent = accent ? (accentColor ?? AppStyle.accent) : null;
 
-    return Material(
-      color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 0,
-      shadowColor: theme.colorScheme.shadow,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: theme.colorScheme.shadow.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 1),
+    // Icon colors
+    final iconBg = effectiveAccent != null
+        ? effectiveAccent.withValues(alpha: 0.15)
+        : AppStyle.primary.withValues(alpha: 0.1);
+    final iconFg = effectiveAccent ?? AppStyle.primary;
+
+    // Badge colors
+    final badgeBg = effectiveAccent ?? AppStyle.primary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: (effectiveAccent ?? Colors.black).withValues(
+                    alpha: 0.05,
+                  ),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+              border: Border.all(
+                color: (effectiveAccent ?? Colors.black).withValues(
+                  alpha: 0.05,
+                ),
+                width: 1,
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: iconBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      icon,
-                      size: 18,
-                      color: iconFg,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (count > 0)
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: badgeBg,
-                        borderRadius: BorderRadius.circular(10),
+                        color: iconBg,
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: Icon(icon, size: 20, color: iconFg),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        '$count',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: badgeFg,
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E293B),
+                          letterSpacing: -0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (count > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: badgeBg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, size: 10, color: theme.colorScheme.onSurfaceVariant),
-                ],
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: _listMaxHeight,
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: child,
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: _listMaxHeight,
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white,
+                          Colors.white.withValues(alpha: 0),
+                        ],
+                        stops: const [0.8, 1.0],
+                      ).createShader(bounds);
+                    },
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: child,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -389,7 +472,9 @@ class _RecadoListItem extends StatelessWidget {
               trailing!,
               style: theme.textTheme.labelSmall?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: accent ? accentColor : theme.colorScheme.onSurfaceVariant,
+                color: accent
+                    ? accentColor
+                    : theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -416,43 +501,50 @@ class _ListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final bg = accent
-        ? Colors.orange.withValues(alpha: 0.06)
-        : (highlight ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3) : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4));
+        ? AppStyle.danger.withValues(alpha: 0.05)
+        : (highlight
+              ? AppStyle.primary.withValues(alpha: 0.08)
+              : const Color(0xFFF1F5F9));
+
+    final textColor = accent ? AppStyle.danger : const Color(0xFF475569);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: highlight ? Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)) : null,
+        borderRadius: BorderRadius.circular(12),
+        border: highlight
+            ? Border.all(color: AppStyle.primary.withValues(alpha: 0.2))
+            : Border.all(color: Colors.black.withValues(alpha: 0.03), width: 1),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Text(
               leading,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
+                color: const Color(0xFF1E293B),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           alignPrimaryRight
               ? Expanded(
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       primary,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: accent ? Colors.orange.shade800 : theme.colorScheme.onSurface,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -462,9 +554,10 @@ class _ListItem extends StatelessWidget {
               : Flexible(
                   child: Text(
                     primary,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: accent ? Colors.orange.shade800 : theme.colorScheme.onSurface,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
