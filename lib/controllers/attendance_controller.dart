@@ -5,6 +5,9 @@ import '../models/attendance_record.dart';
 import '../models/consulente.dart';
 import '../models/consulente_session.dart';
 import '../services/attendance_service.dart';
+import '../services/finance_service.dart';
+import '../services/settings_service.dart';
+import '../models/financial_record.dart';
 import '../core/utils/ui_utils.dart';
 import 'consulente_controller.dart';
 
@@ -143,6 +146,49 @@ class AttendanceController extends GetxController {
         'Não foi possível atualizar a presença. Tente novamente.',
       );
     });
+  }
+
+  Future<void> markAttendanceWithPayment(
+    int consulenteId,
+    String status,
+    int numberOfPayments,
+  ) async {
+    // 1. Marca a presença normalmente
+    markAttendance(consulenteId, status);
+
+    // 2. Regista o pagamento se for presente e tiver pagamentos > 0
+    if (status == 'present' && numberOfPayments > 0) {
+      try {
+        final feeStr =
+            await SettingsService.getSetting('attendance_fee') ?? '3.50';
+        final fee = double.tryParse(feeStr) ?? 3.50;
+        final totalAmount = fee * numberOfPayments;
+
+        final consulente = allConsulentes.firstWhereOrNull(
+          (c) => c.id == consulenteId,
+        );
+        final nome = consulente?.name ?? 'Consulente Desconhecido';
+
+        await FinanceService.createRecord(
+          FinancialRecord(
+            type: 'income',
+            category: 'Sessão',
+            amount: totalAmount,
+            description:
+                'Pagamento Sessão - $nome ($numberOfPayments pessoa(s))',
+            recordDate: selectedDate.value,
+          ),
+        );
+        UiUtils.showSuccess(
+          'Pagamento registado: ${totalAmount.toStringAsFixed(2)}€',
+        );
+      } catch (e) {
+        debugPrint('Erro ao registar pagamento na presença: $e');
+        UiUtils.showError(
+          'Presença marcada, mas ocorreu um erro no registo financeiro.',
+        );
+      }
+    }
   }
 
   Future<bool> updateAttendanceStatus(

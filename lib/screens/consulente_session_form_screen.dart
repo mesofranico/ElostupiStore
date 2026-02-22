@@ -16,23 +16,26 @@ class ConsulenteSessionFormScreen extends StatefulWidget {
   });
 
   @override
-  State<ConsulenteSessionFormScreen> createState() => _ConsulenteSessionFormScreenState();
+  State<ConsulenteSessionFormScreen> createState() =>
+      _ConsulenteSessionFormScreenState();
 }
 
-class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScreen> {
+class _ConsulenteSessionFormScreenState
+    extends State<ConsulenteSessionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _notesController = TextEditingController();
-  
+
   ConsulentesController? controller;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   List<int> _selectedAcompanhantes = [];
+  int _extraAcompanhantes = 0;
   bool get isEditing => widget.session != null;
 
   @override
   void initState() {
     super.initState();
-    
+
     try {
       controller = Get.find<ConsulentesController>();
     } catch (e) {
@@ -48,16 +51,18 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       Get.back();
       return;
     }
-    
+
     if (isEditing) {
       _selectedDate = widget.session!.sessionDate;
       _selectedTime = TimeOfDay.fromDateTime(widget.session!.sessionDate);
       _notesController.text = widget.session!.notes ?? '';
       _selectedAcompanhantes = widget.session!.acompanhantesIds ?? [];
+      _extraAcompanhantes = widget.session!.extraAcompanhantes;
     } else {
       _selectedDate = DateTime.now();
       _selectedTime = const TimeOfDay(hour: 20, minute: 0);
       _selectedAcompanhantes = [];
+      _extraAcompanhantes = 0;
     }
   }
 
@@ -70,13 +75,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
   @override
   Widget build(BuildContext context) {
     if (controller == null || _selectedDate == null || _selectedTime == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    
+
     final theme = Theme.of(context);
     return Scaffold(
       appBar: StandardAppBar(
@@ -123,7 +124,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         children: [
@@ -184,7 +187,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
         decoration: BoxDecoration(
           border: Border.all(color: theme.colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
         ),
         child: Row(
           children: [
@@ -211,7 +216,10 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                 ],
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.arrow_drop_down,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -227,7 +235,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
         decoration: BoxDecoration(
           border: Border.all(color: theme.colorScheme.outlineVariant),
           borderRadius: BorderRadius.circular(10),
-          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.4,
+          ),
         ),
         child: Row(
           children: [
@@ -254,7 +264,10 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                 ],
               ),
             ),
-            Icon(Icons.arrow_drop_down, color: theme.colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.arrow_drop_down,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -268,11 +281,11 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       decoration: InputDecoration(
         labelText: 'Notas adicionais',
         prefixIcon: const Icon(Icons.note),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.4,
+        ),
       ),
       maxLines: 4,
       textCapitalization: TextCapitalization.sentences,
@@ -298,7 +311,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.onPrimary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      theme.colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : Text(
@@ -355,9 +370,16 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
       id: widget.session?.id,
       consulenteId: widget.consulenteId,
       sessionDate: sessionDateTime,
-      description: _notesController.text.trim().isEmpty ? 'Sessão de consulta' : _notesController.text.trim(),
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-      acompanhantesIds: _selectedAcompanhantes.isEmpty ? null : _selectedAcompanhantes,
+      description: _notesController.text.trim().isEmpty
+          ? 'Sessão de consulta'
+          : _notesController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+      acompanhantesIds: _selectedAcompanhantes.isEmpty
+          ? null
+          : _selectedAcompanhantes,
+      extraAcompanhantes: _extraAcompanhantes,
     );
 
     bool success;
@@ -373,7 +395,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isEditing ? 'Sessão atualizada com sucesso' : 'Sessão criada com sucesso',
+              isEditing
+                  ? 'Sessão atualizada com sucesso'
+                  : 'Sessão criada com sucesso',
               style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -411,7 +435,9 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.4,
+            ),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: theme.colorScheme.outlineVariant),
           ),
@@ -454,12 +480,94 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
                           _selectedAcompanhantes.remove(id);
                         });
                       },
-                      backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                      backgroundColor: theme.colorScheme.primaryContainer
+                          .withValues(alpha: 0.6),
                       deleteIconColor: theme.colorScheme.onPrimaryContainer,
                     );
                   }).toList(),
                 ),
               ],
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Acompanhantes não registados',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          'Número de pessoas extras',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove, size: 20),
+                          onPressed: _extraAcompanhantes > 0
+                              ? () {
+                                  setState(() {
+                                    _extraAcompanhantes--;
+                                  });
+                                }
+                              : null,
+                          color: theme.colorScheme.primary,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        Container(
+                          width: 40,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$_extraAcompanhantes',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add, size: 20),
+                          onPressed: () {
+                            setState(() {
+                              _extraAcompanhantes++;
+                            });
+                          },
+                          color: theme.colorScheme.primary,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -469,7 +577,11 @@ class _ConsulenteSessionFormScreenState extends State<ConsulenteSessionFormScree
 
   void _showAcompanhantesBottomSheet() {
     final availableConsulentes = controller!.consulentes
-        .where((c) => c.id != widget.consulenteId && !_selectedAcompanhantes.contains(c.id))
+        .where(
+          (c) =>
+              c.id != widget.consulenteId &&
+              !_selectedAcompanhantes.contains(c.id),
+        )
         .toList();
 
     if (availableConsulentes.isEmpty) {
@@ -514,10 +626,12 @@ class AcompanhantesSelectionBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<AcompanhantesSelectionBottomSheet> createState() => _AcompanhantesSelectionBottomSheetState();
+  State<AcompanhantesSelectionBottomSheet> createState() =>
+      _AcompanhantesSelectionBottomSheetState();
 }
 
-class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelectionBottomSheet> {
+class _AcompanhantesSelectionBottomSheetState
+    extends State<AcompanhantesSelectionBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
   List<Consulente> _filteredConsulentes = [];
 
@@ -606,8 +720,13 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                   borderRadius: BorderRadius.circular(10),
                 ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -643,21 +762,32 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surface,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant.withValues(
+                              alpha: 0.5,
+                            ),
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                              color: theme.colorScheme.shadow.withValues(
+                                alpha: 0.06,
+                              ),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           leading: CircleAvatar(
                             backgroundColor: theme.colorScheme.primaryContainer,
                             child: Text(
-                              consulente.name.isNotEmpty ? consulente.name[0].toUpperCase() : '?',
+                              consulente.name.isNotEmpty
+                                  ? consulente.name[0].toUpperCase()
+                                  : '?',
                               style: TextStyle(
                                 color: theme.colorScheme.onPrimaryContainer,
                                 fontWeight: FontWeight.bold,
@@ -666,7 +796,9 @@ class _AcompanhantesSelectionBottomSheetState extends State<AcompanhantesSelecti
                           ),
                           title: Text(
                             consulente.name,
-                            style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           trailing: Icon(
                             Icons.add_circle_outline,

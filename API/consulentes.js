@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const [rows] = await pool.execute(`
       SELECT 
         id,
@@ -40,11 +40,11 @@ router.get('/:id', async (req, res) => {
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulentes WHERE id = ?
     `, [id]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     console.error('Erro ao buscar consulente:', error);
@@ -56,26 +56,26 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { name, phone, email, notes } = req.body;
-    
+
     // Validações básicas
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Nome é obrigatório' });
     }
-    
+
     if (!phone || phone.trim().length === 0) {
       return res.status(400).json({ error: 'Telefone é obrigatório' });
     }
-    
+
     const [result] = await pool.execute(`
       INSERT INTO consulentes (name, phone, email, notes, created_at)
       VALUES (?, ?, ?, ?, NOW())
     `, [
-      name.trim(), 
-      phone.trim(), 
+      name.trim(),
+      phone.trim(),
       email && email.trim() !== '' ? email.trim() : null,
       notes && notes.trim() !== '' ? notes.trim() : null
     ]);
-    
+
     // Buscar o consulente recém-criado
     const [newConsulente] = await pool.execute(`
       SELECT 
@@ -88,16 +88,16 @@ router.post('/', async (req, res) => {
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulentes WHERE id = ?
     `, [result.insertId]);
-    
+
     res.status(201).json(newConsulente[0]);
   } catch (error) {
     console.error('Erro ao criar consulente:', error);
-    
+
     // Verificar se é erro de duplicação
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Já existe um consulente com este telefone ou email' });
     }
-    
+
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -107,38 +107,38 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phone, email, notes } = req.body;
-    
+
     // Verificar se o consulente existe
     const [existing] = await pool.execute(
       'SELECT id FROM consulentes WHERE id = ?',
       [id]
     );
-    
+
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
+
     // Validações básicas
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Nome é obrigatório' });
     }
-    
+
     if (!phone || phone.trim().length === 0) {
       return res.status(400).json({ error: 'Telefone é obrigatório' });
     }
-    
+
     await pool.execute(`
       UPDATE consulentes SET 
         name = ?, phone = ?, email = ?, notes = ?, updated_at = NOW()
       WHERE id = ?
     `, [
-      name.trim(), 
-      phone.trim(), 
+      name.trim(),
+      phone.trim(),
       email && email.trim() !== '' ? email.trim() : null,
       notes && notes.trim() !== '' ? notes.trim() : null,
       id
     ]);
-    
+
     // Buscar o consulente atualizado
     const [updatedConsulente] = await pool.execute(`
       SELECT 
@@ -151,16 +151,16 @@ router.put('/:id', async (req, res) => {
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulentes WHERE id = ?
     `, [id]);
-    
+
     res.json(updatedConsulente[0]);
   } catch (error) {
     console.error('Erro ao atualizar consulente:', error);
-    
+
     // Verificar se é erro de duplicação
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Já existe um consulente com este telefone ou email' });
     }
-    
+
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -169,19 +169,19 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verificar se o consulente existe
     const [existing] = await pool.execute(
       'SELECT id, name FROM consulentes WHERE id = ?',
       [id]
     );
-    
+
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
+
     const consulenteName = existing[0].name;
-    
+
     // Contar sessões relacionadas antes da exclusão
     let totalSessions = 0;
     try {
@@ -193,18 +193,18 @@ router.delete('/:id', async (req, res) => {
     } catch (error) {
       totalSessions = 0;
     }
-    
+
     // Deletar o consulente (as sessões serão automaticamente removidas devido ao ON DELETE CASCADE)
     const [result] = await pool.execute(
       'DELETE FROM consulentes WHERE id = ?',
       [id]
     );
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
-    res.json({ 
+
+    res.json({
       message: 'Consulente e todas as informações relacionadas foram removidos com sucesso',
       details: {
         consulenteName: consulenteName,
@@ -212,7 +212,7 @@ router.delete('/:id', async (req, res) => {
         sessionsRemoved: totalSessions
       }
     });
-    
+
   } catch (error) {
     console.error('Erro ao deletar consulente:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -223,17 +223,17 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/sessions', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verificar se o consulente existe
     const [consulente] = await pool.execute(
       'SELECT id, name FROM consulentes WHERE id = ?',
       [id]
     );
-    
+
     if (consulente.length === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
+
     // Buscar sessões do consulente
     const [sessions] = await pool.execute(`
       SELECT 
@@ -243,14 +243,15 @@ router.get('/:id/sessions', async (req, res) => {
         description,
         notes,
         acompanhantes_ids,
+        extra_acompanhantes,
         CONVERT_TZ(created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulente_sessions 
       WHERE consulente_id = ?
       ORDER BY session_date DESC
     `, [id]);
-    
-    res.json({ 
+
+    res.json({
       consulente: consulente[0].name,
       sessions: sessions,
       total: sessions.length
@@ -265,27 +266,27 @@ router.get('/:id/sessions', async (req, res) => {
 router.post('/:id/sessions', async (req, res) => {
   try {
     const { id } = req.params;
-    const { session_date, description, notes, acompanhantes_ids } = req.body;
-    
+    const { session_date, description, notes, acompanhantes_ids, extra_acompanhantes } = req.body;
+
     // Verificar se o consulente existe
     const [consulente] = await pool.execute(
       'SELECT id, name FROM consulentes WHERE id = ?',
       [id]
     );
-    
+
     if (consulente.length === 0) {
       return res.status(404).json({ error: 'Consulente não encontrado' });
     }
-    
+
     // Validações básicas
     if (!session_date) {
       return res.status(400).json({ error: 'Data da sessão é obrigatória' });
     }
-    
+
     if (!description || description.trim().length === 0) {
       return res.status(400).json({ error: 'Descrição é obrigatória' });
     }
-    
+
     // Validar acompanhantes se fornecidos
     let acompanhantesJson = null;
     if (acompanhantes_ids && Array.isArray(acompanhantes_ids) && acompanhantes_ids.length > 0) {
@@ -295,34 +296,35 @@ router.post('/:id/sessions', async (req, res) => {
         `SELECT id FROM consulentes WHERE id IN (${placeholders})`,
         acompanhantes_ids
       );
-      
+
       if (acompanhantes.length !== acompanhantes_ids.length) {
         return res.status(400).json({ error: 'Um ou mais acompanhantes não existem' });
       }
-      
+
       acompanhantesJson = JSON.stringify(acompanhantes_ids);
     }
-    
+
     const [result] = await pool.execute(`
-      INSERT INTO consulente_sessions (consulente_id, session_date, description, notes, acompanhantes_ids, created_at)
-      VALUES (?, ?, ?, ?, ?, NOW())
+      INSERT INTO consulente_sessions (consulente_id, session_date, description, notes, acompanhantes_ids, extra_acompanhantes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, NOW())
     `, [
       id,
       session_date,
       description.trim(),
       notes && notes.trim() !== '' ? notes.trim() : null,
-      acompanhantesJson
+      acompanhantesJson,
+      extra_acompanhantes || 0
     ]);
-    
+
     // Criar automaticamente um registo de presença para esta sessão
     const sessionDate = new Date(session_date).toISOString().split('T')[0]; // Extrair apenas a data (YYYY-MM-DD)
-    
+
     // Verificar se já existe um registo de presença para este consulente nesta data
     const [existingAttendance] = await pool.execute(
       'SELECT id FROM attendance_records WHERE consulente_id = ? AND attendance_date = ?',
       [id, sessionDate]
     );
-    
+
     // Se não existir, criar um registo de presença como "pending"
     if (existingAttendance.length === 0) {
       await pool.execute(`
@@ -334,7 +336,7 @@ router.post('/:id/sessions', async (req, res) => {
         `Presença automática (Pendente) - Sessão: ${description.trim()}`
       ]);
     }
-    
+
     // Criar registos de presença para acompanhantes também
     if (acompanhantes_ids && acompanhantes_ids.length > 0) {
       for (const acompanhanteId of acompanhantes_ids) {
@@ -342,7 +344,7 @@ router.post('/:id/sessions', async (req, res) => {
           'SELECT id FROM attendance_records WHERE consulente_id = ? AND attendance_date = ?',
           [acompanhanteId, sessionDate]
         );
-        
+
         if (existingAcompanhanteAttendance.length === 0) {
           await pool.execute(`
             INSERT INTO attendance_records (consulente_id, attendance_date, status, notes, created_at)
@@ -355,7 +357,7 @@ router.post('/:id/sessions', async (req, res) => {
         }
       }
     }
-    
+
     // Buscar a sessão recém-criada
     const [newSession] = await pool.execute(`
       SELECT 
@@ -365,11 +367,12 @@ router.post('/:id/sessions', async (req, res) => {
         description,
         notes,
         acompanhantes_ids,
+        extra_acompanhantes,
         CONVERT_TZ(created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulente_sessions WHERE id = ?
     `, [result.insertId]);
-    
+
     res.status(201).json(newSession[0]);
   } catch (error) {
     console.error('Erro ao criar sessão:', error);
@@ -381,27 +384,27 @@ router.post('/:id/sessions', async (req, res) => {
 router.put('/sessions/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { session_date, description, notes, acompanhantes_ids } = req.body;
-    
+    const { session_date, description, notes, acompanhantes_ids, extra_acompanhantes } = req.body;
+
     // Verificar se a sessão existe
     const [existing] = await pool.execute(
       'SELECT id FROM consulente_sessions WHERE id = ?',
       [id]
     );
-    
+
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Sessão não encontrada' });
     }
-    
+
     // Validações básicas
     if (!session_date) {
       return res.status(400).json({ error: 'Data da sessão é obrigatória' });
     }
-    
+
     if (!description || description.trim().length === 0) {
       return res.status(400).json({ error: 'Descrição é obrigatória' });
     }
-    
+
     // Validar acompanhantes se fornecidos
     let acompanhantesJson = null;
     if (acompanhantes_ids && Array.isArray(acompanhantes_ids) && acompanhantes_ids.length > 0) {
@@ -411,44 +414,45 @@ router.put('/sessions/:id', async (req, res) => {
         `SELECT id FROM consulentes WHERE id IN (${placeholders})`,
         acompanhantes_ids
       );
-      
+
       if (acompanhantes.length !== acompanhantes_ids.length) {
         return res.status(400).json({ error: 'Um ou mais acompanhantes não existem' });
       }
-      
+
       acompanhantesJson = JSON.stringify(acompanhantes_ids);
     }
-    
+
     await pool.execute(`
       UPDATE consulente_sessions SET 
-        session_date = ?, description = ?, notes = ?, acompanhantes_ids = ?, updated_at = NOW()
+        session_date = ?, description = ?, notes = ?, acompanhantes_ids = ?, extra_acompanhantes = ?, updated_at = NOW()
       WHERE id = ?
     `, [
       session_date,
       description.trim(),
       notes && notes.trim() !== '' ? notes.trim() : null,
       acompanhantesJson,
+      extra_acompanhantes || 0,
       id
     ]);
-    
+
     // Atualizar também o registo de presença se existir
     const sessionDate = new Date(session_date).toISOString().split('T')[0];
-    
+
     // Buscar o consulente_id da sessão atualizada
     const [sessionInfo] = await pool.execute(
       'SELECT consulente_id FROM consulente_sessions WHERE id = ?',
       [id]
     );
-    
+
     if (sessionInfo.length > 0) {
       const consulenteId = sessionInfo[0].consulente_id;
-      
+
       // Atualizar ou criar registo de presença
       const [existingAttendance] = await pool.execute(
         'SELECT id FROM attendance_records WHERE consulente_id = ? AND attendance_date = ?',
         [consulenteId, sessionDate]
       );
-      
+
       if (existingAttendance.length > 0) {
         // Atualizar registo existente
         await pool.execute(`
@@ -472,7 +476,7 @@ router.put('/sessions/:id', async (req, res) => {
         ]);
       }
     }
-    
+
     // Buscar a sessão atualizada
     const [updatedSession] = await pool.execute(`
       SELECT 
@@ -482,11 +486,12 @@ router.put('/sessions/:id', async (req, res) => {
         description,
         notes,
         acompanhantes_ids,
+        extra_acompanhantes,
         CONVERT_TZ(created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulente_sessions WHERE id = ?
     `, [id]);
-    
+
     res.json(updatedSession[0]);
   } catch (error) {
     console.error('Erro ao atualizar sessão:', error);
@@ -498,48 +503,48 @@ router.put('/sessions/:id', async (req, res) => {
 router.delete('/sessions/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verificar se a sessão existe
     const [existing] = await pool.execute(
       'SELECT id FROM consulente_sessions WHERE id = ?',
       [id]
     );
-    
+
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Sessão não encontrada' });
     }
-    
+
     // Buscar informações da sessão antes de deletar
     const [sessionInfo] = await pool.execute(`
       SELECT consulente_id, session_date 
       FROM consulente_sessions 
       WHERE id = ?
     `, [id]);
-    
+
     if (sessionInfo.length === 0) {
       return res.status(404).json({ error: 'Sessão não encontrada' });
     }
-    
+
     const consulenteId = sessionInfo[0].consulente_id;
     const sessionDate = new Date(sessionInfo[0].session_date).toISOString().split('T')[0];
-    
+
     // Deletar a sessão
     const [result] = await pool.execute(
       'DELETE FROM consulente_sessions WHERE id = ?',
       [id]
     );
-    
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Sessão não encontrada' });
     }
-    
+
     // Verificar se existem outras sessões para este consulente nesta data
     const [otherSessions] = await pool.execute(`
       SELECT COUNT(*) as count 
       FROM consulente_sessions 
       WHERE consulente_id = ? AND DATE(session_date) = ?
     `, [consulenteId, sessionDate]);
-    
+
     // Se não houver outras sessões nesta data, remover o registo de presença automática
     if (otherSessions[0].count === 0) {
       await pool.execute(`
@@ -547,7 +552,7 @@ router.delete('/sessions/:id', async (req, res) => {
         WHERE consulente_id = ? AND attendance_date = ? AND notes LIKE 'Presença automática (Pendente)%'
       `, [consulenteId, sessionDate]);
     }
-    
+
     res.json({ message: 'Sessão deletada com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar sessão:', error);
@@ -559,10 +564,10 @@ router.delete('/sessions/:id', async (req, res) => {
 router.get('/sessions-by-date/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    
+
     console.log(`=== DEBUG API SESSIONS BY DATE ===`);
     console.log(`Buscando sessões para data: ${date}`);
-    
+
     const [sessions] = await pool.execute(`
       SELECT 
         id,
@@ -571,19 +576,20 @@ router.get('/sessions-by-date/:date', async (req, res) => {
         description,
         notes,
         acompanhantes_ids,
+        extra_acompanhantes,
         CONVERT_TZ(created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM consulente_sessions 
       WHERE DATE(session_date) = ?
       ORDER BY session_date ASC
     `, [date]);
-    
+
     console.log(`Sessões encontradas: ${sessions.length}`);
     sessions.forEach(session => {
       console.log(`Sessão ${session.id}: Consulente ${session.consulente_id}, Acompanhantes: ${session.acompanhantes_ids}`);
     });
     console.log(`=== FIM DEBUG API SESSIONS BY DATE ===`);
-    
+
     res.json(sessions);
   } catch (error) {
     console.error('Erro ao buscar sessões por data:', error);

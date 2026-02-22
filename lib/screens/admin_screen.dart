@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../widgets/standard_appbar.dart';
 import '../controllers/admin_controller.dart';
 import '../core/utils/ui_utils.dart';
+import '../services/settings_service.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -47,6 +48,13 @@ class AdminScreen extends StatelessWidget {
             subtitle: 'Registar leituras e calcular custos',
             onTap: () => Get.toNamed('/electricity'),
           ),
+          _buildMenuCard(
+            context,
+            icon: Icons.settings,
+            title: 'Configurações Gerais',
+            subtitle: 'Definir valor da sessão, etc.',
+            onTap: () => _showSettingsDialog(context),
+          ),
           const SizedBox(height: 20),
           const Divider(),
           const SizedBox(height: 10),
@@ -59,6 +67,76 @@ class AdminScreen extends StatelessWidget {
             onTap: () => _showResetPINDialog(context),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSettingsDialog(BuildContext context) async {
+    final value = await SettingsService.getSetting('attendance_fee') ?? '3.50';
+    final controller = TextEditingController(text: value);
+    bool isLoading = false;
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Configurações Gerais'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Defina o valor pago por pessoa (Sessão):'),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor da Sessão (€)',
+                    border: OutlineInputBorder(),
+                    prefixText: '€ ',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Get.back(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setState(() => isLoading = true);
+                        final success = await SettingsService.updateSetting(
+                          'attendance_fee',
+                          controller.text.trim().replaceAll(',', '.'),
+                        );
+                        setState(() => isLoading = false);
+                        if (success) {
+                          Get.back();
+                          UiUtils.showSuccess(
+                            'Configuração guardada com sucesso!',
+                          );
+                        } else {
+                          UiUtils.showError('Erro ao guardar a configuração.');
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Guardar'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

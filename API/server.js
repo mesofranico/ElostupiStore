@@ -13,6 +13,7 @@ const attendanceRouter = require('./attendance');
 const recadosRouter = require('./recados');
 const financeRouter = require('./finance');
 const adminRouter = require('./admin');
+const settingsRouter = require('./settings');
 
 const app = express();
 app.use(cors());
@@ -38,6 +39,7 @@ app.use('/api/attendance', attendanceRouter);
 app.use('/api/recados', recadosRouter);
 app.use('/api/finance', financeRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/settings', settingsRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {

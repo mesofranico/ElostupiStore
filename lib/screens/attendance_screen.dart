@@ -421,11 +421,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     // Verificar se este consulente tem sessões com acompanhantes
     for (final session in controller.sessionsWithAcompanhantes) {
       if (session.consulenteId == consulente.id &&
-          session.acompanhantesIds != null &&
-          session.acompanhantesIds!.isNotEmpty) {
+          ((session.acompanhantesIds != null &&
+                  session.acompanhantesIds!.isNotEmpty) ||
+              session.extraAcompanhantes > 0)) {
         hasCompanions = true;
         debugPrint(
-          'Consulente ${consulente.id} tem acompanhantes: ${session.acompanhantesIds}',
+          'Consulente ${consulente.id} tem acompanhantes registados ou extras',
         );
         break;
       }
@@ -561,6 +562,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         status,
                         consulente.id!,
                         controller,
+                        hasCompanions,
                       ),
                     ),
                   ],
@@ -712,63 +714,82 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       // Buscar sessões onde este consulente é o principal
       for (final session in sessions) {
         debugPrint(
-          'Sessão ID: ${session.id}, Consulente ID: ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}',
+          'Sessão ID: ${session.id}, Consulente ID: ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}, Extras: ${session.extraAcompanhantes}',
         );
 
-        if (session.consulenteId == consulenteId &&
-            session.acompanhantesIds != null) {
-          debugPrint(
-            'Encontrada sessão para consulente $consulenteId com ${session.acompanhantesIds!.length} acompanhantes',
-          );
+        if (session.consulenteId == consulenteId) {
+          final bool hasRegistered =
+              session.acompanhantesIds != null &&
+              session.acompanhantesIds!.isNotEmpty;
+          final bool hasExtra = session.extraAcompanhantes > 0;
 
-          // Buscar informações dos acompanhantes diretamente da API
-          for (final acompanhanteId in session.acompanhantesIds!) {
-            debugPrint('Processando acompanhante ID: $acompanhanteId');
+          if (hasRegistered || hasExtra) {
+            debugPrint(
+              'Encontrada sessão para consulente $consulenteId com acompanhantes (Registados: $hasRegistered, Extras: $hasExtra)',
+            );
 
-            try {
-              // Buscar informações do acompanhante diretamente da API
-              final acompanhante = await ConsulentesService.getConsulenteById(
-                acompanhanteId,
-              );
-              debugPrint(
-                'Acompanhante encontrado na API: ${acompanhante.name}',
-              );
-              acompanhantes.add(acompanhante);
-            } catch (e) {
-              debugPrint(
-                'Erro ao buscar acompanhante $acompanhanteId da API: $e',
-              );
+            if (hasRegistered) {
+              // Buscar informações dos acompanhantes diretamente da API
+              for (final acompanhanteId in session.acompanhantesIds!) {
+                debugPrint('Processando acompanhante ID: $acompanhanteId');
 
-              // Fallback: buscar nos registos de presença se disponível
-              try {
-                final attendanceRecord = controller.attendanceRecords
-                    .firstWhere((r) => r.consulenteId == acompanhanteId);
-                debugPrint(
-                  'Acompanhante encontrado nos registos de presença: ${attendanceRecord.consulenteName}',
-                );
+                try {
+                  // Buscar informações do acompanhante diretamente da API
+                  final acompanhante =
+                      await ConsulentesService.getConsulenteById(
+                        acompanhanteId,
+                      );
+                  debugPrint(
+                    'Acompanhante encontrado na API: ${acompanhante.name}',
+                  );
+                  acompanhantes.add(acompanhante);
+                } catch (e) {
+                  debugPrint(
+                    'Erro ao buscar acompanhante $acompanhanteId da API: $e',
+                  );
 
-                final acompanhante = Consulente(
-                  id: acompanhanteId,
-                  name:
-                      attendanceRecord.consulenteName ??
-                      'Consulente $acompanhanteId',
-                  phone: attendanceRecord.consulentePhone ?? '',
-                  email: attendanceRecord.consulenteEmail,
-                );
-                acompanhantes.add(acompanhante);
-              } catch (e2) {
-                debugPrint(
-                  'Acompanhante não encontrado em nenhum lugar, criando temporário',
-                );
+                  // Fallback: buscar nos registos de presença se disponível
+                  try {
+                    final attendanceRecord = controller.attendanceRecords
+                        .firstWhere((r) => r.consulenteId == acompanhanteId);
+                    debugPrint(
+                      'Acompanhante encontrado nos registos de presença: ${attendanceRecord.consulenteName}',
+                    );
 
-                // Último recurso: criar um consulente temporário
-                final acompanhante = Consulente(
-                  id: acompanhanteId,
-                  name: 'Consulente $acompanhanteId',
-                  phone: '',
-                );
-                acompanhantes.add(acompanhante);
+                    final acompanhante = Consulente(
+                      id: acompanhanteId,
+                      name:
+                          attendanceRecord.consulenteName ??
+                          'Consulente $acompanhanteId',
+                      phone: attendanceRecord.consulentePhone ?? '',
+                      email: attendanceRecord.consulenteEmail,
+                    );
+                    acompanhantes.add(acompanhante);
+                  } catch (e2) {
+                    debugPrint(
+                      'Acompanhante não encontrado em nenhum lugar, criando temporário',
+                    );
+
+                    // Último recurso: criar um consulente temporário
+                    final acompanhante = Consulente(
+                      id: acompanhanteId,
+                      name: 'Consulente $acompanhanteId',
+                      phone: '',
+                    );
+                    acompanhantes.add(acompanhante);
+                  }
+                }
               }
+            }
+
+            if (hasExtra) {
+              acompanhantes.add(
+                Consulente(
+                  id: -1, // ID negativo para não conflitar com reais
+                  name: '${session.extraAcompanhantes} Acompanhante(s)',
+                  phone: '',
+                ),
+              );
             }
           }
         }
@@ -787,6 +808,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     String currentStatus,
     int consulenteId,
     AttendanceController controller,
+    bool hasCompanions,
   ) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
@@ -813,7 +835,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => controller.markAttendance(consulenteId, value),
+            onTap: () {
+              if (value == 'present' && currentStatus != 'present') {
+                _handlePresentAndPayment(
+                  consulenteId,
+                  controller,
+                  hasCompanions,
+                );
+              } else {
+                controller.markAttendance(consulenteId, value);
+              }
+            },
             borderRadius: borderRadius,
             child: Container(
               constraints: const BoxConstraints(minHeight: 36),
@@ -996,6 +1028,121 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         } else {
           UiUtils.showError(controller.errorMessage.value);
         }
+      },
+    );
+  }
+
+  void _handlePresentAndPayment(
+    int consulenteId,
+    AttendanceController controller,
+    bool hasCompanions,
+  ) async {
+    // Se não tiver acompanhantes, regista a presença com 1 pagamento.
+    if (!hasCompanions) {
+      controller.markAttendanceWithPayment(consulenteId, 'present', 1);
+      return;
+    }
+
+    // Se tiver acompanhantes, pergunta no BottomSheet quantos pagam.
+    int paymentCount = 1; // Pelo menos o consulente
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final sheetTheme = Theme.of(ctx);
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              decoration: BoxDecoration(
+                color: sheetTheme.colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Registar Pagamento',
+                    style: sheetTheme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Este consulente tem acompanhantes na sessão. Quantas pessoas irão pagar a sessão?',
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: paymentCount > 0
+                            ? () => setState(() => paymentCount--)
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline, size: 36),
+                        color: sheetTheme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 20),
+                      Text(
+                        paymentCount.toString(),
+                        style: sheetTheme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      IconButton(
+                        onPressed: () => setState(() => paymentCount++),
+                        icon: const Icon(Icons.add_circle_outline, size: 36),
+                        color: sheetTheme.colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        controller.markAttendanceWithPayment(
+                          consulenteId,
+                          'present',
+                          paymentCount,
+                        );
+                      },
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Confirmar Presença e Pagamento'),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                      },
+                      child: const Text('Cancelar'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
       },
     );
   }

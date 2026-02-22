@@ -400,48 +400,6 @@ class _ReportsTabState extends State<ReportsTab> {
                                 color: isIncome ? Colors.green : Colors.red,
                               ),
                             ),
-                            if (record.id != null)
-                              GestureDetector(
-                                onTap: () =>
-                                    financeController.deleteRecord(record.id!),
-                                child: Container(
-                                  margin: const EdgeInsets.only(top: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.error.withValues(
-                                      alpha: 0.1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: theme.colorScheme.error.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.delete_outline_rounded,
-                                        size: 14,
-                                        color: theme.colorScheme.error,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Eliminar',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: theme.colorScheme.error,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ],
