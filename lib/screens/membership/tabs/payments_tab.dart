@@ -5,6 +5,7 @@ import '../../../core/currency_formatter.dart';
 import '../widgets/membership_shared_widgets.dart';
 import '../widgets/membership_dialogs.dart';
 import '../membership_utils.dart';
+import '../../../widgets/loading_view.dart';
 
 class PaymentsTab extends StatelessWidget {
   final PaymentController controller;
@@ -17,7 +18,7 @@ class PaymentsTab extends StatelessWidget {
 
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const LoadingView();
       }
 
       final stats = controller.getPaymentStatistics();

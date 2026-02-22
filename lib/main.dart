@@ -8,8 +8,13 @@ import 'controllers/product_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'controllers/consulente_controller.dart';
 import 'controllers/attendance_controller.dart';
+import 'controllers/member_controller.dart';
+import 'controllers/payment_controller.dart';
+import 'controllers/finance_controller.dart';
 import 'services/bluetooth_print_service.dart';
 import 'screens/main_navigation_screen.dart';
+import 'screens/cart_screen.dart';
+import 'screens/reports_screen.dart';
 import 'screens/admin_screen.dart';
 import 'screens/admin_products_screen.dart';
 import 'screens/membership_screen.dart';
@@ -20,6 +25,7 @@ import 'screens/consulentes_screen.dart';
 import 'screens/attendance_screen.dart';
 import 'screens/recados_screen.dart';
 import 'controllers/recado_controller.dart';
+import 'controllers/admin_controller.dart';
 import 'screens/membership/membership_binding.dart';
 
 void main() async {
@@ -34,6 +40,10 @@ void main() async {
   Get.put(ConsulentesController()); // ConsulentesController
   Get.put(AttendanceController());
   Get.put(RecadoController());
+  Get.put(MemberController());
+  Get.put(PaymentController());
+  Get.put(FinanceController()); // Initialize FinanceController
+  Get.put(AdminController());
 
   runApp(const MyApp());
 }
@@ -60,6 +70,12 @@ class MyApp extends StatelessWidget {
       defaultTransition: Transition.noTransition,
       transitionDuration: Duration.zero,
       getPages: [
+        GetPage(name: '/cart', page: () => const CartScreen()),
+        GetPage(
+          name: '/reports',
+          page: () => const ReportsScreen(),
+          binding: MembershipBinding(),
+        ),
         GetPage(name: '/admin', page: () => const AdminScreen()),
         GetPage(
           name: '/admin/products',

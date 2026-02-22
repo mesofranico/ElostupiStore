@@ -5,6 +5,7 @@ import '../../../core/currency_formatter.dart';
 import '../widgets/membership_shared_widgets.dart';
 import '../widgets/membership_dialogs.dart';
 import '../membership_utils.dart';
+import '../../../widgets/loading_view.dart';
 
 class MembersTab extends StatefulWidget {
   final MemberController controller;
@@ -39,7 +40,7 @@ class _MembersTabState extends State<MembersTab> {
 
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const LoadingView();
       }
 
       if (controller.errorMessage.isNotEmpty) {
@@ -122,7 +123,7 @@ class _MembersTabState extends State<MembersTab> {
                   child: FilledButton.icon(
                     onPressed: () => controller.refreshData(),
                     icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('Atualizar'),
+                    label: const Text('Actualizar'),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 40),
                       shape: RoundedRectangleBorder(

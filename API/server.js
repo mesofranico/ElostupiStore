@@ -10,6 +10,9 @@ const categoriesRouter = require('./categories');
 const girasRouter = require('./giras');
 const consulentesRouter = require('./consulentes');
 const attendanceRouter = require('./attendance');
+const recadosRouter = require('./recados');
+const financeRouter = require('./finance');
+const adminRouter = require('./admin');
 
 const app = express();
 app.use(cors());
@@ -32,6 +35,9 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/giras', girasRouter);
 app.use('/api/consulentes', consulentesRouter);
 app.use('/api/attendance', attendanceRouter);
+app.use('/api/recados', recadosRouter);
+app.use('/api/finance', financeRouter);
+app.use('/api/admin', adminRouter);
 
 const PORT = 3000;
 app.listen(PORT, () => {

@@ -10,8 +10,8 @@ class ElectricityService {
   // Buscar todas as leituras
   static Future<List<ElectricityReading>> getAllReadings() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/electricity-readings'));
-      
+      final response = await http.get(Uri.parse(ApiConfig.electricityUrl));
+
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => ElectricityReading.fromJson(json)).toList();
@@ -33,8 +33,8 @@ class ElectricityService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/electricity-readings'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(ApiConfig.electricityUrl),
+        headers: ApiConfig.defaultHeaders,
         body: json.encode({
           'counter_value': counterValue.toInt(), // Enviar como inteiro
           'kw_consumed': kwConsumed.toInt(), // Enviar como inteiro
@@ -67,8 +67,8 @@ class ElectricityService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/electricity-readings/$id'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('${ApiConfig.electricityUrl}/$id'),
+        headers: ApiConfig.defaultHeaders,
         body: json.encode({
           'counter_value': counterValue.toInt(), // Enviar como inteiro
           'kw_consumed': kwConsumed.toInt(), // Enviar como inteiro
@@ -92,7 +92,10 @@ class ElectricityService {
   // Excluir leitura
   static Future<void> deleteReading(int id) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/electricity-readings/$id'));
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.electricityUrl}/$id'),
+        headers: ApiConfig.defaultHeaders,
+      );
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Falha ao excluir leitura: ${response.statusCode}');
@@ -105,8 +108,10 @@ class ElectricityService {
   // Buscar leitura por ID
   static Future<ElectricityReading> getReadingById(int id) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/electricity-readings/$id'));
-      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.electricityUrl}/$id'),
+      );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return ElectricityReading.fromJson(data);
@@ -121,13 +126,17 @@ class ElectricityService {
   // Buscar configurações
   static Future<ElectricitySettings> getSettings() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/electricity-settings'));
-      
+      final response = await http.get(
+        Uri.parse(ApiConfig.electricitySettingsUrl),
+      );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return ElectricitySettings.fromJson(data);
       } else {
-        throw Exception('Falha ao carregar configurações: ${response.statusCode}');
+        throw Exception(
+          'Falha ao carregar configurações: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');
@@ -141,8 +150,8 @@ class ElectricityService {
   }) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/electricity-settings'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(ApiConfig.electricitySettingsUrl),
+        headers: ApiConfig.defaultHeaders,
         body: json.encode({
           'default_price_per_kw': defaultPricePerKw,
           'vat_rate': vatRate,
@@ -153,10 +162,12 @@ class ElectricityService {
         final data = json.decode(response.body);
         return ElectricitySettings.fromJson(data);
       } else {
-        throw Exception('Falha ao atualizar configurações: ${response.statusCode}');
+        throw Exception(
+          'Falha ao atualizar configurações: ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');
     }
   }
-} 
+}

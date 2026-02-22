@@ -8,7 +8,7 @@ import 'cart_controller.dart';
 class ProductController extends GetxController {
   final ProductService _productService = ProductService();
   final GetStorage _storage = GetStorage();
-  
+
   final RxList<Product> products = <Product>[].obs;
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
@@ -20,10 +20,10 @@ class ProductController extends GetxController {
   void onInit() {
     super.onInit();
     loadProducts();
-    
+
     // Inicializar ordem das categorias
     _initializeCategoryOrder();
-    
+
     // Observar mudanças no carrinho para atualizar indicadores de stock
     // Verificar se o CartController já foi inicializado
     try {
@@ -64,17 +64,22 @@ class ProductController extends GetxController {
   int getAvailableStock(Product product) {
     try {
       final cartController = Get.find<CartController>();
-      final cartItem = cartController.items.firstWhereOrNull((item) => item.product.id == product.id);
+      final cartItem = cartController.items.firstWhereOrNull(
+        (item) => item.product.id == product.id,
+      );
       final cartQuantity = cartItem?.quantity ?? 0;
       // Somar quantidade em pedidos pendentes (reativo)
       int pendingQuantity = 0;
-      final List<Map<String, dynamic>> pendingOrders = cartController.pendingOrders;
+      final List<Map<String, dynamic>> pendingOrders =
+          cartController.pendingOrders;
       for (final order in pendingOrders) {
         final List<dynamic> items = order['items'] ?? [];
         for (final item in items) {
           if (item['product']?['id']?.toString() == product.id) {
             final q = item['quantity'];
-            pendingQuantity += (q is int) ? q : int.tryParse(q?.toString() ?? '') ?? 0;
+            pendingQuantity += (q is int)
+                ? q
+                : int.tryParse(q?.toString() ?? '') ?? 0;
           }
         }
       }
@@ -90,20 +95,34 @@ class ProductController extends GetxController {
     try {
       if (category == 'Todas') {
         return products.where((p) {
+          if (!p.manageStock) return false;
           final availableStock = getAvailableStock(p);
           return availableStock <= 5 && availableStock > 0;
         }).toList();
       }
       return products.where((p) {
         if (p.category != category) return false;
+        if (!p.manageStock) return false;
         final availableStock = getAvailableStock(p);
         return availableStock <= 5 && availableStock > 0;
       }).toList();
     } catch (e) {
       if (category == 'Todas') {
-        return products.where((p) => (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).toList();
+        return products
+            .where(
+              (p) => p.manageStock && (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0,
+            )
+            .toList();
       }
-      return products.where((p) => p.category == category && (p.stock ?? 0) <= 5 && (p.stock ?? 0) > 0).toList();
+      return products
+          .where(
+            (p) =>
+                p.category == category &&
+                p.manageStock &&
+                (p.stock ?? 0) <= 5 &&
+                (p.stock ?? 0) > 0,
+          )
+          .toList();
     }
   }
 
@@ -116,12 +135,14 @@ class ProductController extends GetxController {
     try {
       if (category == 'Todas') {
         return products.where((p) {
+          if (!p.manageStock) return false;
           final availableStock = getAvailableStock(p);
           return availableStock == 0;
         }).length;
       } else {
         return products.where((p) {
           if (p.category != category) return false;
+          if (!p.manageStock) return false;
           final availableStock = getAvailableStock(p);
           return availableStock == 0;
         }).length;
@@ -129,9 +150,18 @@ class ProductController extends GetxController {
     } catch (e) {
       // Fallback para cálculo sem carrinho
       if (category == 'Todas') {
-        return products.where((p) => (p.stock ?? 0) == 0).length;
+        return products
+            .where((p) => p.manageStock && (p.stock ?? 0) == 0)
+            .length;
       } else {
-        return products.where((p) => p.category == category && (p.stock ?? 0) == 0).length;
+        return products
+            .where(
+              (p) =>
+                  p.category == category &&
+                  p.manageStock &&
+                  (p.stock ?? 0) == 0,
+            )
+            .length;
       }
     }
   }
@@ -139,27 +169,26 @@ class ProductController extends GetxController {
   Future<void> loadProducts() async {
     isLoading.value = true;
     errorMessage.value = '';
-    
+
     try {
       final List<Product> loadedProducts = await _productService.getProducts();
       products.value = loadedProducts;
       hasCachedData.value = false;
-      
+
       // Salvar no cache local
       await _saveProductsToCache(loadedProducts);
-      
+
       // Carregar ordem das categorias da API
       await _loadCategoryOrderFromAPI();
-      
     } catch (e) {
       // Tentar carregar do cache
       final cachedProducts = await _loadProductsFromCache();
-      
+
       if (cachedProducts.isNotEmpty) {
         products.value = cachedProducts;
         hasCachedData.value = true;
         errorMessage.value = _getFriendlyErrorMessage(e.toString());
-        
+
         // Carregar ordem das categorias da API mesmo em modo offline
         await _loadCategoryOrderFromAPI();
       } else {
@@ -172,16 +201,16 @@ class ProductController extends GetxController {
     }
   }
 
-
-
   String _getFriendlyErrorMessage(String error) {
-    if (error.contains('SocketException') || error.contains('NetworkException')) {
+    if (error.contains('SocketException') ||
+        error.contains('NetworkException')) {
       return 'Sem conexão com a internet. Verifique sua rede e tente novamente.';
     } else if (error.contains('TimeoutException')) {
       return 'Tempo limite excedido. A conexão está lenta, tente novamente.';
     } else if (error.contains('404') || error.contains('Not Found')) {
       return 'Produtos não encontrados no servidor. Tente novamente mais tarde.';
-    } else if (error.contains('500') || error.contains('Internal Server Error')) {
+    } else if (error.contains('500') ||
+        error.contains('Internal Server Error')) {
       return 'Erro no servidor. Tente novamente em alguns minutos.';
     } else if (error.contains('JSON')) {
       return 'Erro ao processar dados dos produtos. Tente novamente.';
@@ -192,10 +221,14 @@ class ProductController extends GetxController {
 
   Future<void> _saveProductsToCache(List<Product> products) async {
     try {
-      final List<Map<String, dynamic>> productsJson = 
-          products.map((p) => p.toJson()).toList();
+      final List<Map<String, dynamic>> productsJson = products
+          .map((p) => p.toJson())
+          .toList();
       await _storage.write('cached_products', productsJson);
-      await _storage.write('cache_timestamp', DateTime.now().millisecondsSinceEpoch);
+      await _storage.write(
+        'cache_timestamp',
+        DateTime.now().millisecondsSinceEpoch,
+      );
     } catch (e) {
       if (kDebugMode) {
         print('Erro ao salvar cache: $e');
@@ -227,21 +260,29 @@ class ProductController extends GetxController {
 
   List<Product> get filteredProducts {
     List<Product> filtered = products;
-    
+
     // Filtrar por categoria
     if (selectedCategory.value != 'Todas') {
-      filtered = filtered.where((product) => 
-          product.category == selectedCategory.value).toList();
+      filtered = filtered
+          .where((product) => product.category == selectedCategory.value)
+          .toList();
     }
-    
+
     // Filtrar por pesquisa
     if (searchQuery.value.isNotEmpty) {
-      filtered = filtered.where((product) =>
-          product.name.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-          product.description.toLowerCase().contains(searchQuery.value.toLowerCase())
-      ).toList();
+      filtered = filtered
+          .where(
+            (product) =>
+                product.name.toLowerCase().contains(
+                  searchQuery.value.toLowerCase(),
+                ) ||
+                product.description.toLowerCase().contains(
+                  searchQuery.value.toLowerCase(),
+                ),
+          )
+          .toList();
     }
-    
+
     return filtered;
   }
 
@@ -249,29 +290,34 @@ class ProductController extends GetxController {
   final RxList<String> _customCategoryOrder = <String>[].obs;
 
   List<String> get categories {
-    final Set<String> categories = products.map((p) => p.category).where((c) => c != null).cast<String>().toSet();
-    
+    final Set<String> categories = products
+        .map((p) => p.category)
+        .where((c) => c != null)
+        .cast<String>()
+        .toSet();
+
     // Obter categorias na ordem personalizada
     final List<String> orderedCategories = [];
-    
+
     // Adicionar 'Todas' sempre primeiro
     orderedCategories.add('Todas');
-    
+
     // Adicionar categorias na ordem personalizada
     for (final category in _customCategoryOrder) {
       if (categories.contains(category)) {
         orderedCategories.add(category);
       }
     }
-    
+
     // Adicionar categorias novas que não estão na ordem personalizada
-    final newCategories = categories
-        .where((category) => !_customCategoryOrder.contains(category))
-        .toList()
-      ..sort();
-    
+    final newCategories =
+        categories
+            .where((category) => !_customCategoryOrder.contains(category))
+            .toList()
+          ..sort();
+
     orderedCategories.addAll(newCategories);
-    
+
     return orderedCategories;
   }
 
@@ -290,7 +336,11 @@ class ProductController extends GetxController {
         print('Erro ao carregar ordem das categorias da API: $e');
       }
       // Em caso de erro, usar ordem alfabética
-      final Set<String> categories = products.map((p) => p.category).where((c) => c != null).cast<String>().toSet();
+      final Set<String> categories = products
+          .map((p) => p.category)
+          .where((c) => c != null)
+          .cast<String>()
+          .toSet();
       final sortedCategories = categories.toList()..sort();
       _customCategoryOrder.value = sortedCategories;
     }
@@ -329,4 +379,14 @@ class ProductController extends GetxController {
   }
 
   bool get isOfflineMode => hasCachedData.value;
-} 
+
+  Future<void> refreshData() async {
+    products.clear();
+    errorMessage.value = '';
+    try {
+      await _storage.remove('cached_products');
+      await _storage.remove('cache_timestamp');
+    } catch (_) {}
+    await loadProducts();
+  }
+}

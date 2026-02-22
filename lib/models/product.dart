@@ -7,6 +7,7 @@ class Product {
   final String imageUrl;
   final String? category;
   final int? stock;
+  final bool manageStock;
 
   Product({
     required this.id,
@@ -17,6 +18,7 @@ class Product {
     required this.imageUrl,
     this.category,
     this.stock,
+    this.manageStock = true,
   });
 
   // Converte JSON para Product
@@ -29,7 +31,10 @@ class Product {
       description: json['description'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
       category: json['category'],
-      stock: json['stock'] is int ? json['stock'] : int.tryParse(json['stock']?.toString() ?? ''),
+      stock: json['stock'] is int
+          ? json['stock']
+          : int.tryParse(json['stock']?.toString() ?? ''),
+      manageStock: json['manage_stock'] == 1 || json['manage_stock'] == true,
     );
   }
 
@@ -53,6 +58,7 @@ class Product {
       'imageUrl': imageUrl,
       'category': category,
       'stock': stock,
+      'manage_stock': manageStock ? 1 : 0,
     };
   }
 
@@ -66,6 +72,7 @@ class Product {
     String? imageUrl,
     String? category,
     int? stock,
+    bool? manageStock,
   }) {
     return Product(
       id: id ?? this.id,
@@ -76,6 +83,7 @@ class Product {
       imageUrl: imageUrl ?? this.imageUrl,
       category: category ?? this.category,
       stock: stock ?? this.stock,
+      manageStock: manageStock ?? this.manageStock,
     );
   }
-} 
+}

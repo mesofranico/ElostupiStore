@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../core/app_style.dart';
+import '../core/utils/ui_utils.dart';
 
 class AppController extends GetxController {
   final GetStorage _storage = GetStorage();
@@ -57,17 +58,10 @@ class AppController extends GetxController {
     }
 
     // Feedback visual
-    Get.snackbar(
-      'Configuração Atualizada',
+    UiUtils.showSuccess(
       showResalePrice.value
           ? 'Preços de revenda ativados'
           : 'Preços de revenda desativados',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.withValues(alpha: 0.8),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
     );
   }
 
@@ -86,17 +80,10 @@ class AppController extends GetxController {
     }
 
     // Feedback visual
-    Get.snackbar(
-      'Configuração Atualizada',
+    UiUtils.showInfo(
       keepScreenOn.value
           ? 'Tela manterá ligada'
           : 'Tela pode apagar normalmente',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.orange.withValues(alpha: 0.8),
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 8,
     );
   }
 
@@ -141,15 +128,8 @@ class AppController extends GetxController {
         print('Configurações resetadas para valores padrão');
       }
 
-      Get.snackbar(
-        'Configurações Resetadas',
+      UiUtils.showInfo(
         'Todas as configurações foram restauradas para os valores padrão',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.blue.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
       );
     } catch (e) {
       if (kDebugMode) {

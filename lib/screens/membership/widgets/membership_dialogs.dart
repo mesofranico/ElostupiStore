@@ -8,6 +8,7 @@ import '../../../core/currency_formatter.dart';
 import '../../../core/membership_calculator.dart';
 import '../../../core/snackbar_helper.dart';
 import '../../../core/app_style.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../membership_utils.dart';
 import 'membership_shared_widgets.dart';
 
@@ -636,6 +637,7 @@ class MembershipDialogs {
 
     String paymentType = overdueMonths > 0 ? 'overdue' : 'regular';
     int numberOfMonths = 1;
+    bool isProcessing = false;
 
     showModalBottomSheet(
       context: context,
@@ -828,65 +830,104 @@ class MembershipDialogs {
 
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          int monthsToAdvance = 1;
-                          if (paymentType == 'overdue') {
-                            monthsToAdvance = overdueMonths;
-                          } else if (paymentType == 'advance') {
-                            monthsToAdvance = numberOfMonths;
-                          }
+                      onPressed: isProcessing
+                          ? null
+                          : () async {
+                              setState(() => isProcessing = true);
+                              try {
+                                int monthsToAdvance = 1;
+                                if (paymentType == 'overdue') {
+                                  monthsToAdvance = overdueMonths;
+                                } else if (paymentType == 'advance') {
+                                  monthsToAdvance = numberOfMonths;
+                                }
 
-                          final payment = Payment(
-                            memberId: member.id!,
-                            amount: currentTotal,
-                            paymentDate: DateTime.now(),
-                            status: 'completed',
-                            paymentType: paymentType,
-                            createdAt: DateTime.now(),
-                          );
-
-                          final success = await paymentController.createPayment(
-                            payment,
-                          );
-                          if (!success) return;
-
-                          // Lógica de atualização de datas (simplificada para o exemplo, mantendo a original)
-                          DateTime nextDate;
-                          final base = member.nextPaymentDate ?? DateTime.now();
-
-                          if (paymentType == 'overdue') {
-                            nextDate =
-                                MembershipCalculator.calculateNextPaymentAfterOverdue(
-                                  member.lastPaymentDate ?? member.joinDate,
-                                  member.membershipType,
-                                  monthsToAdvance,
+                                final payment = Payment(
+                                  memberId: member.id!,
+                                  amount: currentTotal,
+                                  paymentDate: DateTime.now(),
+                                  status: 'completed',
+                                  paymentType: paymentType,
+                                  createdAt: DateTime.now(),
                                 );
-                          } else {
-                            nextDate = base;
-                            for (int i = 0; i < monthsToAdvance; i++) {
-                              nextDate =
-                                  MembershipCalculator.calculateNextPaymentByType(
-                                    member.membershipType,
-                                    fromDate: nextDate,
+
+                                final success = await paymentController
+                                    .createPayment(
+                                      payment,
+                                      showSnackbar: false,
+                                      showLoading: false,
+                                    );
+
+                                if (!success) {
+                                  setState(() => isProcessing = false);
+                                  if (context.mounted) {
+                                    SnackBarHelper.showError(
+                                      context,
+                                      'Erro ao registar pagamento',
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                // Lógica de atualização de datas
+                                DateTime nextDate;
+                                final base =
+                                    member.nextPaymentDate ?? DateTime.now();
+
+                                if (paymentType == 'overdue') {
+                                  nextDate =
+                                      MembershipCalculator.calculateNextPaymentAfterOverdue(
+                                        member.lastPaymentDate ??
+                                            member.joinDate,
+                                        member.membershipType,
+                                        monthsToAdvance,
+                                      );
+                                } else {
+                                  nextDate = base;
+                                  for (int i = 0; i < monthsToAdvance; i++) {
+                                    nextDate =
+                                        MembershipCalculator.calculateNextPaymentByType(
+                                          member.membershipType,
+                                          fromDate: nextDate,
+                                        );
+                                  }
+                                }
+
+                                await memberController.updateMember(
+                                  member.copyWith(
+                                    lastPaymentDate: DateTime.now(),
+                                    nextPaymentDate: nextDate,
+                                    paymentStatus: 'paid',
+                                  ),
+                                  showSnackbar: false,
+                                  showLoading: false,
+                                );
+
+                                if (sheetContext.mounted) {
+                                  Navigator.pop(sheetContext);
+                                  memberController.loadMembers(
+                                    showLoading: false,
                                   );
-                            }
-                          }
 
-                          await memberController.updateMember(
-                            member.copyWith(
-                              lastPaymentDate: DateTime.now(),
-                              nextPaymentDate: nextDate,
-                              paymentStatus: 'paid',
-                            ),
-                          );
-
-                          if (sheetContext.mounted) {
-                            Navigator.pop(sheetContext);
-                            memberController.loadMembers();
-                          }
-                        } catch (_) {}
-                      },
+                                  // Mostrar snackbar após o fecho do bottomsheet.
+                                  // Usamos um atraso ligeiramente maior e removemos context.mounted se necessário,
+                                  // ou garantimos que usamos o contexto global do GetX se UiUtils o permitir.
+                                  Future.delayed(
+                                    const Duration(milliseconds: 500),
+                                    () {
+                                      UiUtils.showSuccess(
+                                        'Pagamento de "${member.name}" efectuado com sucesso!',
+                                      );
+                                    },
+                                  );
+                                }
+                              } catch (e) {
+                                setState(() => isProcessing = false);
+                                if (context.mounted) {
+                                  UiUtils.showError('Erro inesperado: $e');
+                                }
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppStyle.primary,
                         foregroundColor: Colors.white,
@@ -894,14 +935,26 @@ class MembershipDialogs {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                      ),
-                      child: const Text(
-                        'Confirmar Pagamento',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        disabledBackgroundColor: AppStyle.primary.withValues(
+                          alpha: 0.6,
                         ),
                       ),
+                      child: isProcessing
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Confirmar Pagamento',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ],
                 ),

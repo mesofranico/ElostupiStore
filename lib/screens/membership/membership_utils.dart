@@ -110,7 +110,7 @@ class MembershipUtils {
       case 'regular':
         return 'Mensal';
       case 'overdue':
-        return 'Atraso';
+        return 'Em Atraso';
       case 'advance':
         return 'Adiantado';
       default:

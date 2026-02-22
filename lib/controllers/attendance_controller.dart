@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../models/attendance_record.dart';
 import '../models/consulente.dart';
 import '../models/consulente_session.dart';
 import '../services/attendance_service.dart';
+import '../core/utils/ui_utils.dart';
 import 'consulente_controller.dart';
 
 class AttendanceController extends GetxController {
@@ -137,8 +139,7 @@ class AttendanceController extends GetxController {
       debugPrint('Erro ao marcar presença: $e');
       attendanceRecords.assignAll(previousRecords);
       attendanceStats.assignAll(previousStats);
-      Get.snackbar(
-        'Erro',
+      UiUtils.showError(
         'Não foi possível atualizar a presença. Tente novamente.',
       );
     });
@@ -287,5 +288,22 @@ class AttendanceController extends GetxController {
 
   void clearError() {
     errorMessage.value = '';
+  }
+
+  Future<void> refreshData() async {
+    attendanceRecords.clear();
+    consulentesWithoutAttendance.clear();
+    allConsulentes.clear();
+    sessionsWithAcompanhantes.clear();
+    attendanceStats.clear();
+    errorMessage.value = '';
+
+    try {
+      final storage = GetStorage();
+      await storage.remove('attendance_cache');
+      await storage.remove('cached_attendance');
+    } catch (_) {}
+
+    await loadAttendanceForDate(selectedDate.value);
   }
 }

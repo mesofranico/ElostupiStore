@@ -1,53 +1,90 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/recado.dart';
+import '../services/recado_service.dart';
+import '../core/utils/ui_utils.dart';
 
 class RecadoController extends GetxController {
   final RxList<Recado> recados = <Recado>[].obs;
-  static const String _storageKey = 'recados';
+  final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _load();
+    loadRecados();
   }
 
-  void _load() {
+  Future<void> loadRecados() async {
     try {
-      final box = GetStorage();
-      final list = box.read<List>(_storageKey);
-      if (list != null) {
-        recados.assignAll(
-          list.map((e) => Recado.fromJson(Map<String, dynamic>.from(e as Map))).toList(),
-        );
-      }
-    } catch (_) {
-      recados.clear();
+      isLoading.value = true;
+      final list = await RecadoService.getAll();
+      recados.assignAll(list);
+    } catch (e) {
+      // Erro silencioso ou log
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  Future<void> _save() async {
-    final box = GetStorage();
-    await box.write(_storageKey, recados.map((e) => e.toJson()).toList());
-  }
-
   Future<void> add(Recado recado) async {
-    recados.add(recado);
-    await _save();
+    try {
+      UiUtils.showLoadingOverlay(message: 'A guardar recado...');
+      final newRecado = await RecadoService.add(recado);
+      recados.add(newRecado);
+      UiUtils.hideLoading();
+      Get.back(); // Voltar da tela de formulário
+    } catch (e) {
+      if (kDebugMode) {
+        print('DEBUG: Error adding recado: $e');
+      }
+      UiUtils.hideLoading();
+      UiUtils.showError('Erro ao guardar recado: $e');
+    }
   }
 
   Future<void> updateRecado(Recado recado) async {
-    final i = recados.indexWhere((r) => r.id == recado.id);
-    if (i >= 0) {
-      recados[i] = recado;
-      await _save();
+    try {
+      UiUtils.showLoadingOverlay(message: 'A atualizar recado...');
+      final updated = await RecadoService.update(recado);
+      final i = recados.indexWhere((r) => r.id == updated.id);
+      if (i >= 0) {
+        recados[i] = updated;
+      }
+      UiUtils.hideLoading();
+      Get.back(); // Voltar da tela de formulário
+    } catch (e) {
+      UiUtils.hideLoading();
+      UiUtils.showError('Erro ao atualizar recado: $e');
     }
   }
 
   Future<void> remove(String id) async {
-    recados.removeWhere((r) => r.id == id);
-    await _save();
+    try {
+      UiUtils.showLoadingOverlay(message: 'A eliminar recado...');
+      await RecadoService.delete(id);
+      recados.removeWhere((r) => r.id == id);
+      UiUtils.hideLoading();
+    } catch (e) {
+      UiUtils.hideLoading();
+      UiUtils.showError('Erro ao eliminar recado: $e');
+    }
   }
 
-  List<Recado> get comAlerta => recados.where((r) => r.alerta || (r.diasRestantes != null && r.diasRestantes! <= 7)).toList();
+  Future<void> refreshData() async {
+    recados.clear();
+    try {
+      final storage = GetStorage();
+      await storage.remove('recados_cache');
+      await storage.remove('cached_recados');
+      await storage.remove('recados'); // Legacy key if any
+    } catch (_) {}
+    await loadRecados();
+  }
+
+  List<Recado> get comAlerta => recados
+      .where(
+        (r) => r.alerta || (r.diasRestantes != null && r.diasRestantes! <= 7),
+      )
+      .toList();
 }

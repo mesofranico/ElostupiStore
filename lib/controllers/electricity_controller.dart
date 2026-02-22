@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/electricity_reading.dart';
 import '../models/electricity_settings.dart';
 import '../services/electricity_service.dart';
+import '../core/utils/ui_utils.dart';
 
 class ElectricityController extends GetxController {
   final RxList<ElectricityReading> readings = <ElectricityReading>[].obs;
@@ -11,9 +12,10 @@ class ElectricityController extends GetxController {
   final Rx<ElectricitySettings?> settings = Rx<ElectricitySettings?>(null);
 
   // Controllers para os campos de entrada
-  final counterController = TextEditingController(); // Mudou de kwController para counterController
+  final counterController =
+      TextEditingController(); // Mudou de kwController para counterController
   final notesController = TextEditingController();
-  
+
   // Focus node temporário para remover foco
   final unfocusNode = FocusNode();
 
@@ -40,6 +42,7 @@ class ElectricityController extends GetxController {
     } catch (e) {
       // Se não conseguir carregar, usar configurações padrão
       settings.value = ElectricitySettings.defaultSettings();
+      debugPrint('Erro ao carregar configurações de eletricidade: $e');
     }
   }
 
@@ -50,7 +53,7 @@ class ElectricityController extends GetxController {
       final readingsList = await ElectricityService.getAllReadings();
       readings.assignAll(readingsList);
     } catch (e) {
-      // Erro silencioso
+      UiUtils.showError('Erro ao carregar leituras: $e');
     } finally {
       isLoading.value = false;
     }
@@ -59,44 +62,54 @@ class ElectricityController extends GetxController {
   // Adicionar nova leitura
   Future<void> addReading() async {
     if (counterController.text.isEmpty) {
+      UiUtils.showError('Indique o valor do contador.');
       return;
     }
 
     if (settings.value == null) {
+      UiUtils.showError('Configurações não carregadas.');
       return;
     }
 
     try {
       isAdding.value = true;
-      
+      UiUtils.showLoadingOverlay(message: 'A guardar leitura...');
+
       final counterValue = double.parse(counterController.text);
-      
+
       // Validar que o valor do contador seja um número inteiro
       if (counterValue != counterValue.toInt()) {
+        UiUtils.hideLoading();
+        UiUtils.showError('O valor do contador deve ser um número inteiro.');
         return;
       }
-      
+
       // Verificar se é a primeira leitura
       final isFirstReading = readings.isEmpty;
-      
+
       // Para a primeira leitura, não calcular KW consumidos
       double kwConsumed = 0.0;
       double totalCost = 0.0;
-      
+
       if (!isFirstReading) {
         // Calcular KW consumidos baseado na diferença com a leitura anterior
-        final lastReading = readings.first; // Assumindo que está ordenado por data decrescente
+        final lastReading =
+            readings.first; // Assumindo que está ordenado por data decrescente
         kwConsumed = counterValue - lastReading.counterValue;
-        
+
         // Validar que o consumo seja positivo
         if (kwConsumed <= 0) {
+          UiUtils.hideLoading();
+          UiUtils.showError(
+            'O novo valor deve ser superior ao anterior (${lastReading.counterValue.toInt()}).',
+          );
           return;
         }
-        
+
         final pricePerKw = settings.value!.defaultPricePerKw;
         totalCost = kwConsumed * pricePerKw;
       }
-      
+
       final pricePerKw = settings.value!.defaultPricePerKw;
       final notes = notesController.text;
 
@@ -114,11 +127,15 @@ class ElectricityController extends GetxController {
 
       // Recarregar lista
       await loadReadings();
-      
+
+      UiUtils.hideLoading();
+      UiUtils.showSuccess('Leitura adicionada com sucesso!');
+
       // Remover foco de todos os campos
       unfocusNode.requestFocus();
     } catch (e) {
-      // Erro silencioso
+      UiUtils.hideLoading();
+      UiUtils.showError('Erro ao adicionar leitura: $e');
     } finally {
       isAdding.value = false;
     }
@@ -127,10 +144,14 @@ class ElectricityController extends GetxController {
   // Excluir leitura
   Future<void> deleteReading(int id) async {
     try {
+      UiUtils.showLoadingOverlay(message: 'A excluir leitura...');
       await ElectricityService.deleteReading(id);
       await loadReadings();
+      UiUtils.hideLoading();
+      UiUtils.showSuccess('Leitura excluída com sucesso.');
     } catch (e) {
-      // Erro silencioso
+      UiUtils.hideLoading();
+      UiUtils.showError('Erro ao excluir leitura: $e');
     }
   }
 
@@ -155,4 +176,4 @@ class ElectricityController extends GetxController {
     if (readings.isEmpty) return null;
     return readings.first.counterValue;
   }
-} 
+}

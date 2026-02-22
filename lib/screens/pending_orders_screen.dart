@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/cart_controller.dart';
 import '../models/product.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
+import '../widgets/loading_view.dart';
 
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({super.key});
@@ -13,6 +15,7 @@ class PendingOrdersScreen extends StatefulWidget {
 
 class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   late CartController cartController;
+  final Map<String, bool> _internalOrders = {};
 
   @override
   void initState() {
@@ -22,6 +25,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   }
 
   void refreshOrders() {
+    _internalOrders.clear();
     cartController.updatePendingOrders();
     setState(() {});
   }
@@ -38,7 +42,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       body: Obx(() {
         final pendingOrders = cartController.pendingOrders;
         if (cartController.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingView();
         }
         if (pendingOrders.isEmpty) {
           return Center(
@@ -74,15 +78,22 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
           itemCount: pendingOrders.length,
           itemBuilder: (context, index) {
             final order = pendingOrders[index];
+            final orderId = order['id'];
             final List<dynamic> items = order['items'] ?? [];
             final total = double.tryParse(order['total'].toString()) ?? 0.0;
             final note = order['note']?.toString().trim();
+            final isInternal = _internalOrders[orderId] ?? false;
+
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: theme.colorScheme.shadow.withValues(alpha: 0.06),
@@ -150,7 +161,12 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                         );
                       }
                     }),
-                    Divider(height: 20, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    Divider(
+                      height: 20,
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -169,78 +185,105 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    // Checkbox para Consumo Interno
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _internalOrders[orderId] = !isInternal;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  value: isInternal,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _internalOrders[orderId] = v ?? false;
+                                    });
+                                  },
+                                  activeColor: Colors.blue.shade700,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Consumo Interno',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: isInternal
+                                      ? Colors.blue.shade700
+                                      : theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: isInternal
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton.icon(
                             onPressed: () async {
-                              final ok = await cartController.finalizePendingOrderAPI(order['id']);
+                              final ok = await cartController
+                                  .finalizePendingOrderAPI(
+                                    orderId,
+                                    isInternal: isInternal,
+                                  );
                               if (ok) refreshOrders();
                             },
                             style: FilledButton.styleFrom(
+                              backgroundColor: isInternal
+                                  ? Colors.blue.shade700
+                                  : null,
                               minimumSize: const Size(0, 40),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                            icon: const Icon(Icons.check_circle, size: 18),
-                            label: const Text('Finalizar'),
+                            icon: Icon(
+                              isInternal
+                                  ? Icons.home_repair_service
+                                  : Icons.check_circle,
+                              size: 18,
+                            ),
+                            label: Text(isInternal ? 'Consumir' : 'Finalizar'),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) {
-                                  final t = Theme.of(ctx);
-                                  return AlertDialog(
-                                    backgroundColor: t.colorScheme.surface,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                    title: Row(
-                                      children: [
-                                        Icon(Icons.delete_outline, color: t.colorScheme.error, size: 24),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          'Remover pedido',
-                                          style: t.textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: t.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    content: Text(
-                                      'Queres apagar este pedido pendente?',
-                                      style: t.textTheme.bodyMedium?.copyWith(color: t.colorScheme.onSurfaceVariant),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(ctx).pop(false),
-                                        child: const Text('Cancelar'),
-                                      ),
-                                      FilledButton(
-                                        onPressed: () => Navigator.of(ctx).pop(true),
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: t.colorScheme.error,
-                                          foregroundColor: t.colorScheme.onError,
-                                          minimumSize: const Size(0, 40),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        ),
-                                        child: const Text('Apagar'),
-                                      ),
-                                    ],
+                            onPressed: () {
+                              UiUtils.showConfirmDialog(
+                                title: 'Remover pedido',
+                                message: 'Queres apagar este pedido pendente?',
+                                confirmLabel: 'Apagar',
+                                icon: Icons.delete_outline,
+                                color: theme.colorScheme.error,
+                                onConfirm: () async {
+                                  await cartController.removePendingOrderAPI(
+                                    orderId,
                                   );
+                                  refreshOrders();
                                 },
                               );
-                              if (confirm == true) {
-                                await cartController.removePendingOrderAPI(order['id']);
-                                refreshOrders();
-                              }
                             },
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size(0, 40),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               side: BorderSide(color: theme.colorScheme.error),
                               foregroundColor: theme.colorScheme.error,
                             ),
@@ -259,4 +302,4 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       }),
     );
   }
-} 
+}

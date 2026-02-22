@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/member_controller.dart';
 import '../../../controllers/payment_controller.dart';
+import '../../../controllers/finance_controller.dart';
+import '../../../models/financial_record.dart';
 import '../../../core/currency_formatter.dart';
-import '../widgets/membership_shared_widgets.dart';
-import '../widgets/membership_dialogs.dart';
+import '../widgets/financial_entry_dialog.dart';
 import '../membership_utils.dart';
-import '../../../core/utils/ui_utils.dart';
+import '../../../core/app_style.dart';
 
-class ReportsTab extends StatelessWidget {
+class ReportsTab extends StatefulWidget {
   final MemberController memberController;
   final PaymentController paymentController;
 
@@ -19,486 +20,745 @@ class ReportsTab extends StatelessWidget {
   });
 
   @override
+  State<ReportsTab> createState() => _ReportsTabState();
+}
+
+class _ReportsTabState extends State<ReportsTab> {
+  late final FinanceController financeController;
+
+  @override
+  void initState() {
+    super.initState();
+    financeController = Get.find<FinanceController>();
+    // Auto-refresh ao entrar na aba/ecrã
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      financeController.loadAllData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabeçalho
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.02),
-                  blurRadius: 2,
-                  offset: const Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.analytics,
-                  color: theme.colorScheme.primary,
-                  size: 28,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Relatórios de mensalidades',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Análise do sistema de mensalidades',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Header Moderno
+          _buildHeader(theme, financeController),
 
-          // Indicador de filtro ativo
-          Obx(() {
-            if (memberController.filterStartDate.value != null &&
-                memberController.filterEndDate.value != null) {
-              return Container(
-                margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(
-                    alpha: 0.3,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.5,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.filter_alt,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Filtro: ${MembershipUtils.formatDate(memberController.filterStartDate.value!)} a ${MembershipUtils.formatDate(memberController.filterEndDate.value!)}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => memberController.clearDateFilter(),
-                      child: const Text('Limpar'),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
+          const SizedBox(height: 24),
 
-          const SizedBox(height: 20),
+          // Filtros Rápidos
+          _buildQuickFilters(theme, financeController),
 
-          // Estatísticas em Cards
-          Row(
-            children: [
-              Expanded(
-                child: MembershipStatisticCard(
-                  title: 'Total de Membros',
-                  value: Obx(
-                    () => Text(
-                      memberController.getFilteredMembers().length.toString(),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ),
-                  icon: Icons.people,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: MembershipStatisticCard(
-                  title: 'Membros Ativos',
-                  value: Obx(
-                    () => Text(
-                      memberController
-                          .getFilteredMembers()
-                          .where((m) => m.isActive)
-                          .length
-                          .toString(),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ),
-                  icon: Icons.check_circle,
-                  color: Colors.green,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
 
-          const SizedBox(height: 12),
+          // Cards Principais (Balanço)
+          _buildSummaryCards(theme, financeController),
 
-          Row(
-            children: [
-              Expanded(
-                child: MembershipStatisticCard(
-                  title: 'Em Atraso',
-                  value: Obx(
-                    () => Text(
-                      memberController
-                          .getFilteredMembers()
-                          .where(
-                            (m) =>
-                                m.paymentStatus == 'overdue' ||
-                                (m.nextPaymentDate != null &&
-                                    m.nextPaymentDate!.isBefore(
-                                      DateTime.now(),
-                                    )),
-                          )
-                          .length
-                          .toString(),
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-                  icon: Icons.warning,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: MembershipStatisticCard(
-                  title: 'Valor Total',
-                  value: Obx(
-                    () => Text(
-                      CurrencyFormatter.formatEuro(
-                        paymentController.getFilteredPayments().fold<double>(
-                          0,
-                          (sum, p) => sum + p.amount,
-                        ),
-                      ),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange,
-                      ),
-                    ),
-                  ),
-                  icon: Icons.euro,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 28),
 
-          const SizedBox(height: 20),
-
-          // Relatório Detalhado de Membros
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.02),
-                  blurRadius: 2,
-                  offset: const Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.people,
-                      color: theme.colorScheme.primary,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Análise de membros',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Obx(() {
-                  final filteredMembers = memberController.getFilteredMembers();
-                  final total = filteredMembers.length;
-                  final active = filteredMembers
-                      .where((m) => m.isActive)
-                      .length;
-                  final overdue = filteredMembers
-                      .where(
-                        (m) =>
-                            m.paymentStatus == 'overdue' ||
-                            (m.nextPaymentDate != null &&
-                                m.nextPaymentDate!.isBefore(DateTime.now())),
-                      )
-                      .length;
-                  final paid = filteredMembers
-                      .where((m) => m.paymentStatus == 'paid')
-                      .length;
-
-                  return Column(
-                    children: [
-                      MembershipDetailedReportRow(
-                        label: 'Total de Membros',
-                        value: total.toString(),
-                        icon: Icons.people,
-                        color: Colors.blue,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Membros Ativos',
-                        value: active.toString(),
-                        icon: Icons.check_circle,
-                        color: Colors.green,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Em Atraso',
-                        value: overdue.toString(),
-                        icon: Icons.warning,
-                        color: Colors.red,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Pagamentos em Dia',
-                        value: paid.toString(),
-                        icon: Icons.payment,
-                        color: Colors.green,
-                      ),
-                    ],
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Relatório Detalhado de Pagamentos
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-                BoxShadow(
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.02),
-                  blurRadius: 2,
-                  offset: const Offset(0, 0),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.payment, color: Colors.green.shade700, size: 22),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Análise de pagamentos',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Obx(() {
-                  final filteredPayments = paymentController
-                      .getFilteredPayments();
-                  final total = filteredPayments.length;
-                  final totalAmount = filteredPayments.fold<double>(
-                    0,
-                    (sum, p) => sum + p.amount,
-                  );
-                  final completed = filteredPayments
-                      .where((p) => p.status == 'completed')
-                      .length;
-
-                  // Calcular estatísticas por tipo
-                  final regularPayments = filteredPayments
-                      .where((p) => p.paymentType == 'regular')
-                      .length;
-                  final overduePayments = filteredPayments
-                      .where((p) => p.paymentType == 'overdue')
-                      .length;
-                  final advancePayments = filteredPayments
-                      .where((p) => p.paymentType == 'advance')
-                      .length;
-
-                  return Column(
-                    children: [
-                      MembershipDetailedReportRow(
-                        label: 'Total de Pagamentos',
-                        value: total.toString(),
-                        icon: Icons.payment,
-                        color: Colors.blue,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Valor Total',
-                        value: CurrencyFormatter.formatEuro(totalAmount),
-                        icon: Icons.euro,
-                        color: Colors.orange,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Concluídos',
-                        value: completed.toString(),
-                        icon: Icons.check_circle,
-                        color: Colors.green,
-                      ),
-                      const Divider(height: 24),
-                      MembershipDetailedReportRow(
-                        label: 'Pagamentos Regulares',
-                        value: regularPayments.toString(),
-                        icon: Icons.schedule,
-                        color: Colors.blue,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Pagamentos em Atraso',
-                        value: overduePayments.toString(),
-                        icon: Icons.warning,
-                        color: Colors.red,
-                      ),
-                      MembershipDetailedReportRow(
-                        label: 'Pagamentos Antecipados',
-                        value: advancePayments.toString(),
-                        icon: Icons.trending_up,
-                        color: Colors.green,
-                      ),
-                    ],
-                  );
-                }),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    UiUtils.showLoadingOverlay(message: 'Gerando relatório...');
-                    await Future.delayed(
-                      const Duration(milliseconds: 600),
-                    ); // Premium feel
-
-                    if (!context.mounted) return;
-
-                    final report = MembershipUtils.generateReportContent(
-                      members: memberController.getFilteredMembers(),
-                      payments: paymentController.getFilteredPayments(),
-                      generationDate: MembershipUtils.formatDate(
-                        DateTime.now(),
-                      ),
-                    );
-
-                    UiUtils.hideLoading();
-                    MembershipDialogs.showReportDialog(context, report);
-                  },
-                  icon: const Icon(Icons.download, size: 18),
-                  label: const Text('Exportar relatório'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => MembershipDialogs.showDateRangeDialog(
-                    context,
-                    memberController,
-                  ),
-                  icon: const Icon(Icons.date_range, size: 18),
-                  label: const Text('Filtrar período'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          // Secção de Ações
+          _buildActionButtons(
+            context,
+            theme,
+            widget.memberController,
+            widget.paymentController,
           ),
 
           const SizedBox(height: 32),
+
+          // Lista de Transações Recentes
+          _buildTransactionsSection(theme, financeController),
+
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme, FinanceController financeController) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppStyle.softShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Saldo Consolidado',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Obx(
+                  () => Text(
+                    CurrencyFormatter.formatEuro(financeController.balance),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Obx(
+            () => financeController.isLoading.value
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : IconButton(
+                    onPressed: () => financeController.loadAllData(),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFilters(
+    ThemeData theme,
+    FinanceController financeController,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _FilterChip(
+          label: 'Hoje',
+          type: 'daily',
+          controller: financeController,
+        ),
+        _FilterChip(
+          label: 'Semana',
+          type: 'weekly',
+          controller: financeController,
+        ),
+        _FilterChip(
+          label: 'Mês',
+          type: 'monthly',
+          controller: financeController,
+        ),
+        IconButton.filledTonal(
+          onPressed: () =>
+              _showCustomDateRangePicker(Get.context!, financeController),
+          icon: const Icon(Icons.date_range_rounded, size: 20),
+          style: IconButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCards(
+    ThemeData theme,
+    FinanceController financeController,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: _SummaryCard(
+            title: 'Entradas',
+            icon: Icons.arrow_upward_rounded,
+            color: Colors.green,
+            value: Obx(
+              () => Text(
+                CurrencyFormatter.formatEuro(financeController.totalIncome),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _SummaryCard(
+            title: 'Gastos',
+            icon: Icons.arrow_downward_rounded,
+            color: Colors.red,
+            value: Obx(
+              () => Text(
+                CurrencyFormatter.formatEuro(financeController.totalExpense),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons(
+    BuildContext context,
+    ThemeData theme,
+    MemberController mCtrl,
+    PaymentController pCtrl,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () => FinancialEntryDialog.show(context),
+            icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
+            label: const Text('Novo Gasto'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.withValues(alpha: 0.1),
+              foregroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () =>
+                FinancialEntryDialog.show(context, initialType: 'income'),
+            icon: const Icon(Icons.add_chart_rounded, size: 20),
+            label: const Text('Nova Entrada'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.green.withValues(alpha: 0.1),
+              foregroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransactionsSection(
+    ThemeData theme,
+    FinanceController financeController,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Transações Recentes',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            TextButton(
+              onPressed: () {}, // Link para histórico completo futuramente
+              child: const Text('Ver tudo'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Obx(() {
+          if (financeController.records.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 48,
+                      color: theme.disabledColor,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Nenhuma transação manual no período',
+                      style: TextStyle(color: theme.disabledColor),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: financeController.records.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final record = financeController.records[index];
+              final isIncome = record.type == 'income';
+
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showTransactionDetails(context, record, theme),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: (isIncome ? Colors.green : Colors.red)
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isIncome
+                                ? Icons.keyboard_double_arrow_up_rounded
+                                : Icons.keyboard_double_arrow_down_rounded,
+                            color: isIncome ? Colors.green : Colors.red,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                record.category,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Text(
+                                MembershipUtils.formatDate(record.recordDate),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${isIncome ? '+' : '-'} ${CurrencyFormatter.formatEuro(record.amount)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isIncome ? Colors.green : Colors.red,
+                              ),
+                            ),
+                            if (record.id != null)
+                              GestureDetector(
+                                onTap: () =>
+                                    financeController.deleteRecord(record.id!),
+                                child: Container(
+                                  margin: const EdgeInsets.only(top: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.error.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: theme.colorScheme.error.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 14,
+                                        color: theme.colorScheme.error,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Eliminar',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.error,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }),
+      ],
+    );
+  }
+
+  void _showCustomDateRangePicker(
+    BuildContext context,
+    FinanceController controller,
+  ) async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: DateTimeRange(
+        start: controller.startDate.value,
+        end: controller.endDate.value,
+      ),
+    );
+    if (picked != null) {
+      controller.setDateRange(picked.start, picked.end);
+    }
+  }
+
+  void _showTransactionDetails(
+    BuildContext context,
+    FinancialRecord record,
+    ThemeData theme,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color:
+                          (record.type == 'income' ? Colors.green : Colors.red)
+                              .withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      record.type == 'income'
+                          ? Icons.keyboard_double_arrow_up_rounded
+                          : Icons.keyboard_double_arrow_down_rounded,
+                      color: record.type == 'income'
+                          ? Colors.green
+                          : Colors.red,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          record.category,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          MembershipUtils.formatDate(record.recordDate),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${record.type == 'income' ? '+' : '-'} ${CurrencyFormatter.formatEuro(record.amount)}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: record.type == 'income'
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              if (record.description != null &&
+                  record.description!.isNotEmpty) ...[
+                Text(
+                  'Descrição',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  record.description!
+                      .replaceAll('(overdue)', '(Em Atraso)')
+                      .replaceAll('(regular)', '(Mensal)')
+                      .replaceAll('(advance)', '(Adiantado)'),
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+              ],
+              if (record.details != null &&
+                  record.details!.containsKey('items')) ...[
+                Text(
+                  'Produtos/Serviços',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...(record.details!['items'] as List).map((item) {
+                  final it = Map<String, dynamic>.from(item);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${it['quantity']}x ${it['name']}',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          CurrencyFormatter.formatEuro(
+                            double.parse((it['price'] ?? 0).toString()) *
+                                double.parse((it['quantity'] ?? 1).toString()),
+                          ),
+                          style: theme.textTheme.bodyLarge,
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 24),
+              ],
+              if (record.details != null &&
+                  record.details!.containsKey('memberName')) ...[
+                Text(
+                  'Relacionado a:',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      record.details!['memberName'],
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+                if (record.details!.containsKey('paymentType')) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.payment_outlined, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Tipo: ${MembershipUtils.getPaymentTypeText(record.details!['paymentType'])}',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 24),
+              ],
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(modalContext),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Fechar'),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final String type;
+  final FinanceController controller;
+
+  const _FilterChip({
+    required this.label,
+    required this.type,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final isSelected = controller.selectedPeriodType.value == type;
+      return FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) => controller.setPeriod(type),
+        selectedColor: Get.theme.colorScheme.primaryContainer,
+        checkmarkColor: Get.theme.colorScheme.primary,
+        labelStyle: TextStyle(
+          color: isSelected
+              ? Get.theme.colorScheme.primary
+              : Get.theme.colorScheme.onSurface,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      );
+    });
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final Widget value;
+
+  const _SummaryCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Get.theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Get.theme.colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: Get.theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          value,
         ],
       ),
     );

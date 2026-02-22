@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/cart_controller.dart';
+import '../core/utils/ui_utils.dart';
 import '../controllers/app_controller.dart';
 import '../widgets/cart_item_widget.dart';
 import '../widgets/standard_appbar.dart';
@@ -48,7 +49,11 @@ class CartScreen extends StatelessWidget {
                       color: Colors.orange.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.save_outlined, color: Colors.orange.shade700, size: 18),
+                    child: Icon(
+                      Icons.save_outlined,
+                      color: Colors.orange.shade700,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -77,17 +82,27 @@ class CartScreen extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Ex: Nome do consulente, observações...',
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  fillColor: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.4),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.5,
+                      ),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(color: Colors.orange, width: 1.5),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -125,37 +140,22 @@ class CartScreen extends StatelessWidget {
                         onTap: () async {
                           final note = noteController.text.trim();
                           if (note.isEmpty) {
-                            Get.snackbar(
-                              'Nota obrigatória',
-                              'Adicione uma nota ao pedido.',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: theme.colorScheme.error,
-                              colorText: theme.colorScheme.onError,
-                              duration: const Duration(seconds: 3),
-                            );
+                            UiUtils.showError('Adicione uma nota ao pedido.');
                             return;
                           }
                           Navigator.of(ctx).pop();
-                          final ok = await cartController.savePendingOrderAPI(note: note);
+                          final ok = await cartController.savePendingOrderAPI(
+                            note: note,
+                          );
                           if (ok) {
                             cartController.clearCart();
-                            Get.snackbar(
-                              'Pedido pendente',
+                            UiUtils.showSuccess(
                               'O pedido foi guardado. Pode finalizar mais tarde.',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: Colors.orange,
-                              colorText: Colors.white,
-                              duration: const Duration(seconds: 3),
                             );
                             Get.back();
                           } else {
-                            Get.snackbar(
-                              'Erro',
+                            UiUtils.showError(
                               'Não foi possível guardar o pedido. Tente novamente.',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: theme.colorScheme.error,
-                              colorText: theme.colorScheme.onError,
-                              duration: const Duration(seconds: 3),
                             );
                           }
                         },
@@ -210,124 +210,13 @@ class CartScreen extends StatelessWidget {
               return IconButton(
                 icon: const Icon(Icons.delete_sweep),
                 onPressed: () {
-                  Get.dialog(
-                    Dialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.errorContainer,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(Icons.delete_sweep, color: theme.colorScheme.onErrorContainer, size: 18),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Limpar carrinho?',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Remover todos os itens do carrinho?',
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () => Get.back(),
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        height: 36,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.surfaceContainerHighest,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          'Cancelar',
-                                          style: theme.textTheme.labelLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      onTap: () {
-                                        cartController.clearCart();
-                                        Get.back();
-                                      },
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        height: 36,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: theme.colorScheme.error,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.delete_sweep, size: 16, color: theme.colorScheme.onError),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'Limpar',
-                                              style: theme.textTheme.labelLarge?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.colorScheme.onError,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  UiUtils.showConfirmDialog(
+                    title: 'Limpar carrinho?',
+                    message: 'Remover todos os itens do carrinho?',
+                    confirmLabel: 'Limpar',
+                    icon: Icons.delete_sweep,
+                    color: theme.colorScheme.error,
+                    onConfirm: () => cartController.clearCart(),
                   );
                 },
               );
@@ -368,213 +257,322 @@ class CartScreen extends StatelessWidget {
             );
           }
 
-        return Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                itemCount: cartController.items.length,
-                itemBuilder: (context, index) {
-                  return CartItemWidget(cartItem: cartController.items[index]);
-                },
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
                   ),
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.02),
-                    blurRadius: 2,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Total:',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Obx(() => Text(
-                          '€${cartController.totalPrice.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
-                          ),
-                        )),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Obx(() {
-                    final appController = Get.find<AppController>();
-                    final isResale = appController.showResalePrice.value;
-                    final totalItems = cartController.totalItems;
-                    final uniqueItems = cartController.items.length;
-                    return Text(
-                      '$totalItems ${totalItems == 1 ? 'item' : 'itens'} • ${uniqueItems == 1 ? '1 produto' : '$uniqueItems produtos'} • ${isResale ? 'Preço Corrente' : 'Preço Consulente'}',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                  itemCount: cartController.items.length,
+                  itemBuilder: (context, index) {
+                    return CartItemWidget(
+                      cartItem: cartController.items[index],
                     );
-                  }),
-                  const SizedBox(height: 14),
-                  Obx(() => Row(
-                    children: [
-                      Expanded(
-                        child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
+                  },
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+                      blurRadius: 2,
+                      offset: const Offset(0, 0),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Total:',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.green.shade200),
+                          ),
+                          child: Obx(
+                            () => Text(
+                              '€${cartController.totalPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Obx(() {
+                      final appController = Get.find<AppController>();
+                      final isResale = appController.showResalePrice.value;
+                      final totalItems = cartController.totalItems;
+                      final uniqueItems = cartController.items.length;
+                      return Text(
+                        '$totalItems ${totalItems == 1 ? 'item' : 'itens'} • ${uniqueItems == 1 ? '1 produto' : '$uniqueItems produtos'} • ${isResale ? 'Preço Corrente' : 'Preço Consulente'}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                    // Toggle de Consumo Interno
+                    Obx(
+                      () => Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => cartController.isInternal.toggle(),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cartController.isInternal.value
+                                  ? Colors.blue.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: cartController.isInternal.value
+                                    ? Colors.blue.withValues(alpha: 0.3)
+                                    : theme.colorScheme.outlineVariant
+                                          .withValues(alpha: 0.3),
+                              ),
                               borderRadius: BorderRadius.circular(8),
-                              onTap: cartController.isLoading.value
-                                  ? null
-                                  : () => _showGuardarPedidoBottomSheet(
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  cartController.isInternal.value
+                                      ? Icons.home_repair_service
+                                      : Icons.home_repair_service_outlined,
+                                  size: 16,
+                                  color: cartController.isInternal.value
+                                      ? Colors.blue.shade700
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Consumo Interno (Terreiro)',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: cartController.isInternal.value
+                                              ? Colors.blue.shade700
+                                              : theme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                          fontWeight:
+                                              cartController.isInternal.value
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                  ),
+                                ),
+                                Switch(
+                                  value: cartController.isInternal.value,
+                                  onChanged: (v) =>
+                                      cartController.isInternal.value = v,
+                                  activeThumbColor: theme.primaryColor,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Obx(
+                      () => Row(
+                        children: [
+                          Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: cartController.isLoading.value
+                                    ? null
+                                    : () => _showGuardarPedidoBottomSheet(
                                         context,
                                         theme,
                                         noteController,
                                         cartController,
                                       ),
-                              child: Container(
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: cartController.isLoading.value
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    const AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'A guardar...',
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                          ],
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.hourglass_empty,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Guardar Pedido',
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                 ),
-                                child: cartController.isLoading.value
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'A guardar...',
-                                            style: theme.textTheme.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.hourglass_empty, color: Colors.white, size: 18),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Guardar Pedido',
-                                            style: theme.textTheme.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                               ),
                             ),
                           ),
-                        ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                              onTap: cartController.isLoading.value
-                                  ? null
-                                  : () async {
-                                      final success = await cartController.finalizeOrder();
-                                      if (success) Get.back();
-                                    },
-                              child: Container(
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(8),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: cartController.isLoading.value
+                                    ? null
+                                    : () async {
+                                        final success = await cartController
+                                            .finalizeOrder();
+                                        if (success) Get.back();
+                                      },
+                                child: Container(
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: cartController.isLoading.value
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    const AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              'A processar...',
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                          ],
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.payment,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Finalizar Pedido',
+                                              style: theme.textTheme.labelLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                 ),
-                                child: cartController.isLoading.value
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'A processar...',
-                                            style: theme.textTheme.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.payment, color: Colors.white, size: 18),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Finalizar Pedido',
-                                            style: theme.textTheme.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  )),
-                ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
         }),
       ),
     );
   }
 }
- 

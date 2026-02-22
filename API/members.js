@@ -21,12 +21,12 @@ router.get('/', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -41,7 +41,7 @@ router.get('/', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -84,12 +84,12 @@ router.get('/overdue', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -104,7 +104,7 @@ router.get('/overdue', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN m.next_payment_date < CURDATE() AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
               COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
             ) / 
@@ -119,7 +119,7 @@ router.get('/overdue', async (req, res) => {
           ELSE 0 
         END as total_overdue
       FROM members m
-      WHERE (m.next_payment_date < CURDATE() OR m.payment_status = 'overdue')
+      WHERE (DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') OR m.payment_status = 'overdue')
       AND m.is_active = 1
       ORDER BY m.next_payment_date ASC
     `);
@@ -177,11 +177,11 @@ router.get('/:id', async (req, res) => {
         CONVERT_TZ(updated_at, '+00:00', '+01:00') as updated_at
       FROM members WHERE id = ?
     `, [req.params.id]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Membro não encontrado' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     console.error('Erro ao buscar membro:', error);
@@ -206,45 +206,45 @@ router.post('/', async (req, res) => {
     if (!name || name.trim().length === 0) {
       return res.status(400).json({ error: 'Nome é obrigatório' });
     }
-    
+
     if (!phone || phone.trim().length === 0) {
       return res.status(400).json({ error: 'Telefone é obrigatório' });
     }
-    
+
     if (!membership_type || membership_type.trim().length === 0) {
       return res.status(400).json({ error: 'Tipo de mensalidade é obrigatório' });
     }
-    
+
     if (!monthly_fee || isNaN(monthly_fee) || monthly_fee <= 0) {
       return res.status(400).json({ error: 'Valor da mensalidade deve ser um número positivo' });
     }
-    
+
     if (!join_date) {
       return res.status(400).json({ error: 'Data de adesão é obrigatória' });
     }
 
     // Calcular primeira data de pagamento (sempre dia 1 do mês seguinte ao ingresso)
     const joinDateObj = new Date(join_date);
-    
+
     // Extrair ano e mês, lidando com fuso horário
     const year = joinDateObj.getFullYear();
     const month = joinDateObj.getMonth(); // 0-11
-    
+
     // Calcular mês seguinte
     let nextMonth = month + 1;
     let nextYear = year;
-    
+
     // Se passou de dezembro, ajustar para janeiro do ano seguinte
     if (nextMonth >= 12) {
       nextMonth = 0;
       nextYear++;
     }
-    
+
     // Criar string de data no formato YYYY-MM-DD para fuso horário de Lisboa
     const firstPaymentDateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-01 00:00:00`;
-    
 
-    
+
+
     const [result] = await pool.execute(`
       INSERT INTO members (
         name, email, phone, membership_type, monthly_fee, 
@@ -252,15 +252,15 @@ router.post('/', async (req, res) => {
         last_payment_date, next_payment_date, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [
-      name, 
+      name,
       email && email.trim() !== '' ? email : null, // Usar NULL em vez de string vazia
-      phone, 
-      membership_type, 
+      phone,
+      membership_type,
       monthly_fee,
-      join_date, 
-      is_active ? 1 : 0, 
+      join_date,
+      is_active ? 1 : 0,
       'pending',
-      null, 
+      null,
       firstPaymentDateStr
     ]);
 
@@ -275,23 +275,23 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Erro ao criar membro:', error);
     console.error('Stack trace:', error.stack);
-    
+
     // Verificar se é erro de duplicação (email ou telefone únicos)
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Já existe um membro com este email ou telefone' });
     }
-    
+
     // Verificar se é erro de validação da base de dados
     if (error.code === 'ER_BAD_NULL_ERROR') {
       return res.status(400).json({ error: 'Dados obrigatórios em falta' });
     }
-    
+
     // Verificar se é erro de tipo de dados
     if (error.code === 'ER_TRUNCATED_WRONG_VALUE' || error.code === 'ER_WRONG_VALUE') {
       return res.status(400).json({ error: 'Formato de dados inválido' });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: 'Erro interno do servidor',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -332,18 +332,18 @@ router.put('/:id', async (req, res) => {
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth() + 1; // getMonth() retorna 0-11
-      
+
       // Calcular próxima data de pagamento (dia 1 do próximo mês)
       let nextMonth = month + 1;
       let nextYear = year;
-      
+
       if (nextMonth > 12) {
         nextMonth = 1;
         nextYear++;
       }
-      
+
       const newNextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01 00:00:00`;
-      
+
       await pool.execute(`
         UPDATE members SET 
           name = ?, email = ?, phone = ?, membership_type = ?, 
@@ -352,13 +352,13 @@ router.put('/:id', async (req, res) => {
           payment_status = ?, updated_at = NOW()
         WHERE id = ?
       `, [
-        name, 
+        name,
         email && email.trim() !== '' ? email : null,
-        phone, 
-        membership_type, 
+        phone,
+        membership_type,
         monthly_fee,
-        join_date, 
-        willBeActive, 
+        join_date,
+        willBeActive,
         null, // Limpar último pagamento ao reativar
         newNextPaymentDate, // Nova data de pagamento
         'pending', // Status pendente ao reativar
@@ -374,16 +374,16 @@ router.put('/:id', async (req, res) => {
           payment_status = ?, updated_at = NOW()
         WHERE id = ?
       `, [
-        name, 
+        name,
         email && email.trim() !== '' ? email : null,
-        phone, 
-        membership_type, 
+        phone,
+        membership_type,
         monthly_fee,
-        join_date, 
-        willBeActive, 
+        join_date,
+        willBeActive,
         last_payment_date,
-        next_payment_date, 
-        payment_status, 
+        next_payment_date,
+        payment_status,
         req.params.id
       ]);
     }
@@ -408,7 +408,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const memberId = req.params.id;
-    
+
     // Verificar se o membro existe antes de deletar
     const [existingMember] = await pool.execute(
       'SELECT id, name FROM members WHERE id = ?',
@@ -420,7 +420,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     const memberName = existingMember[0].name;
-    
+
     // Contar pagamentos relacionados antes da exclusão
     let totalPayments = 0;
     try {
@@ -433,7 +433,7 @@ router.delete('/:id', async (req, res) => {
       // Se houver erro ao contar pagamentos, continuar sem contar
       totalPayments = 0;
     }
-    
+
     // Deletar o membro (os pagamentos serão automaticamente removidos devido ao ON DELETE CASCADE)
     const [result] = await pool.execute(
       'DELETE FROM members WHERE id = ?',
@@ -443,8 +443,8 @@ router.delete('/:id', async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Membro não encontrado' });
     }
-    
-    res.json({ 
+
+    res.json({
       message: 'Membro e todas as informações relacionadas foram removidos com sucesso',
       details: {
         memberName: memberName,
@@ -452,7 +452,7 @@ router.delete('/:id', async (req, res) => {
         paymentsRemoved: totalPayments
       }
     });
-    
+
   } catch (error) {
     console.error('Erro ao deletar membro:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -463,13 +463,13 @@ router.delete('/:id', async (req, res) => {
 router.get('/verify-deletion/:id', async (req, res) => {
   try {
     const memberId = req.params.id;
-    
+
     // Verificar se o membro ainda existe
     const [memberExists] = await pool.execute(
       'SELECT id, name FROM members WHERE id = ?',
       [memberId]
     );
-    
+
     // Verificar se há pagamentos relacionados (se a tabela existir)
     let paymentsExist = false;
     let paymentsCount = 0;
@@ -486,7 +486,7 @@ router.get('/verify-deletion/:id', async (req, res) => {
       paymentsExist = false;
       paymentsCount = 0;
     }
-    
+
     const verification = {
       memberExists: memberExists.length > 0,
       memberName: memberExists.length > 0 ? memberExists[0].name : null,
@@ -495,7 +495,7 @@ router.get('/verify-deletion/:id', async (req, res) => {
       deletionComplete: memberExists.length === 0 && !paymentsExist,
       timestamp: new Date().toISOString()
     };
-    
+
     res.json(verification);
   } catch (error) {
     console.error('Erro ao verificar exclusão:', error);
@@ -507,7 +507,7 @@ router.get('/verify-deletion/:id', async (req, res) => {
 router.put('/:id/toggle-status', async (req, res) => {
   try {
     const { is_active } = req.body;
-    
+
     if (typeof is_active !== 'boolean') {
       return res.status(400).json({ error: 'is_active deve ser true ou false' });
     }
@@ -528,7 +528,7 @@ router.put('/:id/toggle-status', async (req, res) => {
 
     // Se não há mudança de status, retornar sem fazer nada
     if (wasActive === willBeActive) {
-      return res.json({ 
+      return res.json({
         message: `Membro já está ${is_active ? 'ativo' : 'inativo'}`,
         member: member
       });
@@ -539,17 +539,17 @@ router.put('/:id/toggle-status', async (req, res) => {
       const today = new Date();
       const year = today.getFullYear();
       const month = today.getMonth() + 1;
-      
+
       let nextMonth = month + 1;
       let nextYear = year;
-      
+
       if (nextMonth > 12) {
         nextMonth = 1;
         nextYear++;
       }
-      
+
       const newNextPaymentDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01 00:00:00`;
-      
+
       await pool.execute(`
         UPDATE members SET 
           is_active = ?, 
@@ -560,7 +560,7 @@ router.put('/:id/toggle-status', async (req, res) => {
         WHERE id = ?
       `, [willBeActive, newNextPaymentDate, req.params.id]);
 
-      res.json({ 
+      res.json({
         message: 'Membro reativado com sucesso. Contagem de mensalidades reiniciada.',
         action: 'reactivated',
         newNextPaymentDate: newNextPaymentDate
@@ -575,7 +575,7 @@ router.put('/:id/toggle-status', async (req, res) => {
         WHERE id = ?
       `, [willBeActive, req.params.id]);
 
-      res.json({ 
+      res.json({
         message: 'Membro desativado com sucesso. Contagem de mensalidades suspensa.',
         action: 'deactivated'
       });

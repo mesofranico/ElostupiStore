@@ -4,7 +4,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import '../controllers/cart_controller.dart';
 import 'dashboard_screen.dart';
 import 'shop_screen.dart';
-import 'cart_screen.dart';
+import 'reports_screen.dart';
 import 'admin_screen.dart';
 import 'settings_screen.dart';
 
@@ -37,9 +37,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return PersistentTabView(
       controller: _tabController,
       tabs: _buildTabs(cartController),
-      navBarBuilder: (navBarConfig) => Style2BottomNavBar(
-        navBarConfig: navBarConfig,
-      ),
+      navBarBuilder: (navBarConfig) =>
+          Style2BottomNavBar(navBarConfig: navBarConfig),
     );
   }
 
@@ -53,46 +52,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ),
       ),
       PersistentTabConfig(
-        screen: const CartScreen(),
+        screen: const ReportsScreen(),
         item: ItemConfig(
-          icon: Obx(() {
-            final totalItems = cartController.totalItems;
-            if (totalItems > 0) {
-              return Stack(
-                children: [
-                  const Icon(Icons.shopping_cart_outlined),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red[500],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white, width: 0),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12,
-                        minHeight: 12,
-                      ),
-                      child: Text(
-                        '$totalItems',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                          height: 1,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }
-            return const Icon(Icons.shopping_cart_outlined);
-          }),
-          title: "Carrinho",
+          icon: const Icon(Icons.analytics),
+          inactiveIcon: const Icon(Icons.analytics_outlined),
+          title: "Relatórios",
         ),
       ),
       PersistentTabConfig(

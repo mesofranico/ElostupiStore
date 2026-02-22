@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../widgets/standard_appbar.dart';
+import '../controllers/admin_controller.dart';
+import '../core/utils/ui_utils.dart';
 
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
@@ -45,8 +47,88 @@ class AdminScreen extends StatelessWidget {
             subtitle: 'Registar leituras e calcular custos',
             onTap: () => Get.toNamed('/electricity'),
           ),
+          const SizedBox(height: 20),
+          const Divider(),
+          const SizedBox(height: 10),
+          _buildMenuCard(
+            context,
+            icon: Icons.delete_forever,
+            title: 'Limpeza Completa do Sistema',
+            subtitle: 'Reset as mensalidades, relatórios, presenças, etc.',
+            iconColor: Colors.redAccent,
+            onTap: () => _showResetPINDialog(context),
+          ),
         ],
       ),
+    );
+  }
+
+  void _showResetPINDialog(BuildContext context) {
+    final TextEditingController pinController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Limpeza de Segurança'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Esta ação é irreversível e irá apagar todo o histórico.',
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: pinController,
+              decoration: const InputDecoration(
+                labelText: 'Insira o PIN de Admin',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (pinController.text == '1989') {
+                Get.back();
+                _showFinalConfirmDialog(context);
+              } else {
+                UiUtils.showError('PIN incorreto. Acesso negado.');
+              }
+            },
+            child: const Text('Confirmar PIN'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFinalConfirmDialog(BuildContext context) {
+    final adminController = Get.find<AdminController>();
+
+    UiUtils.showConfirmDialog(
+      title: 'ATENÇÃO: RESET TOTAL',
+      message:
+          'Tem a certeza que deseja realizar o reset completo? Isso irá apagar todos os pagamentos, relatórios, presenças, etc. Membros, Produtos e Consulentes serão preservados.',
+      confirmLabel: 'SIM, RESETAR TUDO',
+      icon: Icons.warning_amber_rounded,
+      color: Colors.red,
+      onConfirm: () async {
+        final success = await adminController.resetSystem('1989');
+        if (success) {
+          // Atualizar todos os controladores para refletir o reset
+          await adminController.refreshAllControllers();
+
+          UiUtils.showSuccess('O sistema foi resetado com sucesso!');
+        } else {
+          UiUtils.showError(adminController.errorMessage.value);
+        }
+      },
     );
   }
 
@@ -56,6 +138,7 @@ class AdminScreen extends StatelessWidget {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color? iconColor,
   }) {
     final theme = Theme.of(context);
     return Container(
@@ -63,10 +146,20 @@ class AdminScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       child: Material(
@@ -86,7 +179,7 @@ class AdminScreen extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    color: theme.colorScheme.onPrimaryContainer,
+                    color: iconColor ?? theme.colorScheme.onPrimaryContainer,
                     size: 24,
                   ),
                 ),

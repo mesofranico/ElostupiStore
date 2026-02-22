@@ -35,7 +35,9 @@ class PendingOrderService {
     if (response.statusCode == 201) {
       return true;
     } else {
-      throw Exception('Erro ao criar pedido pendente: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Erro ao criar pedido pendente: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -44,8 +46,15 @@ class PendingOrderService {
     return response.statusCode == 200;
   }
 
-  Future<bool> finalizePendingOrder(String id) async {
-    final response = await http.post(Uri.parse('$baseUrl/$id/finalize'));
+  Future<bool> finalizePendingOrder(
+    String id, {
+    bool isInternal = false,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/$id/finalize'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'isInternal': isInternal}),
+    );
     return response.statusCode == 200;
   }
-} 
+}

@@ -10,6 +10,7 @@ import '../widgets/standard_appbar.dart';
 import '../core/utils/ui_utils.dart';
 import 'pending_orders_screen.dart';
 import 'shop_screen.dart';
+import '../widgets/loading_view.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -36,7 +37,7 @@ class DashboardScreen extends StatelessWidget {
             if (dashboardController.isLoading.value) {
               return const Padding(
                 padding: EdgeInsets.only(top: 48),
-                child: Center(child: CircularProgressIndicator()),
+                child: LoadingView(),
               );
             }
             return UiUtils.animatedFadeIn(

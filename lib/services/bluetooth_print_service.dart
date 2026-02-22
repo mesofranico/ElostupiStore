@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:bluetooth_print_plus/bluetooth_print_plus.dart';
 import 'package:get/get.dart';
 import '../models/cart_item.dart';
+import '../core/utils/ui_utils.dart';
 
 class BluetoothPrintService extends GetxService {
   final RxBool isConnected = false.obs;
@@ -38,7 +38,9 @@ class BluetoothPrintService extends GetxService {
       devices.clear();
       devices.addAll(event);
       if (kDebugMode) {
-        print('********** devices list updated: ${devices.length} devices **********');
+        print(
+          '********** devices list updated: ${devices.length} devices **********',
+        );
       }
     });
 
@@ -102,13 +104,7 @@ class BluetoothPrintService extends GetxService {
       if (kDebugMode) {
         print('********** Error starting scan: $e **********');
       }
-      Get.snackbar(
-        'Erro',
-        'Erro ao procurar dispositivos Bluetooth',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Erro ao procurar dispositivos Bluetooth');
     }
   }
 
@@ -126,26 +122,15 @@ class BluetoothPrintService extends GetxService {
     try {
       selectedDevice.value = device;
       await BluetoothPrintPlus.connect(device);
-      
-      Get.snackbar(
-        'Conectado',
+
+      UiUtils.showSuccess(
         'Ligado a ${device.name.isNotEmpty ? device.name : device.address}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
       );
-      
+
       return true;
     } catch (e) {
       selectedDevice.value = null;
-      Get.snackbar(
-        'Erro de Ligação',
-        'Não foi possível ligar ao dispositivo',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Não foi possível ligar ao dispositivo');
       return false;
     }
   }
@@ -155,77 +140,68 @@ class BluetoothPrintService extends GetxService {
     try {
       await BluetoothPrintPlus.disconnect();
       selectedDevice.value = null;
-      
-      Get.snackbar(
-        'Desconectado',
-        'Dispositivo desligado',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
+
+      UiUtils.showInfo('Dispositivo desligado');
     } catch (e) {
       // Silently handle disconnect errors
     }
   }
 
-    // Imprimir talão de compra usando texto simples
+  // Imprimir talão de compra usando texto simples
   Future<bool> printReceipt({
     required List<CartItem> items,
     required double total,
     String? note,
   }) async {
     if (!isConnected.value) {
-      Get.snackbar(
-        'Não Conectado',
-        'Ligue primeiro a uma impressora Bluetooth',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Ligue primeiro a uma impressora Bluetooth');
       return false;
     }
 
     try {
       // Criar texto do talão
       final StringBuffer receipt = StringBuffer();
-      
+
       // Cabeçalho centralizado
       receipt.writeln('        ELOSTUPI STORE');
       receipt.writeln('================================');
-      
+
       // Informações da loja
       receipt.writeln('Velas e Artigos Religiosos');
       receipt.writeln('');
-      
+
       // Data e hora formatadas
       final now = DateTime.now();
-      final dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
-      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-      
+      final dateStr =
+          '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+      final timeStr =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
       receipt.writeln('Data: $dateStr    Hora: $timeStr');
       receipt.writeln('--------------------------------');
-      
-             // Itens organizados
-       for (final item in items) {
-         final cleanName = _cleanText(item.product.name);
-         final price = item.product.price.toStringAsFixed(2);
-         final lineTotal = (item.product.price * item.quantity).toStringAsFixed(2);
-         
-         // Primeira linha: Nome do produto
-         receipt.writeln(cleanName);
-         
-         // Segunda linha: Quantidade, preço unitário e total
-         receipt.writeln('${item.quantity}x $price EUR = $lineTotal EUR');
-         receipt.writeln('');
-       }
-      
+
+      // Itens organizados
+      for (final item in items) {
+        final cleanName = _cleanText(item.product.name);
+        final price = item.product.price.toStringAsFixed(2);
+        final lineTotal = (item.product.price * item.quantity).toStringAsFixed(
+          2,
+        );
+
+        // Primeira linha: Nome do produto
+        receipt.writeln(cleanName);
+
+        // Segunda linha: Quantidade, preço unitário e total
+        receipt.writeln('${item.quantity}x $price EUR = $lineTotal EUR');
+        receipt.writeln('');
+      }
+
       receipt.writeln('--------------------------------');
-      
+
       // Total formatado
       final totalStr = total.toStringAsFixed(2);
       receipt.writeln('TOTAL: ${' '.padLeft(15)}$totalStr EUR');
-      
+
       // Nota (se houver)
       if (note != null && note.trim().isNotEmpty) {
         receipt.writeln('--------------------------------');
@@ -237,7 +213,7 @@ class BluetoothPrintService extends GetxService {
           receipt.writeln(cleanNote.substring(i, end));
         }
       }
-      
+
       receipt.writeln('================================');
       receipt.writeln('        OBRIGADO PELA COMPRA!');
       receipt.writeln('        Volte sempre!');
@@ -245,30 +221,17 @@ class BluetoothPrintService extends GetxService {
       receipt.writeln('ElosTupi - Qualidade e Tradicao');
       receipt.writeln('');
       receipt.writeln('');
-      
+
       // Converter para bytes e imprimir (usar Latin-1 para compatibilidade)
       final receiptText = receipt.toString();
       final bytes = receiptText.codeUnits;
       await BluetoothPrintPlus.write(Uint8List.fromList(bytes));
-      
-      Get.snackbar(
-        'Talão Impresso',
-        'Talão enviado para impressora com sucesso',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-      
+
+      UiUtils.showSuccess('Talão enviado para impressora com sucesso');
+
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erro de Impressão',
-        'Erro ao imprimir talão',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Erro ao imprimir talão');
       return false;
     }
   }
@@ -276,13 +239,7 @@ class BluetoothPrintService extends GetxService {
   // Imprimir teste
   Future<bool> printTest() async {
     if (!isConnected.value) {
-      Get.snackbar(
-        'Não Conectado',
-        'Ligue primeiro a uma impressora Bluetooth',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Ligue primeiro a uma impressora Bluetooth');
       return false;
     }
 
@@ -296,103 +253,92 @@ class BluetoothPrintService extends GetxService {
       testText.writeln('================');
       testText.writeln('');
       testText.writeln('');
-      
-             // Criar talão de exemplo completo com nova formatação
-       testText.writeln('        ELOSTUPI STORE');
-       testText.writeln('================================');
-       testText.writeln('Velas e Artigos Religiosos');
-       testText.writeln('');
-       
-       // Data e hora de exemplo
-       final now = DateTime.now();
-       final dateStr = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
-       final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-       
-       testText.writeln('Data: $dateStr    Hora: $timeStr');
-       testText.writeln('--------------------------------');
-       
-               // Itens de exemplo organizados
-        testText.writeln('Vela 7 Dias - Amarela');
-        testText.writeln('2x 5.50 EUR = 11.00 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Violeta / Lilas');
-        testText.writeln('1x 3.25 EUR = 3.25 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Azuis');
-        testText.writeln('3x 2.75 EUR = 8.25 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Azul-Claro');
-        testText.writeln('1x 4.00 EUR = 4.00 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Castanhas');
-        testText.writeln('2x 6.50 EUR = 13.00 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas de Mel');
-        testText.writeln('1x 8.75 EUR = 8.75 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Brancas');
-        testText.writeln('4x 1.50 EUR = 6.00 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Pretas');
-        testText.writeln('2x 2.00 EUR = 4.00 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Laranja');
-        testText.writeln('1x 3.75 EUR = 3.75 EUR');
-        testText.writeln('');
-        
-        testText.writeln('Velas Rosa');
-        testText.writeln('3x 2.25 EUR = 6.75 EUR');
-        testText.writeln('');
-       
-       testText.writeln('--------------------------------');
-       testText.writeln('TOTAL:               68.75 EUR');
-       
-       // Nota de exemplo
-       testText.writeln('--------------------------------');
-       testText.writeln('NOTA:');
-       testText.writeln('Pedido para entrega amanha');
-       testText.writeln('Cliente: Maria Silva');
-       testText.writeln('Telefone: 912345678');
-       
-       testText.writeln('================================');
-       testText.writeln('        OBRIGADO PELA COMPRA!');
-       testText.writeln('        Volte sempre!');
-       testText.writeln('');
-       testText.writeln('ElosTupi - Qualidade e Tradicao');
+
+      // Criar talão de exemplo completo com nova formatação
+      testText.writeln('        ELOSTUPI STORE');
+      testText.writeln('================================');
+      testText.writeln('Velas e Artigos Religiosos');
+      testText.writeln('');
+
+      // Data e hora de exemplo
+      final now = DateTime.now();
+      final dateStr =
+          '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+      final timeStr =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      testText.writeln('Data: $dateStr    Hora: $timeStr');
+      testText.writeln('--------------------------------');
+
+      // Itens de exemplo organizados
+      testText.writeln('Vela 7 Dias - Amarela');
+      testText.writeln('2x 5.50 EUR = 11.00 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Violeta / Lilas');
+      testText.writeln('1x 3.25 EUR = 3.25 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Azuis');
+      testText.writeln('3x 2.75 EUR = 8.25 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Azul-Claro');
+      testText.writeln('1x 4.00 EUR = 4.00 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Castanhas');
+      testText.writeln('2x 6.50 EUR = 13.00 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas de Mel');
+      testText.writeln('1x 8.75 EUR = 8.75 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Brancas');
+      testText.writeln('4x 1.50 EUR = 6.00 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Pretas');
+      testText.writeln('2x 2.00 EUR = 4.00 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Laranja');
+      testText.writeln('1x 3.75 EUR = 3.75 EUR');
+      testText.writeln('');
+
+      testText.writeln('Velas Rosa');
+      testText.writeln('3x 2.25 EUR = 6.75 EUR');
+      testText.writeln('');
+
+      testText.writeln('--------------------------------');
+      testText.writeln('TOTAL:               68.75 EUR');
+
+      // Nota de exemplo
+      testText.writeln('--------------------------------');
+      testText.writeln('NOTA:');
+      testText.writeln('Pedido para entrega amanha');
+      testText.writeln('Cliente: Maria Silva');
+      testText.writeln('Telefone: 912345678');
+
+      testText.writeln('================================');
+      testText.writeln('        OBRIGADO PELA COMPRA!');
+      testText.writeln('        Volte sempre!');
+      testText.writeln('');
+      testText.writeln('ElosTupi - Qualidade e Tradicao');
       testText.writeln('');
       testText.writeln('');
-      
+
       // Converter para bytes e imprimir (usar Latin-1 para compatibilidade)
       final testTextString = testText.toString();
       final bytes = testTextString.codeUnits;
       await BluetoothPrintPlus.write(Uint8List.fromList(bytes));
-      
-      Get.snackbar(
-        'Teste Impresso',
-        'Talão de exemplo enviado para impressora',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-      
+
+      UiUtils.showSuccess('Talão de exemplo enviado para impressora');
+
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Erro no Teste',
-        'Erro ao imprimir teste',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-      );
+      UiUtils.showError('Erro ao imprimir teste');
       return false;
     }
   }
@@ -415,46 +361,64 @@ class BluetoothPrintService extends GetxService {
   // Limpar texto de caracteres especiais para compatibilidade com impressora
   String _cleanText(String text) {
     String result = text;
-    
+
     // Substituir acentos portugueses
     result = result
-        .replaceAll('ã', 'a').replaceAll('á', 'a').replaceAll('à', 'a')
-        .replaceAll('â', 'a').replaceAll('ä', 'a')
-        .replaceAll('é', 'e').replaceAll('è', 'e').replaceAll('ê', 'e')
+        .replaceAll('ã', 'a')
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('ä', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
         .replaceAll('ë', 'e')
-        .replaceAll('í', 'i').replaceAll('ì', 'i').replaceAll('î', 'i')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('î', 'i')
         .replaceAll('ï', 'i')
-        .replaceAll('ó', 'o').replaceAll('ò', 'o').replaceAll('ô', 'o')
-        .replaceAll('õ', 'o').replaceAll('ö', 'o')
-        .replaceAll('ú', 'u').replaceAll('ù', 'u').replaceAll('û', 'u')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ö', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('û', 'u')
         .replaceAll('ü', 'u')
-        .replaceAll('ç', 'c').replaceAll('ñ', 'n');
-    
+        .replaceAll('ç', 'c')
+        .replaceAll('ñ', 'n');
+
     // Remover caracteres especiais europeus
     result = result
-        .replaceAll('š', 's').replaceAll('ž', 'z').replaceAll('ć', 'c')
-        .replaceAll('č', 'c').replaceAll('đ', 'd')
-        .replaceAll('ł', 'l').replaceAll('ń', 'n').replaceAll('ś', 's')
-        .replaceAll('ź', 'z').replaceAll('ż', 'z')
-        .replaceAll('ą', 'a').replaceAll('ę', 'e');
-    
+        .replaceAll('š', 's')
+        .replaceAll('ž', 'z')
+        .replaceAll('ć', 'c')
+        .replaceAll('č', 'c')
+        .replaceAll('đ', 'd')
+        .replaceAll('ł', 'l')
+        .replaceAll('ń', 'n')
+        .replaceAll('ś', 's')
+        .replaceAll('ź', 'z')
+        .replaceAll('ż', 'z')
+        .replaceAll('ą', 'a')
+        .replaceAll('ę', 'e');
+
     // Remover caracteres chineses e outros problemáticos
     result = result.replaceAll('醬', '');
-    
+
     // Substituir símbolos de moeda
     result = result
         .replaceAll('€', 'EUR')
         .replaceAll('£', 'GBP')
         .replaceAll('\$', 'USD');
-    
+
     // Remover qualquer carácter que não seja ASCII básico
     result = result.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    
+
     // Limpar espaços extras
     result = result.trim();
-    
+
     return result;
   }
 }
-
- 

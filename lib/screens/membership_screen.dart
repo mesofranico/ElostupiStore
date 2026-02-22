@@ -5,7 +5,6 @@ import '../controllers/payment_controller.dart';
 import '../widgets/standard_appbar.dart';
 import 'membership/tabs/members_tab.dart';
 import 'membership/tabs/payments_tab.dart';
-import 'membership/tabs/reports_tab.dart';
 import 'membership/widgets/membership_dialogs.dart';
 
 class MembershipScreen extends StatelessWidget {
@@ -19,7 +18,7 @@ class MembershipScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         appBar: StandardAppBar(
           title: 'Gestão de mensalidades',
@@ -34,7 +33,6 @@ class MembershipScreen extends StatelessWidget {
             tabs: const [
               Tab(icon: Icon(Icons.people), text: 'Membros'),
               Tab(icon: Icon(Icons.payment), text: 'Pagamentos'),
-              Tab(icon: Icon(Icons.analytics), text: 'Relatórios'),
             ],
           ),
           actions: [
@@ -63,10 +61,6 @@ class MembershipScreen extends StatelessWidget {
           children: [
             MembersTab(controller: memberController),
             PaymentsTab(controller: paymentController),
-            ReportsTab(
-              memberController: memberController,
-              paymentController: paymentController,
-            ),
           ],
         ),
       ),

@@ -53,6 +53,7 @@ router.post('/:id/finalize', async (req, res) => {
   const conn = await db.getConnection();
   try {
     const { id } = req.params;
+    const { isInternal } = req.body;
     // Buscar pedido
     const [rows] = await conn.execute('SELECT * FROM pending_orders WHERE id = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Pedido não encontrado' });
@@ -62,16 +63,46 @@ router.post('/:id/finalize', async (req, res) => {
     for (const item of items) {
       const prodId = item.product.id;
       const qty = item.quantity;
-      // Verificar stock atual
-      const [prodRows] = await conn.execute('SELECT stock FROM products WHERE id = ?', [prodId]);
+      // Verificar stock atual e configuração de gestão
+      const [prodRows] = await conn.execute('SELECT stock, manage_stock FROM products WHERE id = ?', [prodId]);
       if (prodRows.length === 0) return res.status(404).json({ error: `Produto ${prodId} não encontrado` });
+
       const currentStock = prodRows[0].stock;
-      if (currentStock < qty) return res.status(400).json({ error: `Stock insuficiente para o produto ${prodId}` });
-      await conn.execute('UPDATE products SET stock = stock - ? WHERE id = ?', [qty, prodId]);
+      const manageStock = prodRows[0].manage_stock;
+
+      if (manageStock) {
+        if (currentStock < qty) return res.status(400).json({ error: `Stock insuficiente para o produto ${prodId}` });
+        await conn.execute('UPDATE products SET stock = stock - ? WHERE id = ?', [qty, prodId]);
+      }
     }
+    // Registar nos relatórios financeiros
+    const recordDate = new Date().toISOString().split('T')[0];
+
+    // Preparar detalhes dos itens
+    const details = JSON.stringify({
+      orderId: id,
+      items: items.map(it => ({
+        name: it.product.name,
+        quantity: it.quantity,
+        price: it.price || it.product.price
+      }))
+    });
+
+    if (isInternal) {
+      await conn.execute(
+        "INSERT INTO financial_records (type, category, amount, description, record_date, details) VALUES ('expense', 'Consumo Interno', ?, ?, ?, ?)",
+        [pedido.total, `Consumo Interno #${id} (Pendente finalizado)`, recordDate, details]
+      );
+    } else {
+      await conn.execute(
+        "INSERT INTO financial_records (type, category, amount, description, record_date, details) VALUES ('income', 'Venda de Produtos', ?, ?, ?, ?)",
+        [pedido.total, `Pedido Finalizado #${id} (Pendente)`, recordDate, details]
+      );
+    }
+
     // Remover pedido pendente
     await conn.execute('DELETE FROM pending_orders WHERE id = ?', [id]);
-    res.json({ success: true, message: 'Pedido finalizado e stock atualizado' });
+    res.json({ success: true, message: `Pedido finalizado (${isInternal ? 'Consumo' : 'Venda'}), stock atualizado e registado.` });
   } catch (error) {
     console.error('Erro ao finalizar pendente:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });

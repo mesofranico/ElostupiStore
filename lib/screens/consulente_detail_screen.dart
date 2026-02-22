@@ -8,6 +8,8 @@ import '../services/attendance_service.dart';
 import '../widgets/standard_appbar.dart';
 import 'consulente_form_screen.dart';
 import 'consulente_session_form_screen.dart';
+import '../core/utils/ui_utils.dart';
+import '../widgets/loading_view.dart';
 
 class ConsulenteDetailScreen extends StatefulWidget {
   final Consulente consulente;
@@ -24,7 +26,8 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     super.initState();
     // Carregar sessões após o widget ser construído
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ConsulentesController controller = Get.find<ConsulentesController>();
+      final ConsulentesController controller =
+          Get.find<ConsulentesController>();
       controller.selectConsulente(widget.consulente);
     });
   }
@@ -44,7 +47,9 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           bottom: TabBar(
             indicatorColor: theme.colorScheme.onPrimary,
             labelColor: theme.colorScheme.onPrimary,
-            unselectedLabelColor: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
+            unselectedLabelColor: theme.colorScheme.onPrimary.withValues(
+              alpha: 0.8,
+            ),
             tabs: const [
               Tab(icon: Icon(Icons.person), text: 'Informações'),
               Tab(icon: Icon(Icons.event), text: 'Histórico'),
@@ -70,7 +75,10 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                     children: [
                       Icon(Icons.delete, size: 20, color: Colors.red),
                       const SizedBox(width: 8),
-                      const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      const Text(
+                        'Eliminar',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ],
                   ),
                 ),
@@ -79,10 +87,7 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           ],
         ),
         body: TabBarView(
-          children: [
-            _buildInfoTab(controller),
-            _buildHistoryTab(controller),
-          ],
+          children: [_buildInfoTab(controller), _buildHistoryTab(controller)],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _addNewSession(controller),
@@ -113,7 +118,7 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     final theme = Theme.of(context);
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const LoadingView();
       }
 
       final sessions = controller.sessions;
@@ -123,17 +128,25 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.event_busy, size: 56, color: theme.colorScheme.outline),
+              Icon(
+                Icons.event_busy,
+                size: 56,
+                color: theme.colorScheme.outline,
+              ),
               const SizedBox(height: 12),
               Text(
                 'Nenhuma sessão registada',
-                style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Toque no botão + para adicionar a primeira sessão',
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -159,10 +172,20 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       child: Padding(
@@ -176,7 +199,9 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                   backgroundColor: theme.colorScheme.primaryContainer,
                   radius: 30,
                   child: Text(
-                    widget.consulente.name.isNotEmpty ? widget.consulente.name[0].toUpperCase() : '?',
+                    widget.consulente.name.isNotEmpty
+                        ? widget.consulente.name[0].toUpperCase()
+                        : '?',
                     style: TextStyle(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -199,24 +224,37 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.phone, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.phone,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             widget.consulente.phone,
-                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
-                      if (widget.consulente.email != null && widget.consulente.email!.isNotEmpty) ...[
+                      if (widget.consulente.email != null &&
+                          widget.consulente.email!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.email, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                            Icon(
+                              Icons.email,
+                              size: 16,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 widget.consulente.email!,
-                                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -231,11 +269,17 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Registado em ${_formatDate(widget.consulente.createdAt!)}',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -256,7 +300,9 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
             ),
             child: const Padding(
               padding: EdgeInsets.all(16),
@@ -273,10 +319,20 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
             boxShadow: [
-              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+                blurRadius: 2,
+                offset: const Offset(0, 0),
+              ),
             ],
           ),
           child: Padding(
@@ -350,23 +406,33 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.event_busy, size: 48, color: theme.colorScheme.outline),
+                Icon(
+                  Icons.event_busy,
+                  size: 48,
+                  color: theme.colorScheme.outline,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Nenhuma sessão registada',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Toque no botão + para adicionar a primeira sessão',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -381,10 +447,20 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       child: Padding(
@@ -415,25 +491,35 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.schedule, size: 16, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.schedule,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 4),
               Text(
                 _formatDateTime(session.sessionDate),
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             session.description,
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -442,21 +528,24 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     );
   }
 
-  Widget _buildSessionCard(ConsulenteSession session, ConsulentesController controller) {
+  Widget _buildSessionCard(
+    ConsulenteSession session,
+    ConsulentesController controller,
+  ) {
     return FutureBuilder<String?>(
       future: _getAttendanceStatus(session),
       builder: (context, snapshot) {
         final attendanceStatus = snapshot.data;
-        
+
         // Se não há registo de presença, não exibir a sessão
         if (attendanceStatus == null) {
           return const SizedBox.shrink();
         }
-        
+
         Color statusColor;
         IconData statusIcon;
         String statusText;
-        
+
         switch (attendanceStatus) {
           case 'present':
             statusColor = Colors.green;
@@ -485,10 +574,20 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
             boxShadow: [
-              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-              BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+                blurRadius: 2,
+                offset: const Offset(0, 0),
+              ),
             ],
           ),
           child: Material(
@@ -535,7 +634,10 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
@@ -557,7 +659,11 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                         ),
                         const SizedBox(width: 8),
                         PopupMenuButton<String>(
-                          onSelected: (value) => _handleSessionMenuAction(value, session, controller),
+                          onSelected: (value) => _handleSessionMenuAction(
+                            value,
+                            session,
+                            controller,
+                          ),
                           itemBuilder: (context) => [
                             const PopupMenuItem(
                               value: 'edit',
@@ -573,7 +679,8 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              color: theme.colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
@@ -591,10 +698,14 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                          color: theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.4,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -619,13 +730,15 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
   Future<String?> _getAttendanceStatus(ConsulenteSession session) async {
     try {
       // Buscar registos de presença para esta data
-      final attendanceRecords = await AttendanceService.getAttendanceByDate(session.sessionDate);
-      
+      final attendanceRecords = await AttendanceService.getAttendanceByDate(
+        session.sessionDate,
+      );
+
       // Procurar o registo para este consulente
       final record = attendanceRecords.firstWhereOrNull(
         (record) => record.consulenteId == widget.consulente.id,
       );
-      
+
       return record?.status;
     } catch (e) {
       if (kDebugMode) {
@@ -646,7 +759,11 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
     }
   }
 
-  void _handleSessionMenuAction(String action, ConsulenteSession session, ConsulentesController controller) {
+  void _handleSessionMenuAction(
+    String action,
+    ConsulenteSession session,
+    ConsulentesController controller,
+  ) {
     switch (action) {
       case 'edit':
         _editSession(session);
@@ -656,15 +773,7 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
 
   void _editConsulente() {
     if (widget.consulente.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Não é possível editar consulente: ID não encontrado',
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      UiUtils.showError('Não é possível editar consulente: ID não encontrado');
       return;
     }
     Get.to(() => ConsulenteFormScreen(consulente: widget.consulente));
@@ -672,96 +781,61 @@ class _ConsulenteDetailScreenState extends State<ConsulenteDetailScreen> {
 
   void _editSession(ConsulenteSession session) {
     if (widget.consulente.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Não é possível editar sessão: ID do consulente não encontrado',
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+      UiUtils.showError(
+        'Não é possível editar sessão: ID do consulente não encontrado',
       );
       return;
     }
-    Get.to(() => ConsulenteSessionFormScreen(
-      consulenteId: widget.consulente.id!,
-      session: session,
-    ));
-  }
-
-  void _addNewSession(ConsulentesController controller) {
-    if (widget.consulente.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Não é possível adicionar sessão: ID do consulente não encontrado',
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-    Get.to(() => ConsulenteSessionFormScreen(consulenteId: widget.consulente.id!));
-  }
-
-  void _showDeleteDialog(ConsulentesController controller) {
-    final theme = Theme.of(context);
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Eliminar consulente'),
-        content: Text('Tem a certeza que deseja eliminar ${widget.consulente.name}?\n\nEsta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              final success = await controller.deleteConsulente(widget.consulente.id!);
-              if (success) {
-                Get.back();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Consulente eliminado com sucesso',
-                        style: TextStyle(color: theme.colorScheme.onPrimary),
-                      ),
-                      backgroundColor: theme.colorScheme.primary,
-                    ),
-                  );
-                }
-              } else {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        controller.errorMessage.value,
-                        style: TextStyle(color: theme.colorScheme.onError),
-                      ),
-                      backgroundColor: theme.colorScheme.error,
-                    ),
-                  );
-                }
-              }
-            },
-            child: Text('Eliminar', style: TextStyle(color: theme.colorScheme.error)),
-          ),
-        ],
+    Get.to(
+      () => ConsulenteSessionFormScreen(
+        consulenteId: widget.consulente.id!,
+        session: session,
       ),
     );
   }
 
-  Future<Map<String, dynamic>> _getConsulenteStats(int consulenteId, ConsulentesController controller) async {
+  void _addNewSession(ConsulentesController controller) {
+    if (widget.consulente.id == null) {
+      UiUtils.showError(
+        'Não é possível adicionar sessão: ID do consulente não encontrado',
+      );
+      return;
+    }
+    Get.to(
+      () => ConsulenteSessionFormScreen(consulenteId: widget.consulente.id!),
+    );
+  }
+
+  void _showDeleteDialog(ConsulentesController controller) {
+    UiUtils.showConfirmDialog(
+      title: 'Eliminar consulente',
+      message:
+          'Tem a certeza que deseja eliminar ${widget.consulente.name}?\n\nEsta ação não pode ser desfeita.',
+      confirmLabel: 'Eliminar',
+      icon: Icons.delete_outline,
+      color: Theme.of(context).colorScheme.error,
+      onConfirm: () async {
+        final success = await controller.deleteConsulente(
+          widget.consulente.id!,
+        );
+        if (success) {
+          Get.back();
+          UiUtils.showSuccess('Consulente eliminado com sucesso');
+        } else {
+          UiUtils.showError(controller.errorMessage.value);
+        }
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> _getConsulenteStats(
+    int consulenteId,
+    ConsulentesController controller,
+  ) async {
     final sessionCount = await controller.getSessionCount(consulenteId);
     final lastSession = await controller.getLastSession(consulenteId);
-    
-    return {
-      'sessionCount': sessionCount,
-      'lastSession': lastSession,
-    };
+
+    return {'sessionCount': sessionCount, 'lastSession': lastSession};
   }
 
   String _formatDate(DateTime date) {

@@ -7,6 +7,8 @@ import '../models/consulente.dart';
 import '../services/attendance_service.dart';
 import '../services/consulente_service.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
+import '../widgets/loading_view.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -21,7 +23,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final AttendanceController controller = Get.find<AttendanceController>();
-      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      final today = DateTime(
+        DateTime.now().year,
+        DateTime.now().month,
+        DateTime.now().day,
+      );
       controller.selectedDate.value = today;
       controller.loadAttendanceForDate(today);
     });
@@ -39,7 +45,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         showBackButton: true,
         actions: [
           IconButton(
-            onPressed: () => controller.loadAttendanceForDate(controller.selectedDate.value),
+            onPressed: () =>
+                controller.loadAttendanceForDate(controller.selectedDate.value),
             icon: const Icon(Icons.refresh),
             tooltip: 'Atualizar dados',
           ),
@@ -47,7 +54,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingView();
         }
 
         if (controller.errorMessage.value.isNotEmpty) {
@@ -55,19 +62,29 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
+                Icon(
+                  Icons.error_outline,
+                  size: 56,
+                  color: theme.colorScheme.error,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   controller.errorMessage.value,
-                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 FilledButton(
-                  onPressed: () => controller.loadAttendanceForDate(controller.selectedDate.value),
+                  onPressed: () => controller.loadAttendanceForDate(
+                    controller.selectedDate.value,
+                  ),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text('Tentar novamente'),
                 ),
@@ -83,27 +100,39 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.calendar_today, size: 56, color: theme.colorScheme.outline),
+                Icon(
+                  Icons.calendar_today,
+                  size: 56,
+                  color: theme.colorScheme.outline,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Selecione uma data para ver as presenças',
-                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Use os botões de navegação ou toque na data',
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: () => controller.loadAttendanceForDate(controller.selectedDate.value),
+                  onPressed: () => controller.loadAttendanceForDate(
+                    controller.selectedDate.value,
+                  ),
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Carregar dados'),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 40),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ],
@@ -115,23 +144,26 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           children: [
             _buildDateSelector(context, controller),
             _buildStatsCard(context, controller),
-            Expanded(
-              child: _buildAttendanceList(context, controller),
-            ),
+            Expanded(child: _buildAttendanceList(context, controller)),
           ],
         );
       }),
     );
   }
 
-  Widget _buildDateSelector(BuildContext context, AttendanceController controller) {
+  Widget _buildDateSelector(
+    BuildContext context,
+    AttendanceController controller,
+  ) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         border: Border(
-          bottom: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          bottom: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: Row(
@@ -146,9 +178,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                color: theme.colorScheme.primaryContainer.withValues(
+                  alpha: 0.6,
+                ),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
               ),
               child: Text(
                 DateFormat('dd/MM/yyyy').format(controller.selectedDate.value),
@@ -168,35 +206,81 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildStatsCard(BuildContext context, AttendanceController controller) {
+  Widget _buildStatsCard(
+    BuildContext context,
+    AttendanceController controller,
+  ) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
       child: Row(
         children: [
-          Expanded(child: _buildStatCard(context, 'Presentes', controller.attendanceStats['presentes'] ?? 0, Colors.green)),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Presentes',
+              controller.attendanceStats['presentes'] ?? 0,
+              Colors.green,
+            ),
+          ),
           const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(context, 'Faltas', controller.attendanceStats['faltas'] ?? 0, theme.colorScheme.error)),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Faltas',
+              controller.attendanceStats['faltas'] ?? 0,
+              theme.colorScheme.error,
+            ),
+          ),
           const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(context, 'Pendentes', controller.attendanceStats['pendentes'] ?? 0, Colors.orange)),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Pendentes',
+              controller.attendanceStats['pendentes'] ?? 0,
+              Colors.orange,
+            ),
+          ),
           const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(context, 'Total', controller.attendanceStats['total_records'] ?? 0, theme.colorScheme.primary)),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Total',
+              controller.attendanceStats['total_records'] ?? 0,
+              theme.colorScheme.primary,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(BuildContext context, String title, int value, Color color) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String title,
+    int value,
+    Color color,
+  ) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       child: Column(
@@ -221,9 +305,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Widget _buildAttendanceList(BuildContext context, AttendanceController controller) {
+  Widget _buildAttendanceList(
+    BuildContext context,
+    AttendanceController controller,
+  ) {
     final allConsulentes = <Consulente>[];
-    
+
     // Criar conjunto de IDs de acompanhantes para filtrar
     final acompanhantesIds = <int>{};
     for (final session in controller.sessionsWithAcompanhantes) {
@@ -231,22 +318,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         acompanhantesIds.addAll(session.acompanhantesIds!);
       }
     }
-    
+
     // Adicionar todos os consulentes com presença registada
     for (final record in controller.attendanceRecords) {
-      allConsulentes.add(Consulente(
-        id: record.consulenteId,
-        name: record.consulenteName ?? 'Nome não disponível',
-        phone: record.consulentePhone ?? '',
-        email: record.consulenteEmail,
-      ));
+      allConsulentes.add(
+        Consulente(
+          id: record.consulenteId,
+          name: record.consulenteName ?? 'Nome não disponível',
+          phone: record.consulentePhone ?? '',
+          email: record.consulenteEmail,
+        ),
+      );
     }
-    
+
     // Filtrar apenas consulentes principais (não acompanhantes) para exibição
-    final consulentesPrincipais = allConsulentes.where((consulente) => 
-      !acompanhantesIds.contains(consulente.id)
-    ).toList();
-    
+    final consulentesPrincipais = allConsulentes
+        .where((consulente) => !acompanhantesIds.contains(consulente.id))
+        .toList();
+
     debugPrint('=== DEBUG LISTA PRINCIPAL ===');
     debugPrint('Total de consulentes com presença: ${allConsulentes.length}');
     debugPrint('IDs de acompanhantes: $acompanhantesIds');
@@ -259,17 +348,25 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.people_outline, size: 56, color: theme.colorScheme.outline),
+            Icon(
+              Icons.people_outline,
+              size: 56,
+              color: theme.colorScheme.outline,
+            ),
             const SizedBox(height: 12),
             Text(
               'Nenhuma presença registada para esta data',
-              style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'As presenças aparecem automaticamente quando são criadas sessões',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -279,7 +376,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               label: const Text('Gestão de Consulentes'),
               style: FilledButton.styleFrom(
                 minimumSize: const Size(0, 40),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
@@ -292,10 +391,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       itemCount: consulentesPrincipais.length,
       itemBuilder: (context, index) {
         final consulente = consulentesPrincipais[index];
-        final attendanceRecord = controller.getRecordForConsulente(consulente.id!);
+        final attendanceRecord = controller.getRecordForConsulente(
+          consulente.id!,
+        );
         final status = controller.getStatusForConsulente(consulente.id!);
 
-        return _buildConsulenteCard(context, consulente, status, attendanceRecord, controller);
+        return _buildConsulenteCard(
+          context,
+          consulente,
+          status,
+          attendanceRecord,
+          controller,
+        );
       },
     );
   }
@@ -313,14 +420,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     // Verificar se este consulente tem sessões com acompanhantes
     for (final session in controller.sessionsWithAcompanhantes) {
-      if (session.consulenteId == consulente.id && session.acompanhantesIds != null && session.acompanhantesIds!.isNotEmpty) {
+      if (session.consulenteId == consulente.id &&
+          session.acompanhantesIds != null &&
+          session.acompanhantesIds!.isNotEmpty) {
         hasCompanions = true;
-        debugPrint('Consulente ${consulente.id} tem acompanhantes: ${session.acompanhantesIds}');
+        debugPrint(
+          'Consulente ${consulente.id} tem acompanhantes: ${session.acompanhantesIds}',
+        );
         break;
       }
     }
-    
-    debugPrint('Consulente ${consulente.id} (${consulente.name}) - hasCompanions: $hasCompanions');
+
+    debugPrint(
+      'Consulente ${consulente.id} (${consulente.name}) - hasCompanions: $hasCompanions',
+    );
 
     switch (status) {
       case 'present':
@@ -342,10 +455,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
-          BoxShadow(color: theme.colorScheme.shadow.withValues(alpha: 0.02), blurRadius: 2, offset: const Offset(0, 0)),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 0),
+          ),
         ],
       ),
       child: Column(
@@ -354,10 +477,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () => _showNotesDialog(consulente, record, controller),
-              onDoubleTap: record != null ? () => _showDeleteAttendanceDialog(controller, consulente.id!, record.id!) : null,
+              onDoubleTap: record != null
+                  ? () => _showDeleteAttendanceDialog(
+                      controller,
+                      consulente.id!,
+                      record.id!,
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(10),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -376,9 +508,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primary,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: theme.colorScheme.surface, width: 1),
+                                  border: Border.all(
+                                    color: theme.colorScheme.surface,
+                                    width: 1,
+                                  ),
                                 ),
-                                child: Icon(Icons.group, size: 8, color: theme.colorScheme.onPrimary),
+                                child: Icon(
+                                  Icons.group,
+                                  size: 8,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
                               ),
                             ),
                         ],
@@ -400,7 +539,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           const SizedBox(height: 2),
                           Text(
                             consulente.phone,
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                           if (record != null) ...[
                             const SizedBox(height: 2),
@@ -416,7 +557,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ),
                     ),
                     Expanded(
-                      child: _buildStatusSegmented(status, consulente.id!, controller),
+                      child: _buildStatusSegmented(
+                        status,
+                        consulente.id!,
+                        controller,
+                      ),
                     ),
                   ],
                 ),
@@ -426,44 +571,66 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           // Seção de acompanhantes usando FutureBuilder
           if (hasCompanions)
             FutureBuilder<List<Consulente>>(
-              future: _getAcompanhantesForConsulente(consulente.id!, controller),
+              future: _getAcompanhantesForConsulente(
+                consulente.id!,
+                controller,
+              ),
               builder: (context, snapshot) {
                 final theme = Theme.of(context);
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'A carregar acompanhantes...',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
                   );
                 }
                 if (snapshot.hasError) {
-                  debugPrint('Erro ao carregar acompanhantes: ${snapshot.error}');
+                  debugPrint(
+                    'Erro ao carregar acompanhantes: ${snapshot.error}',
+                  );
                   return const SizedBox.shrink();
                 }
                 final acompanhantes = snapshot.data ?? [];
                 if (acompanhantes.isEmpty) return const SizedBox.shrink();
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                    color: theme.colorScheme.primaryContainer.withValues(
+                      alpha: 0.4,
+                    ),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(10),
                       bottomRight: Radius.circular(10),
                     ),
                     border: Border(
-                      top: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      top: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                   ),
                   child: Column(
@@ -471,7 +638,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.group, size: 16, color: theme.colorScheme.primary),
+                          Icon(
+                            Icons.group,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Acompanhantes:',
@@ -488,11 +659,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                         runSpacing: 4,
                         children: acompanhantes.map((acompanhante) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
+                              border: Border.all(
+                                color: theme.colorScheme.outlineVariant
+                                    .withValues(alpha: 0.4),
+                              ),
                             ),
                             child: Text(
                               acompanhante.name,
@@ -514,53 +692,75 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  Future<List<Consulente>> _getAcompanhantesForConsulente(int consulenteId, AttendanceController controller) async {
+  Future<List<Consulente>> _getAcompanhantesForConsulente(
+    int consulenteId,
+    AttendanceController controller,
+  ) async {
     final List<Consulente> acompanhantes = [];
-    
+
     debugPrint('=== DEBUG ACOMPANHANTES (API) ===');
     debugPrint('Consulente ID: $consulenteId');
-    
+
     try {
       // Buscar sessões diretamente da API para garantir dados atualizados
-      final sessions = await AttendanceService.getSessionsWithAcompanhantesByDate(controller.selectedDate.value);
+      final sessions =
+          await AttendanceService.getSessionsWithAcompanhantesByDate(
+            controller.selectedDate.value,
+          );
       debugPrint('Sessões carregadas da API: ${sessions.length}');
-      
+
       // Buscar sessões onde este consulente é o principal
       for (final session in sessions) {
-        debugPrint('Sessão ID: ${session.id}, Consulente ID: ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}');
-        
-        if (session.consulenteId == consulenteId && session.acompanhantesIds != null) {
-          debugPrint('Encontrada sessão para consulente $consulenteId com ${session.acompanhantesIds!.length} acompanhantes');
-          
+        debugPrint(
+          'Sessão ID: ${session.id}, Consulente ID: ${session.consulenteId}, Acompanhantes: ${session.acompanhantesIds}',
+        );
+
+        if (session.consulenteId == consulenteId &&
+            session.acompanhantesIds != null) {
+          debugPrint(
+            'Encontrada sessão para consulente $consulenteId com ${session.acompanhantesIds!.length} acompanhantes',
+          );
+
           // Buscar informações dos acompanhantes diretamente da API
           for (final acompanhanteId in session.acompanhantesIds!) {
             debugPrint('Processando acompanhante ID: $acompanhanteId');
-            
+
             try {
               // Buscar informações do acompanhante diretamente da API
-              final acompanhante = await ConsulentesService.getConsulenteById(acompanhanteId);
-              debugPrint('Acompanhante encontrado na API: ${acompanhante.name}');
+              final acompanhante = await ConsulentesService.getConsulenteById(
+                acompanhanteId,
+              );
+              debugPrint(
+                'Acompanhante encontrado na API: ${acompanhante.name}',
+              );
               acompanhantes.add(acompanhante);
             } catch (e) {
-              debugPrint('Erro ao buscar acompanhante $acompanhanteId da API: $e');
-              
+              debugPrint(
+                'Erro ao buscar acompanhante $acompanhanteId da API: $e',
+              );
+
               // Fallback: buscar nos registos de presença se disponível
               try {
-                final attendanceRecord = controller.attendanceRecords.firstWhere(
-                  (r) => r.consulenteId == acompanhanteId,
+                final attendanceRecord = controller.attendanceRecords
+                    .firstWhere((r) => r.consulenteId == acompanhanteId);
+                debugPrint(
+                  'Acompanhante encontrado nos registos de presença: ${attendanceRecord.consulenteName}',
                 );
-                debugPrint('Acompanhante encontrado nos registos de presença: ${attendanceRecord.consulenteName}');
-                
+
                 final acompanhante = Consulente(
                   id: acompanhanteId,
-                  name: attendanceRecord.consulenteName ?? 'Consulente $acompanhanteId',
+                  name:
+                      attendanceRecord.consulenteName ??
+                      'Consulente $acompanhanteId',
                   phone: attendanceRecord.consulentePhone ?? '',
                   email: attendanceRecord.consulenteEmail,
                 );
                 acompanhantes.add(acompanhante);
               } catch (e2) {
-                debugPrint('Acompanhante não encontrado em nenhum lugar, criando temporário');
-                
+                debugPrint(
+                  'Acompanhante não encontrado em nenhum lugar, criando temporário',
+                );
+
                 // Último recurso: criar um consulente temporário
                 final acompanhante = Consulente(
                   id: acompanhanteId,
@@ -576,14 +776,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     } catch (e) {
       debugPrint('Erro ao buscar sessões da API: $e');
     }
-    
+
     debugPrint('Total de acompanhantes encontrados: ${acompanhantes.length}');
     debugPrint('=== FIM DEBUG ACOMPANHANTES (API) ===');
-    
+
     return acompanhantes;
   }
 
-  Widget _buildStatusSegmented(String currentStatus, int consulenteId, AttendanceController controller) {
+  Widget _buildStatusSegmented(
+    String currentStatus,
+    int consulenteId,
+    AttendanceController controller,
+  ) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final onPrimary = theme.colorScheme.onPrimary;
@@ -630,7 +834,9 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: Text(
                         label,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                           color: fgColor,
                         ),
                       ),
@@ -670,7 +876,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
-    
+
     if (picked != null && picked != controller.selectedDate.value) {
       controller.changeDate(picked);
     }
@@ -683,7 +889,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   ) {
     final theme = Get.context != null ? Theme.of(Get.context!) : null;
     final notesController = TextEditingController(text: record?.notes ?? '');
-    final isAutomatic = record?.notes != null && record!.notes!.contains('Presença automática');
+    final isAutomatic =
+        record?.notes != null && record!.notes!.contains('Presença automática');
     Get.dialog(
       AlertDialog(
         title: Text('Notas - ${consulente.name}'),
@@ -695,13 +902,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.4,
+                  ),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.5,
+                    ),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.event, color: theme.colorScheme.primary, size: 18),
+                    Icon(
+                      Icons.event,
+                      color: theme.colorScheme.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -722,9 +939,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Adicionar notas sobre a presença...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 filled: true,
-                fillColor: theme?.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                fillColor: theme?.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -736,11 +956,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           ),
           FilledButton(
             onPressed: () {
-              final currentStatus = controller.getStatusForConsulente(consulente.id!);
+              final currentStatus = controller.getStatusForConsulente(
+                consulente.id!,
+              );
               controller.markAttendance(
                 consulente.id!,
                 currentStatus,
-                notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
+                notes: notesController.text.trim().isEmpty
+                    ? null
+                    : notesController.text.trim(),
               );
               Get.back();
             },
@@ -751,52 +975,28 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     );
   }
 
-  void _showDeleteAttendanceDialog(AttendanceController controller, int consulenteId, int recordId) {
-    final theme = Get.context != null ? Theme.of(Get.context!) : null;
-    Get.dialog(
-      AlertDialog(
-        title: const Text('Eliminar marcação'),
-        content: const Text(
+  void _showDeleteAttendanceDialog(
+    AttendanceController controller,
+    int consulenteId,
+    int recordId,
+  ) {
+    UiUtils.showConfirmDialog(
+      title: 'Eliminar marcação',
+      message:
           'Tem a certeza que deseja eliminar esta marcação de presença?\n\n'
           '⚠️ ATENÇÃO: A sessão correspondente também será removida do histórico do consulente.\n\n'
           'Esta ação não pode ser desfeita.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              final success = await controller.deleteAttendance(recordId);
-              if (Get.context == null) return;
-              if (success) {
-                ScaffoldMessenger.of(Get.context!).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Marcação e sessão eliminadas com sucesso',
-                      style: TextStyle(color: theme?.colorScheme.onPrimary ?? Colors.white),
-                    ),
-                    backgroundColor: theme?.colorScheme.primary ?? Colors.green,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(Get.context!).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      controller.errorMessage.value,
-                      style: TextStyle(color: theme?.colorScheme.onError ?? Colors.white),
-                    ),
-                    backgroundColor: theme?.colorScheme.error ?? Colors.red,
-                  ),
-                );
-              }
-            },
-            child: Text('Eliminar', style: TextStyle(color: theme?.colorScheme.error ?? Colors.red)),
-          ),
-        ],
-      ),
+      confirmLabel: 'Eliminar',
+      icon: Icons.delete_outline,
+      color: Theme.of(Get.context!).colorScheme.error,
+      onConfirm: () async {
+        final success = await controller.deleteAttendance(recordId);
+        if (success) {
+          UiUtils.showSuccess('Marcação e sessão eliminadas com sucesso');
+        } else {
+          UiUtils.showError(controller.errorMessage.value);
+        }
+      },
     );
   }
 }

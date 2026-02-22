@@ -45,11 +45,11 @@ router.get('/:id', async (req, res) => {
       LEFT JOIN members m ON p.member_id = m.id
       WHERE p.id = ?
     `, [req.params.id]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Pagamento não encontrado' });
     }
-    
+
     res.json(rows[0]);
   } catch (error) {
     console.error('Erro ao buscar pagamento:', error);
@@ -93,10 +93,10 @@ router.post('/', async (req, res) => {
         'SELECT membership_type FROM members WHERE id = ?',
         [member_id]
       );
-      
+
       if (memberRows.length > 0) {
         const membershipType = memberRows[0].membership_type;
-        
+
         // Calcular próxima data baseada no tipo de mensalidade
         let nextPaymentDate;
         switch (membershipType.toLowerCase()) {
@@ -115,7 +115,7 @@ router.post('/', async (req, res) => {
           default:
             nextPaymentDate = `DATE_ADD(?, INTERVAL 1 MONTH)`;
         }
-        
+
         await pool.execute(`
           UPDATE members SET 
             last_payment_date = ?,
@@ -141,6 +141,30 @@ router.post('/', async (req, res) => {
       LEFT JOIN members m ON p.member_id = m.id
       WHERE p.id = ?
     `, [result.insertId]);
+
+    // Registar na contabilidade central se concluído
+    if (status === 'completed') {
+      const p = newPayment[0];
+      const details = JSON.stringify({
+        memberId: p.member_id,
+        memberName: p.member_name,
+        paymentType: p.payment_type
+      });
+
+      // Traduzir tipo de pagamento para a descrição
+      let typeLabel = p.payment_type;
+      if (p.payment_type === 'regular') typeLabel = 'Mensal';
+      else if (p.payment_type === 'overdue') typeLabel = 'Em Atraso';
+      else if (p.payment_type === 'advance') typeLabel = 'Adiantado';
+
+      // Formatar data de forma segura (YYYY-MM-DD)
+      const dateStr = (p.payment_date instanceof Date ? p.payment_date.toISOString() : p.payment_date.toString()).split('T')[0];
+
+      await pool.execute(
+        "INSERT INTO financial_records (type, category, amount, description, record_date, details) VALUES ('income', 'Mensalidade', ?, ?, ?, ?)",
+        [p.amount, `Mensalidade: ${p.member_name} (${typeLabel})`, dateStr, details]
+      );
+    }
 
     res.status(201).json(newPayment[0]);
   } catch (error) {
@@ -171,13 +195,31 @@ router.put('/:id', async (req, res) => {
 
     // Atualizar status do membro se o pagamento for concluído
     if (status === 'completed') {
-      await pool.execute(`
-        UPDATE members SET 
-          last_payment_date = ?,
-          payment_status = 'paid',
-          next_payment_date = DATE_ADD(?, INTERVAL 1 MONTH)
-        WHERE id = ?
-      `, [payment_date, payment_date, member_id]);
+      // Buscar informações do membro para calcular a próxima data corretamente (igual ao POST)
+      const [memberRows] = await pool.execute(
+        'SELECT membership_type FROM members WHERE id = ?',
+        [member_id]
+      );
+
+      if (memberRows.length > 0) {
+        const membershipType = memberRows[0].membership_type;
+        let nextPaymentDate;
+        switch (membershipType.toLowerCase()) {
+          case 'mensal': nextPaymentDate = `DATE_ADD(?, INTERVAL 1 MONTH)`; break;
+          case 'trimestral': nextPaymentDate = `DATE_ADD(?, INTERVAL 3 MONTH)`; break;
+          case 'semestral': nextPaymentDate = `DATE_ADD(?, INTERVAL 6 MONTH)`; break;
+          case 'anual': nextPaymentDate = `DATE_ADD(?, INTERVAL 12 MONTH)`; break;
+          default: nextPaymentDate = `DATE_ADD(?, INTERVAL 1 MONTH)`;
+        }
+
+        await pool.execute(`
+          UPDATE members SET 
+            last_payment_date = ?,
+            payment_status = 'paid',
+            next_payment_date = ${nextPaymentDate}
+          WHERE id = ?
+        `, [payment_date, payment_date, member_id]);
+      }
     }
 
     const [updatedPayment] = await pool.execute(`
@@ -187,6 +229,7 @@ router.put('/:id', async (req, res) => {
         p.amount,
         CONVERT_TZ(p.payment_date, '+00:00', '+01:00') as payment_date,
         p.status,
+        p.payment_type,
         CONVERT_TZ(p.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(p.updated_at, '+00:00', '+01:00') as updated_at,
         m.name as member_name 
@@ -194,6 +237,23 @@ router.put('/:id', async (req, res) => {
       LEFT JOIN members m ON p.member_id = m.id
       WHERE p.id = ?
     `, [req.params.id]);
+
+    // Registar na contabilidade central se transição para concluído
+    if (status === 'completed') {
+      const p = updatedPayment[0];
+      const details = JSON.stringify({
+        memberId: p.member_id,
+        memberName: p.member_name,
+        paymentType: p.payment_type
+      });
+
+      const dateStr = (p.payment_date instanceof Date ? p.payment_date.toISOString() : p.payment_date.toString()).split('T')[0];
+
+      await pool.execute(
+        "INSERT INTO financial_records (type, category, amount, description, record_date, details) VALUES ('income', 'Mensalidade', ?, ?, ?, ?)",
+        [p.amount, `Mensalidade: ${p.member_name} (${p.payment_type})`, dateStr, details]
+      );
+    }
 
     if (updatedPayment.length === 0) {
       return res.status(404).json({ error: 'Pagamento não encontrado' });
@@ -255,7 +315,7 @@ router.get('/member/:memberId', async (req, res) => {
 router.get('/period', async (req, res) => {
   try {
     const { start, end } = req.query;
-    
+
     const [rows] = await pool.execute(`
       SELECT 
         p.id,
@@ -309,7 +369,7 @@ router.get('/status/:status', async (req, res) => {
 router.get('/report', async (req, res) => {
   try {
     const { start, end } = req.query;
-    
+
     // Estatísticas gerais
     const [totalStats] = await pool.execute(`
       SELECT 

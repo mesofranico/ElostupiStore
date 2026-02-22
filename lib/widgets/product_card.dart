@@ -16,10 +16,7 @@ class ProductCard extends StatefulWidget {
 
   final Product product;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-  });
+  const ProductCard({super.key, required this.product});
 
   @override
   State<ProductCard> createState() => _ProductCardState();
@@ -78,13 +75,20 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
-  Widget _buildImageSection(BuildContext context, int stock, double width, double height) {
+  Widget _buildImageSection(
+    BuildContext context,
+    int stock,
+    double width,
+    double height,
+  ) {
     final theme = Theme.of(context);
     return Stack(
       alignment: Alignment.topRight,
       children: [
         ClipRRect(
-          borderRadius: const BorderRadius.horizontal(left: Radius.circular(ProductCard.imageRadius)),
+          borderRadius: const BorderRadius.horizontal(
+            left: Radius.circular(ProductCard.imageRadius),
+          ),
           child: SizedBox(
             width: width,
             height: height,
@@ -92,8 +96,14 @@ class _ProductCardState extends State<ProductCard> {
               getFullImageUrl(widget.product.imageUrl),
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => Container(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                child: Icon(Icons.image_not_supported, size: 22, color: theme.colorScheme.outline),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                child: Icon(
+                  Icons.image_not_supported,
+                  size: 22,
+                  color: theme.colorScheme.outline,
+                ),
               ),
             ),
           ),
@@ -102,7 +112,9 @@ class _ProductCardState extends State<ProductCard> {
           Positioned.fill(
             child: IgnorePointer(
               child: ClipRRect(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(ProductCard.imageRadius)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(ProductCard.imageRadius),
+                ),
                 child: AnimatedOpacity(
                   opacity: _fadingOut ? 0 : 1,
                   duration: const Duration(milliseconds: 300),
@@ -132,6 +144,32 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   Widget _buildStockBadge(BuildContext context, int stock) {
+    if (!widget.product.manageStock) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade700,
+          borderRadius: BorderRadius.circular(4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.shade700.withValues(alpha: 0.3),
+              blurRadius: 1,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: const Text(
+          'Disponível',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            height: 1.0,
+          ),
+        ),
+      );
+    }
+
     final Color color = stock == 0
         ? Colors.red.shade700
         : (stock <= 5 ? Colors.orange.shade700 : Colors.green.shade700);
@@ -140,16 +178,32 @@ class _ProductCardState extends State<ProductCard> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(4),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 1, offset: const Offset(0, 0))],
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 1,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
       child: Text(
         stock == 0 ? 'Sem stock' : '$stock',
-        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600, height: 1.0),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          height: 1.0,
+        ),
       ),
     );
   }
 
-  Widget _buildContentSection(BuildContext context, CartController cartController, AppController appController, double contentHeight) {
+  Widget _buildContentSection(
+    BuildContext context,
+    CartController cartController,
+    AppController appController,
+    double contentHeight,
+  ) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.all(ProductCard.contentPadding),
@@ -165,16 +219,18 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 Text(
                   widget.product.name,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                    height: 1.15,
-                  ) ?? TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                    height: 1.15,
-                  ),
+                  style:
+                      theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                        height: 1.15,
+                      ) ??
+                      TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                        height: 1.15,
+                      ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -182,10 +238,16 @@ class _ProductCardState extends State<ProductCard> {
                   const SizedBox(height: 2),
                   Text(
                     widget.product.description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.15,
-                    ) ?? TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant, height: 1.15),
+                    style:
+                        theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.15,
+                        ) ??
+                        TextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.15,
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -199,20 +261,34 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Widget _buildPriceRow(BuildContext context, CartController cartController, AppController appController) {
+  Widget _buildPriceRow(
+    BuildContext context,
+    CartController cartController,
+    AppController appController,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Flexible(
           child: Obx(() {
-            final displayPrice = appController.showResalePrice.value && widget.product.price2 != null
+            final displayPrice =
+                appController.showResalePrice.value &&
+                    widget.product.price2 != null
                 ? widget.product.price2!
                 : widget.product.price;
-            final isResale = appController.showResalePrice.value && widget.product.price2 != null;
-            final bgColor = isResale ? Colors.orange.shade50 : Colors.green.shade50;
-            final borderColor = isResale ? Colors.orange.shade200 : Colors.green.shade200;
-            final textColor = isResale ? Colors.orange.shade800 : Colors.green.shade800;
+            final isResale =
+                appController.showResalePrice.value &&
+                widget.product.price2 != null;
+            final bgColor = isResale
+                ? Colors.orange.shade50
+                : Colors.green.shade50;
+            final borderColor = isResale
+                ? Colors.orange.shade200
+                : Colors.green.shade200;
+            final textColor = isResale
+                ? Colors.orange.shade800
+                : Colors.green.shade800;
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
               decoration: BoxDecoration(
@@ -240,10 +316,12 @@ class _ProductCardState extends State<ProductCard> {
 
   Widget _buildAddButton(BuildContext context, CartController cartController) {
     final theme = Theme.of(context);
-    final hasStock = _getAvailableStock() > 0;
+    final hasStock = _getAvailableStock() > 0 || !widget.product.manageStock;
     if (!hasStock) {
       return ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: ProductCard.minButtonHeight),
+        constraints: const BoxConstraints(
+          minHeight: ProductCard.minButtonHeight,
+        ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
@@ -254,7 +332,11 @@ class _ProductCardState extends State<ProductCard> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.remove_shopping_cart, size: 14, color: theme.colorScheme.outline),
+              Icon(
+                Icons.remove_shopping_cart,
+                size: 14,
+                color: theme.colorScheme.outline,
+              ),
               const SizedBox(width: 4),
               Text(
                 'Indisponível',
@@ -274,18 +356,28 @@ class _ProductCardState extends State<ProductCard> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          debugPrint('[ProductCard] addToCart: ${widget.product.id} ${widget.product.name}');
+          debugPrint(
+            '[ProductCard] addToCart: ${widget.product.id} ${widget.product.name}',
+          );
           _onAddPressed(cartController);
         },
         borderRadius: BorderRadius.circular(ProductCard.buttonRadius),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: ProductCard.minButtonHeight),
+          constraints: const BoxConstraints(
+            minHeight: ProductCard.minButtonHeight,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: primary,
               borderRadius: BorderRadius.circular(ProductCard.buttonRadius),
-              boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.25), blurRadius: 2, offset: const Offset(0, 1))],
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withValues(alpha: 0.25),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
@@ -295,7 +387,11 @@ class _ProductCardState extends State<ProductCard> {
                 SizedBox(width: 4),
                 Text(
                   'Adicionar',
-                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -343,7 +439,12 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 _buildImageSection(context, stock, imageW, cardH),
                 Expanded(
-                  child: _buildContentSection(context, cartController, appController, cardH),
+                  child: _buildContentSection(
+                    context,
+                    cartController,
+                    appController,
+                    cardH,
+                  ),
                 ),
               ],
             ),

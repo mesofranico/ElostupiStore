@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS financial_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('income', 'expense') NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    description TEXT,
+    record_date DATE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

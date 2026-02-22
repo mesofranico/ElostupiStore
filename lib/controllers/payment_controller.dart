@@ -89,23 +89,31 @@ class PaymentController extends GetxController {
   }
 
   // Criar novo pagamento
-  Future<bool> createPayment(Payment payment) async {
+  Future<bool> createPayment(
+    Payment payment, {
+    bool showSnackbar = true,
+    bool showLoading = true,
+  }) async {
     try {
-      isLoading.value = true;
+      if (showLoading) isLoading.value = true;
       errorMessage.value = '';
 
       final Payment createdPayment = await PaymentService.createPayment(
         payment,
       );
       payments.add(createdPayment);
-      UiUtils.showSuccess('Pagamento registado com sucesso!');
+      if (showSnackbar) {
+        UiUtils.showSuccess('Pagamento registado com sucesso!');
+      }
       return true;
     } catch (e) {
       errorMessage.value = e.toString();
-      UiUtils.showError('Erro ao registar pagamento: $e');
+      if (showSnackbar) {
+        UiUtils.showError('Erro ao registar pagamento: $e');
+      }
       return false;
     } finally {
-      isLoading.value = false;
+      if (showLoading) isLoading.value = false;
     }
   }
 
@@ -178,6 +186,7 @@ class PaymentController extends GetxController {
       return report;
     } catch (e) {
       errorMessage.value = e.toString();
+      UiUtils.hideLoading(); // Close first
       UiUtils.showError('Erro ao gerar relatório: $e');
       return null;
     } finally {

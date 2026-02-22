@@ -6,7 +6,7 @@ import '../models/product.dart';
 class DatabaseService {
   // Configuração da API
   static const String baseUrl = 'https://api.elostupi.pt/api';
-  
+
   // Endpoints
   static const String productsEndpoint = '/products';
   static const String updateStockEndpoint = '/products/stock';
@@ -21,15 +21,16 @@ class DatabaseService {
   // Buscar todos os produtos
   Future<List<Product>> getProducts() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl$productsEndpoint'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse('$baseUrl$productsEndpoint'), headers: _headers)
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return _parseProducts(response.body);
       } else {
-        throw Exception('Erro ao carregar produtos: Status ${response.statusCode}');
+        throw Exception(
+          'Erro ao carregar produtos: Status ${response.statusCode}',
+        );
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');
@@ -39,13 +40,13 @@ class DatabaseService {
   // Atualizar stock de um produto
   Future<bool> updateProductStock(String productId, int newStock) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl$updateStockEndpoint/$productId'),
-        headers: _headers,
-        body: json.encode({
-          'stock': newStock,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl$updateStockEndpoint/$productId'),
+            headers: _headers,
+            body: json.encode({'stock': newStock}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 200;
     } catch (e) {
@@ -54,18 +55,24 @@ class DatabaseService {
   }
 
   // Decrementar stock após venda
-  Future<Map<String, dynamic>> decrementStock(String productId, int quantity) async {
+  Future<Map<String, dynamic>> decrementStock(
+    String productId,
+    int quantity, {
+    bool isInternal = false,
+  }) async {
     try {
       if (kDebugMode) {
-        print('[DEBUG] Requisição decrementStock para produto $productId, quantidade $quantity');
+        print(
+          '[DEBUG] Requisição decrementStock para produto $productId, quantidade $quantity, isInternal: $isInternal',
+        );
       }
-      final response = await http.post(
-        Uri.parse('$baseUrl$productsEndpoint/$productId/decrement'),
-        headers: _headers,
-        body: json.encode({
-          'quantity': quantity,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$productsEndpoint/$productId/decrement'),
+            headers: _headers,
+            body: json.encode({'quantity': quantity, 'isInternal': isInternal}),
+          )
+          .timeout(const Duration(seconds: 10));
       if (kDebugMode) {
         print('[DEBUG] Status:  [33m [1m${response.statusCode} [0m');
       }
@@ -93,14 +100,47 @@ class DatabaseService {
     }
   }
 
+  // Decrementar stock de múltiplos produtos (Venda Consolidada)
+  Future<Map<String, dynamic>> bulkDecrementStock(
+    List<Map<String, dynamic>> items, {
+    bool isInternal = false,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$productsEndpoint/bulk-decrement'),
+            headers: _headers,
+            body: json.encode({'items': items, 'isInternal': isInternal}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': null};
+      } else {
+        String? msg;
+        try {
+          final jsonData = json.decode(response.body);
+          msg = jsonData['error']?.toString() ?? response.body;
+        } catch (_) {
+          msg = response.body;
+        }
+        return {'success': false, 'message': msg};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Erro de conexão: $e'};
+    }
+  }
+
   // Criar pedido
   Future<bool> createOrder(Map<String, dynamic> orderData) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl$ordersEndpoint'),
-        headers: _headers,
-        body: json.encode(orderData),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$ordersEndpoint'),
+            headers: _headers,
+            body: json.encode(orderData),
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 201;
     } catch (e) {
@@ -111,10 +151,12 @@ class DatabaseService {
   // Buscar produto específico
   Future<Product?> getProduct(String productId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl$productsEndpoint/$productId'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl$productsEndpoint/$productId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -130,11 +172,13 @@ class DatabaseService {
   // Criar novo produto
   Future<bool> createProduct(Product product) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl$productsEndpoint'),
-        headers: _headers,
-        body: json.encode(product.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl$productsEndpoint'),
+            headers: _headers,
+            body: json.encode(product.toJson()),
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 201;
     } catch (e) {
@@ -148,11 +192,13 @@ class DatabaseService {
       if (kDebugMode) {
         print('[DB] Atualizando produto: ${product.id}');
       }
-      final response = await http.put(
-        Uri.parse('$baseUrl$productsEndpoint/${product.id}'),
-        headers: _headers,
-        body: json.encode(product.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl$productsEndpoint/${product.id}'),
+            headers: _headers,
+            body: json.encode(product.toJson()),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (kDebugMode) {
         print('[DB] Status da resposta: ${response.statusCode}');
@@ -160,7 +206,7 @@ class DatabaseService {
       if (kDebugMode) {
         print('[DB] Body da resposta: ${response.body}');
       }
-      
+
       return response.statusCode == 200;
     } catch (e) {
       if (kDebugMode) {
@@ -173,10 +219,12 @@ class DatabaseService {
   // Deletar produto
   Future<bool> deleteProduct(String productId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl$productsEndpoint/$productId'),
-        headers: _headers,
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl$productsEndpoint/$productId'),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
 
       return response.statusCode == 200;
     } catch (e) {
@@ -193,4 +241,4 @@ class DatabaseService {
       throw Exception('Erro ao processar dados JSON: $e');
     }
   }
-} 
+}

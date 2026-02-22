@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/product.dart';
@@ -8,16 +7,20 @@ import '../services/product_service.dart';
 import 'app_controller.dart';
 import '../services/pending_order_service.dart';
 import '../services/bluetooth_print_service.dart';
+import '../core/utils/ui_utils.dart';
 
 class CartController extends GetxController {
   final GetStorage _storage = GetStorage();
   final ProductService _productService = ProductService();
   final PendingOrderService _pendingOrderService = PendingOrderService();
-  final BluetoothPrintService _bluetoothService = Get.find<BluetoothPrintService>();
-  
+  final BluetoothPrintService _bluetoothService =
+      Get.find<BluetoothPrintService>();
+
   final RxList<CartItem> items = <CartItem>[].obs;
   final RxBool isLoading = false.obs;
-  final RxList<Map<String, dynamic>> pendingOrders = <Map<String, dynamic>>[].obs;
+  final RxBool isInternal = false.obs;
+  final RxList<Map<String, dynamic>> pendingOrders =
+      <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
@@ -27,36 +30,33 @@ class CartController extends GetxController {
   }
 
   void addToCart(Product product) {
-    // Verificar se há stock disponível
-    if (product.stock != null && product.stock! <= 0) {
+    // Verificar se há stock disponível (se gerido)
+    if (product.manageStock && product.stock != null && product.stock! <= 0) {
       // Não mostrar snackbar - o estado já é visível no card
       return;
     }
 
-    final existingIndex = items.indexWhere((item) => item.product.id == product.id);
-    
+    final existingIndex = items.indexWhere(
+      (item) => item.product.id == product.id,
+    );
+
     if (existingIndex >= 0) {
-      // Verificar se não excede o stock disponível
-      if (product.stock != null && items[existingIndex].quantity >= product.stock!) {
-        Get.snackbar(
-          'Stock Limitado',
+      // Verificar se não excede o stock disponível (se gerido)
+      if (product.manageStock &&
+          product.stock != null &&
+          items[existingIndex].quantity >= product.stock!) {
+        UiUtils.showInfo(
           'Quantidade máxima de ${product.name} já está no carrinho',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
         );
         return;
       }
-      
+
       items[existingIndex].quantity++;
       items.refresh();
     } else {
       items.add(CartItem(product: product, quantity: 1));
     }
-    
+
     saveCartToStorage();
   }
 
@@ -70,26 +70,21 @@ class CartController extends GetxController {
       removeFromCart(productId);
       return;
     }
-    
+
     final index = items.indexWhere((item) => item.product.id == productId);
     if (index >= 0) {
       final product = items[index].product;
-      
-      // Verificar se não excede o stock disponível
-      if (product.stock != null && quantity > product.stock!) {
-        Get.snackbar(
-          'Stock Insuficiente',
+
+      // Verificar se não excede o stock disponível (se gerido)
+      if (product.manageStock &&
+          product.stock != null &&
+          quantity > product.stock!) {
+        UiUtils.showError(
           'Quantidade solicitada excede o stock disponível (${product.stock} unidades)',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.withValues(alpha: 0.8),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 2),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
         );
         return;
       }
-      
+
       items[index].quantity = quantity;
       items.refresh();
       saveCartToStorage();
@@ -104,8 +99,9 @@ class CartController extends GetxController {
   double get totalPrice {
     final AppController appController = Get.find<AppController>();
     return items.fold(0.0, (sum, item) {
-      final price = appController.showResalePrice.value && item.product.price2 != null 
-          ? item.product.price2! 
+      final price =
+          appController.showResalePrice.value && item.product.price2 != null
+          ? item.product.price2!
           : item.product.price;
       return sum + (price * item.quantity);
     });
@@ -119,11 +115,15 @@ class CartController extends GetxController {
 
   Future<void> saveCartToStorage() async {
     try {
-      final List<Map<String, dynamic>> cartJson = items.map((item) => {
-        'product': item.product.toJson(),
-        'quantity': item.quantity,
-      }).toList();
-      
+      final List<Map<String, dynamic>> cartJson = items
+          .map(
+            (item) => {
+              'product': item.product.toJson(),
+              'quantity': item.quantity,
+            },
+          )
+          .toList();
+
       await _storage.write('cart_items', cartJson);
     } catch (e) {
       if (kDebugMode) {
@@ -146,10 +146,14 @@ class CartController extends GetxController {
     try {
       final List<dynamic>? cartJson = _storage.read('cart_items');
       if (cartJson != null) {
-        items.value = cartJson.map((json) => CartItem(
-          product: Product.fromJson(json['product']),
-          quantity: json['quantity'],
-        )).toList();
+        items.value = cartJson
+            .map(
+              (json) => CartItem(
+                product: Product.fromJson(json['product']),
+                quantity: json['quantity'],
+              ),
+            )
+            .toList();
       }
     } catch (e) {
       if (kDebugMode) {
@@ -161,72 +165,59 @@ class CartController extends GetxController {
   // Finalizar compra e atualizar stock
   Future<bool> finalizeOrder() async {
     if (items.isEmpty) return false;
-    
+
     // Ativar wake lock temporariamente durante a operação
     final appController = Get.find<AppController>();
     appController.enableWakeLockTemporarily();
-    
+
     isLoading.value = true;
-    
+
     try {
-      // Atualizar stock para cada item
-      for (final item in items) {
-        if (kDebugMode) {
-          print('[CART] Tentando decrementar stock de ${item.product.id} (${item.product.name}), quantidade: ${item.quantity}');
-        }
-        final result = await _productService.decrementStock(
-          item.product.id, 
-          item.quantity
-        );
-        if (kDebugMode) {
-          print('[CART] Resultado: success=${result['success']}, message=${result['message']}');
-        }
-        
-        if (!(result['success'] ?? false)) {
-          Get.snackbar(
-            'Erro na Compra',
-            result['message'] ?? 'Erro ao atualizar stock de ${item.product.name}',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.withValues(alpha: 0.8),
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
-          isLoading.value = false;
-          return false;
-        }
+      // Preparar lista de itens para decremento em massa
+      final bulkItems = items
+          .map((item) => {'id': item.product.id, 'quantity': item.quantity})
+          .toList();
+
+      if (kDebugMode) {
+        print('[CART] Tentando decremento em massa de ${items.length} itens');
       }
-      
+
+      final result = await _productService.bulkDecrementStock(
+        bulkItems,
+        isInternal: isInternal.value,
+      );
+
+      if (kDebugMode) {
+        print(
+          '[CART] Resultado Bulk: success=${result['success']}, message=${result['message']}',
+        );
+      }
+
+      if (!(result['success'] ?? false)) {
+        UiUtils.showError(
+          result['message'] ?? 'Erro ao processar venda consolidada',
+        );
+        isLoading.value = false;
+        return false;
+      }
+
       // Tentar imprimir talão
       await _printReceipt();
-      
+
       // Limpar carrinho após sucesso
       clearCart();
-      
-      Get.snackbar(
-        'Compra Finalizada!',
-        'Pedido realizado com sucesso. Stock atualizado.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
-      
+      isInternal.value = false; // Resetar flag
+
+      UiUtils.showSuccess('Pedido realizado com sucesso. Stock atualizado.');
+
       isLoading.value = false;
       return true;
-      
     } catch (e) {
       isLoading.value = false;
       if (kDebugMode) {
         print('[CART] Exceção finalizeOrder: $e');
       }
-      Get.snackbar(
-        'Erro na Compra',
-        'Erro ao finalizar pedido: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      UiUtils.showError('Erro ao finalizar pedido: $e');
       return false;
     }
   }
@@ -247,23 +238,29 @@ class CartController extends GetxController {
   // Salvar pedido como pendente (API)
   Future<bool> savePendingOrderAPI({required String note}) async {
     if (items.isEmpty) return false;
-    final List<Map<String, dynamic>> orderItems = items.map((item) => {
-      'product': {
-        'id': item.product.id,
-        'name': item.product.name,
-        'price': item.product.price,
-        'price2': item.product.price2,
-      },
-      'quantity': item.quantity,
-    }).toList();
+    final List<Map<String, dynamic>> orderItems = items
+        .map(
+          (item) => {
+            'product': {
+              'id': item.product.id,
+              'name': item.product.name,
+              'price': item.product.price,
+              'price2': item.product.price2,
+            },
+            'quantity': item.quantity,
+          },
+        )
+        .toList();
     final now = DateTime.now();
-    final id = '${now.year.toString().padLeft(4, '0')}'
+    final id =
+        '${now.year.toString().padLeft(4, '0')}'
         '${now.month.toString().padLeft(2, '0')}'
         '${now.day.toString().padLeft(2, '0')}'
         '${now.hour.toString().padLeft(2, '0')}'
         '${now.minute.toString().padLeft(2, '0')}'
         '${now.second.toString().padLeft(2, '0')}';
-    final createdAt = '${now.year.toString().padLeft(4, '0')}-'
+    final createdAt =
+        '${now.year.toString().padLeft(4, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')} '
         '${now.hour.toString().padLeft(2, '0')}-'
@@ -312,10 +309,16 @@ class CartController extends GetxController {
   }
 
   // Finalizar pedido pendente (API)
-  Future<bool> finalizePendingOrderAPI(String id) async {
+  Future<bool> finalizePendingOrderAPI(
+    String id, {
+    bool isInternal = false,
+  }) async {
     isLoading.value = true;
     try {
-      final ok = await _pendingOrderService.finalizePendingOrder(id);
+      final ok = await _pendingOrderService.finalizePendingOrder(
+        id,
+        isInternal: isInternal,
+      );
       if (ok) {
         // Tentar imprimir talão do pedido finalizado
         await _printPendingOrderReceipt(id);
@@ -333,14 +336,16 @@ class CartController extends GetxController {
   Future<void> _printPendingOrderReceipt(String orderId) async {
     try {
       // Encontrar o pedido na lista de pendentes
-      final orderList = pendingOrders.where((order) => order['id'] == orderId).toList();
+      final orderList = pendingOrders
+          .where((order) => order['id'] == orderId)
+          .toList();
       if (orderList.isEmpty) return;
       final order = orderList.first;
 
       // Converter itens do pedido para CartItem
       final List<CartItem> orderItems = [];
       final List<dynamic> items = order['items'] ?? [];
-      
+
       for (final item in items) {
         final productData = item['product'];
         final product = Product(
@@ -352,11 +357,10 @@ class CartController extends GetxController {
           stock: 0, // Não relevante para impressão
           imageUrl: '', // Não relevante para impressão
         );
-        
-        orderItems.add(CartItem(
-          product: product,
-          quantity: item['quantity'] ?? 1,
-        ));
+
+        orderItems.add(
+          CartItem(product: product, quantity: item['quantity'] ?? 1),
+        );
       }
 
       final total = double.tryParse(order['total'].toString()) ?? 0.0;
@@ -385,5 +389,3 @@ class CartController extends GetxController {
     }
   }
 }
-
- 

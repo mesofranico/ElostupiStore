@@ -35,9 +35,9 @@ class MemberController extends GetxController {
   }
 
   // Carregar todos os membros
-  Future<void> loadMembers() async {
+  Future<void> loadMembers({bool showLoading = true}) async {
     try {
-      isLoading.value = true;
+      if (showLoading) isLoading.value = true;
       errorMessage.value = '';
 
       final List<Member> loadedMembers = await MemberService.getAllMembers();
@@ -46,14 +46,14 @@ class MemberController extends GetxController {
       errorMessage.value = e.toString();
       UiUtils.showError('Não foi possível carregar os membros: $e');
     } finally {
-      isLoading.value = false;
+      if (showLoading) isLoading.value = false;
     }
   }
 
   // Carregar membros em atraso
-  Future<void> loadOverdueMembers() async {
+  Future<void> loadOverdueMembers({bool showLoading = true}) async {
     try {
-      isLoading.value = true;
+      if (showLoading) isLoading.value = true;
       errorMessage.value = '';
 
       final List<Member> overdueMembers =
@@ -63,7 +63,7 @@ class MemberController extends GetxController {
       errorMessage.value = e.toString();
       UiUtils.showError('Erro ao carregar membros em atraso: $e');
     } finally {
-      isLoading.value = false;
+      if (showLoading) isLoading.value = false;
     }
   }
 
@@ -138,9 +138,13 @@ class MemberController extends GetxController {
   }
 
   // Atualizar membro
-  Future<bool> updateMember(Member member) async {
+  Future<bool> updateMember(
+    Member member, {
+    bool showSnackbar = true,
+    bool showLoading = true,
+  }) async {
     try {
-      isLoading.value = true;
+      if (showLoading) isLoading.value = true;
       errorMessage.value = '';
 
       final Member updatedMember = await MemberService.updateMember(member);
@@ -148,14 +152,18 @@ class MemberController extends GetxController {
       if (index != -1) {
         members[index] = updatedMember;
       }
-      UiUtils.showSuccess('Membro atualizado com sucesso!');
+      if (showSnackbar) {
+        UiUtils.showSuccess('Membro atualizado com sucesso!');
+      }
       return true;
     } catch (e) {
       errorMessage.value = e.toString();
-      UiUtils.showError('Erro ao atualizar membro: $e');
+      if (showSnackbar) {
+        UiUtils.showError('Erro ao atualizar membro: $e');
+      }
       return false;
     } finally {
-      isLoading.value = false;
+      if (showLoading) isLoading.value = false;
     }
   }
 
@@ -220,12 +228,7 @@ class MemberController extends GetxController {
     final total = members.length;
     final active = members.where((m) => m.isActive).length;
     final overdue = members
-        .where(
-          (m) =>
-              m.paymentStatus == 'overdue' ||
-              (m.nextPaymentDate != null &&
-                  m.nextPaymentDate!.isBefore(DateTime.now())),
-        )
+        .where((m) => m.paymentStatus == 'overdue' || isMemberOverdue(m))
         .length;
     final paid = members.where((m) => m.paymentStatus == 'paid').length;
 
@@ -271,12 +274,22 @@ class MemberController extends GetxController {
   // Verificar se membro está em atraso
   bool isMemberOverdue(Member member) {
     if (member.nextPaymentDate == null) return false;
-    return member.nextPaymentDate!.isBefore(DateTime.now());
+
+    final now = DateTime.now();
+    final nextPayment = member.nextPaymentDate!;
+
+    // É considerado em atraso apenas se o mês/ano for estritamente anterior ao actual
+    if (nextPayment.year < now.year) return true;
+    if (nextPayment.year == now.year && nextPayment.month < now.month) {
+      return true;
+    }
+
+    return false;
   }
 
   // Obter dias em atraso
   int getDaysOverdue(Member member) {
-    if (member.nextPaymentDate == null) return 0;
+    if (!isMemberOverdue(member)) return 0;
     final now = DateTime.now();
     final overdue = now.difference(member.nextPaymentDate!).inDays;
     return overdue > 0 ? overdue : 0;
