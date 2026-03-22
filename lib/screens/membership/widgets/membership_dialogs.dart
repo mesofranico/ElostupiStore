@@ -6,9 +6,11 @@ import '../../../models/member.dart';
 import '../../../models/payment.dart';
 import '../../../core/currency_formatter.dart';
 import '../../../core/membership_calculator.dart';
-import '../../../core/snackbar_helper.dart';
 import '../../../core/app_style.dart';
 import '../../../core/utils/ui_utils.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../services/bluetooth_print_service.dart';
 import '../membership_utils.dart';
 import 'membership_shared_widgets.dart';
 
@@ -210,10 +212,7 @@ class MembershipDialogs {
                               if (nameController.text.trim().isEmpty ||
                                   phoneController.text.trim().isEmpty ||
                                   feeController.text.trim().isEmpty) {
-                                SnackBarHelper.showWarning(
-                                  context,
-                                  'Campos obrigatórios em falta',
-                                );
+                                UiUtils.showWarning('Campos obrigatórios em falta');
                                 return;
                               }
 
@@ -221,10 +220,7 @@ class MembershipDialogs {
                                 feeController.text.replaceAll(',', '.'),
                               );
                               if (fee == null || fee <= 0) {
-                                SnackBarHelper.showWarning(
-                                  context,
-                                  'Valor inválido',
-                                );
+                                UiUtils.showWarning('Valor inválido');
                                 return;
                               }
 
@@ -253,25 +249,16 @@ class MembershipDialogs {
                                   Navigator.of(sheetContext).pop();
                                   await controller.loadMembers();
                                   if (context.mounted) {
-                                    SnackBarHelper.showSuccess(
-                                      context,
-                                      'Membro adicionado!',
-                                    );
+                                    UiUtils.showSuccess('Membro adicionado!');
                                   }
                                 } else {
                                   if (context.mounted) {
-                                    SnackBarHelper.showError(
-                                      context,
-                                      controller.errorMessage.value,
-                                    );
+                                    UiUtils.showError(controller.errorMessage.value);
                                   }
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  SnackBarHelper.showError(
-                                    context,
-                                    'Erro inesperado: $e',
-                                  );
+                                  UiUtils.showError('Erro inesperado: $e');
                                 }
                               }
                             },
@@ -861,10 +848,7 @@ class MembershipDialogs {
                                 if (!success) {
                                   setState(() => isProcessing = false);
                                   if (context.mounted) {
-                                    SnackBarHelper.showError(
-                                      context,
-                                      'Erro ao registar pagamento',
-                                    );
+                                    UiUtils.showError('Erro ao registar pagamento');
                                   }
                                   return;
                                 }
@@ -1261,15 +1245,11 @@ class MembershipDialogs {
                           if (success) {
                             await controller.loadMembers();
                             if (context.mounted) {
-                              SnackBarHelper.showSuccess(
-                                context,
-                                'Membro "${member.name}" foi excluído com sucesso',
-                              );
+                              UiUtils.showSuccess('Membro "${member.name}" foi excluído com sucesso');
                             }
                           } else {
                             if (context.mounted) {
-                              SnackBarHelper.showError(
-                                context,
+                              UiUtils.showError(
                                 controller.errorMessage.value.isNotEmpty
                                     ? controller.errorMessage.value
                                     : 'Erro ao excluir membro. Tenta novamente.',
@@ -1281,10 +1261,7 @@ class MembershipDialogs {
                             Navigator.of(sheetContext).pop();
                           }
                           if (context.mounted) {
-                            SnackBarHelper.showError(
-                              context,
-                              'Erro inesperado ao excluir membro: $e',
-                            );
+                            UiUtils.showError('Erro inesperado ao excluir membro: $e');
                           }
                         }
                       },
@@ -1874,7 +1851,13 @@ class MembershipDialogs {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Implement receipt printing
+                          final printService = Get.find<BluetoothPrintService>();
+                          printService.printMemberReceipt(
+                            memberName: payment.memberName ?? 'Membro',
+                            amount: payment.amount,
+                            paymentType: payment.paymentType,
+                            paymentDate: payment.paymentDate,
+                          );
                         },
                         icon: const Icon(Icons.print_outlined),
                         label: const Text('Imprimir Recibo'),
@@ -2003,7 +1986,8 @@ class MembershipDialogs {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // TODO: Implement copy
+                        Clipboard.setData(ClipboardData(text: reportContent));
+                        UiUtils.showSuccess('Relatório copiado para a área de transferência');
                         Navigator.pop(context);
                       },
                       icon: const Icon(Icons.copy_rounded),
@@ -2020,7 +2004,7 @@ class MembershipDialogs {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // TODO: Implement share
+                        Share.share(reportContent, subject: 'Relatório de Gestão ElosTupi');
                         Navigator.pop(context);
                       },
                       icon: const Icon(Icons.share_outlined),

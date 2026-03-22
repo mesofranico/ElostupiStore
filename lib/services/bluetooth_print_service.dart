@@ -152,9 +152,12 @@ class BluetoothPrintService extends GetxService {
     required List<CartItem> items,
     required double total,
     String? note,
+    bool silent = false,
   }) async {
     if (!isConnected.value) {
-      UiUtils.showError('Ligue primeiro a uma impressora Bluetooth');
+      if (!silent) {
+        UiUtils.showError('Ligue primeiro a uma impressora Bluetooth');
+      }
       return false;
     }
 
@@ -232,6 +235,71 @@ class BluetoothPrintService extends GetxService {
       return true;
     } catch (e) {
       UiUtils.showError('Erro ao imprimir talão');
+      return false;
+    }
+  }
+
+  // Imprimir recibo de mensalidade
+  Future<bool> printMemberReceipt({
+    required String memberName,
+    required double amount,
+    required String paymentType,
+    required DateTime paymentDate,
+    bool silent = false,
+  }) async {
+    if (!isConnected.value) {
+      if (!silent) {
+        UiUtils.showError('Ligue primeiro a uma impressora Bluetooth');
+      }
+      return false;
+    }
+
+    try {
+      final StringBuffer receipt = StringBuffer();
+
+      // Cabeçalho centralizado
+      receipt.writeln('    ASSOCIACAO ELOS DE TUPINAMBA');
+      receipt.writeln('================================');
+      receipt.writeln('        RECIBO DE QUOTA');
+      receipt.writeln('');
+
+      final cleanMemberName = _cleanText(memberName);
+      receipt.writeln('Membro: $cleanMemberName');
+      
+      final dateStr =
+          '${paymentDate.day.toString().padLeft(2, '0')}/${paymentDate.month.toString().padLeft(2, '0')}/${paymentDate.year}';
+      receipt.writeln('Data Pagamento: $dateStr');
+      
+      final typeStr = _cleanText(paymentType == 'regular' ? 'Mensalidade' : 
+                                paymentType == 'overdue' ? 'Atraso' : 'Adiantamento');
+      receipt.writeln('Tipo: $typeStr');
+      
+      receipt.writeln('--------------------------------');
+      
+      final amountStr = amount.toStringAsFixed(2);
+      receipt.writeln('VALOR: ${' '.padLeft(15)}$amountStr EUR');
+      
+      receipt.writeln('--------------------------------');
+      receipt.writeln('Obg pela sua contribuicao!');
+      receipt.writeln('');
+      
+      final now = DateTime.now();
+      final printDate = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute}';
+      receipt.writeln('Emitido em: $printDate');
+      
+      receipt.writeln('================================');
+      receipt.writeln('');
+      receipt.writeln('');
+      receipt.writeln('');
+
+      final receiptText = receipt.toString();
+      final bytes = receiptText.codeUnits;
+      await BluetoothPrintPlus.write(Uint8List.fromList(bytes));
+
+      UiUtils.showSuccess('Recibo enviado para impressora');
+      return true;
+    } catch (e) {
+      UiUtils.showError('Erro ao imprimir recibo: $e');
       return false;
     }
   }

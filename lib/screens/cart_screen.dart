@@ -20,7 +20,6 @@ class CartScreen extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final bottomPadding = MediaQuery.of(ctx).padding.bottom;
         return Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
@@ -36,158 +35,165 @@ class CartScreen extends StatelessWidget {
               ),
             ],
           ),
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.save_outlined,
-                      color: Colors.orange.shade700,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Guardar pedido',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Adicione uma nota ao pedido:',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: noteController,
-                maxLines: 1,
-                style: theme.textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Ex: Nome do consulente, observações...',
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.4),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.5,
-                      ),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => Navigator.of(ctx).pop(),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16 + MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Cancelar',
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onSurface,
+                      ),
+                      child: Icon(
+                        Icons.save_outlined,
+                        color: Colors.orange.shade700,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Guardar pedido',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Adicione uma nota ao pedido:',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: noteController,
+                  maxLines: 1,
+                  style: theme.textTheme.bodyMedium,
+                  decoration: InputDecoration(
+                    hintText: 'Ex: Nome do consulente, observações...',
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.4),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.orange, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(ctx).pop(),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Cancelar',
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () async {
-                          final note = noteController.text.trim();
-                          if (note.isEmpty) {
-                            UiUtils.showError('Adicione uma nota ao pedido.');
-                            return;
-                          }
-                          Navigator.of(ctx).pop();
-                          final ok = await cartController.savePendingOrderAPI(
-                            note: note,
-                          );
-                          if (ok) {
-                            cartController.clearCart();
-                            UiUtils.showSuccess(
-                              'O pedido foi guardado. Pode finalizar mais tarde.',
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () async {
+                            final note = noteController.text.trim();
+                            if (note.isEmpty) {
+                              UiUtils.showError('Adicione uma nota ao pedido.');
+                              return;
+                            }
+                            Navigator.of(ctx).pop();
+                            final ok = await cartController.savePendingOrderAPI(
+                              note: note,
                             );
-                            Get.back();
-                          } else {
-                            UiUtils.showError(
-                              'Não foi possível guardar o pedido. Tente novamente.',
-                            );
-                          }
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          height: 40,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.save, size: 16, color: Colors.white),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Guardar',
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                            if (ok) {
+                              cartController.clearCart();
+                              Get.back();
+                              Future.delayed(const Duration(milliseconds: 400), () {
+                                UiUtils.showSuccess('O pedido foi guardado com sucesso.');
+                              });
+                            } else {
+                              UiUtils.showError(
+                                'Não foi possível guardar o pedido. Tente novamente.',
+                              );
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.save, size: 16, color: Colors.white),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Guardar',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -417,6 +423,86 @@ class CartScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // Cálculo de Troco
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Cálculo de Troco:',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Obx(() {
+                              final total = cartController.totalPrice;
+                              final received = cartController.amountReceived.value;
+                              final change = received > total ? received - total : 0.0;
+                              return Text(
+                                received > 0 ? 'Troco: €${change.toStringAsFixed(2)}' : '',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildChangeButton(theme, 5, cartController),
+                            const SizedBox(width: 8),
+                            _buildChangeButton(theme, 10, cartController),
+                            const SizedBox(width: 8),
+                            _buildChangeButton(theme, 20, cartController),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _showManualAmountDialog(context, theme, cartController),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  height: 36,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: theme.colorScheme.outlineVariant),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Obx(() {
+                                    final received = cartController.amountReceived.value;
+                                    final isPreset = received == 5.0 || received == 10.0 || received == 20.0;
+                                    return Text(
+                                      (received > 0 && !isPreset) ? '€${received.toStringAsFixed(0)}' : 'Manual',
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        color: (received > 0 && !isPreset)
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.onSurfaceVariant,
+                                        fontWeight: (received > 0 && !isPreset) ? FontWeight.bold : FontWeight.normal,
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ),
+                            Obx(() {
+                              if (cartController.amountReceived.value > 0) {
+                                return IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.close, size: 16),
+                                  onPressed: () => cartController.amountReceived.value = 0.0,
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 14),
                     Obx(
                       () => Row(
@@ -503,7 +589,12 @@ class CartScreen extends StatelessWidget {
                                     : () async {
                                         final success = await cartController
                                             .finalizeOrder();
-                                        if (success) Get.back();
+                                        if (success) {
+                                          Get.back();
+                                          Future.delayed(const Duration(milliseconds: 400), () {
+                                            UiUtils.showSuccess('Pedido realizado com sucesso. Stock atualizado.');
+                                          });
+                                        }
                                       },
                                 child: Container(
                                   height: 40,
@@ -572,6 +663,124 @@ class CartScreen extends StatelessWidget {
             ],
           );
         }),
+      ),
+    );
+  }
+
+  Widget _buildChangeButton(ThemeData theme, double value, CartController controller) {
+    return Obx(() {
+      final isSelected = controller.amountReceived.value == value;
+      return Expanded(
+        child: InkWell(
+          onTap: () => controller.amountReceived.value = value,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+              border: Border.all(
+                color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${value.toStringAsFixed(0)}€',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  static void _showManualAmountDialog(
+    BuildContext context,
+    ThemeData theme,
+    CartController controller,
+  ) {
+    final TextEditingController amountController = TextEditingController(
+      text: controller.amountReceived.value > 0 ? controller.amountReceived.value.toStringAsFixed(0) : '',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: 20 + MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Valor Manual',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: amountController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                prefixText: '€ ',
+                hintText: '0.00',
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                final val = double.tryParse(amountController.text.replaceAll(',', '.'));
+                if (val != null) {
+                  controller.amountReceived.value = val;
+                }
+                Navigator.pop(ctx);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Confirmar Valor'),
+            ),
+          ],
+        ),
       ),
     );
   }

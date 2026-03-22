@@ -6,6 +6,7 @@ import '../controllers/finance_controller.dart';
 import '../controllers/member_controller.dart';
 import '../controllers/payment_controller.dart';
 import 'dashboard_screen.dart';
+import '../controllers/dashboard_controller.dart';
 import 'shop_screen.dart';
 import 'reports_screen.dart';
 import 'admin_screen.dart';
@@ -35,6 +36,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Get.find<PaymentController>().loadPayments();
         } catch (e) {
           // Ignorar se os controllers ainda não estiverem disponíveis
+        }
+      } else if (_tabController.index == 2) {
+        // Se entrar no Início (Dashboard), atualizar dados
+        try {
+          Get.find<DashboardController>().loadDashboard(showLoading: false);
+        } catch (e) {
+          // Ignorar se o controller ainda não estiver disponível
         }
       }
     });

@@ -76,68 +76,158 @@ class AdminScreen extends StatelessWidget {
     final controller = TextEditingController(text: value);
     bool isLoading = false;
 
-    Get.dialog(
+    Get.bottomSheet(
       StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Configurações Gerais'),
-            content: Column(
+          final theme = Theme.of(context);
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text('Defina o valor pago por pessoa (Sessão):'),
-                const SizedBox(height: 15),
+                // Drag Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.settings,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Configurações Gerais',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Defina o valor base pago por cada pessoa (Sessão):',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: controller,
-                  decoration: const InputDecoration(
+                  autofocus: true,
+                  decoration: InputDecoration(
                     labelText: 'Valor da Sessão (€)',
-                    border: OutlineInputBorder(),
-                    prefixText: '€ ',
+                    hintText: '0.00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.euro),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                   ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
                 ),
+                const SizedBox(height: 32),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading ? null : () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                setState(() => isLoading = true);
+                                final success = await SettingsService.updateSetting(
+                                  'attendance_fee',
+                                  controller.text.trim().replaceAll(',', '.'),
+                                );
+                                setState(() => isLoading = false);
+                                if (success) {
+                                  Get.back();
+                                  UiUtils.showSuccess(
+                                    'Configuração guardada com sucesso!',
+                                  );
+                                } else {
+                                  UiUtils.showError('Erro ao guardar a configuração.');
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Guardar Alterações',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: isLoading ? null : () => Get.back(),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        setState(() => isLoading = true);
-                        final success = await SettingsService.updateSetting(
-                          'attendance_fee',
-                          controller.text.trim().replaceAll(',', '.'),
-                        );
-                        setState(() => isLoading = false);
-                        if (success) {
-                          Get.back();
-                          UiUtils.showSuccess(
-                            'Configuração guardada com sucesso!',
-                          );
-                        } else {
-                          UiUtils.showError('Erro ao guardar a configuração.');
-                        }
-                      },
-                child: isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Guardar'),
-              ),
-            ],
           );
         },
       ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 

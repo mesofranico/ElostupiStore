@@ -4,6 +4,7 @@ import '../controllers/consulente_controller.dart';
 import '../models/consulente_session.dart';
 import '../models/consulente.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
 
 class ConsulenteSessionFormScreen extends StatefulWidget {
   final int consulenteId;
@@ -39,15 +40,7 @@ class _ConsulenteSessionFormScreenState
     try {
       controller = Get.find<ConsulentesController>();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Erro ao inicializar formulário de sessão',
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      UiUtils.showError('Erro ao inicializar formulário de sessão');
       Get.back();
       return;
     }
@@ -392,29 +385,15 @@ class _ConsulenteSessionFormScreenState
     if (success) {
       Get.back();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isEditing
-                  ? 'Sessão atualizada com sucesso'
-                  : 'Sessão criada com sucesso',
-              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
+        UiUtils.showSuccess(
+          isEditing
+              ? 'Sessão atualizada com sucesso'
+              : 'Sessão criada com sucesso',
         );
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              controller!.errorMessage.value,
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        UiUtils.showError(controller!.errorMessage.value);
       }
     }
   }
@@ -585,15 +564,7 @@ class _ConsulenteSessionFormScreenState
         .toList();
 
     if (availableConsulentes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Não há consulentes disponíveis para adicionar como acompanhantes',
-            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
+      UiUtils.showInfo('Não há consulentes disponíveis para adicionar como acompanhantes');
       return;
     }
 

@@ -24,10 +24,7 @@ class FinanceReportService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
-        theme: pw.ThemeData.withFont(
-          base: font,
-          bold: boldFont,
-        ),
+        theme: pw.ThemeData.withFont(base: font, bold: boldFont),
         build: (pw.Context context) {
           return [
             // Header
@@ -73,9 +70,19 @@ class FinanceReportService {
             // Summary Cards
             pw.Row(
               children: [
-                _buildSummaryBox('Total Entradas', totalIncome, PdfColors.green, boldFont),
+                _buildSummaryBox(
+                  'Total Entradas',
+                  totalIncome,
+                  PdfColors.green,
+                  boldFont,
+                ),
                 pw.SizedBox(width: 20),
-                _buildSummaryBox('Total Gastos', totalExpense, PdfColors.red, boldFont),
+                _buildSummaryBox(
+                  'Total Gastos',
+                  totalExpense,
+                  PdfColors.red,
+                  boldFont,
+                ),
                 pw.SizedBox(width: 20),
                 _buildSummaryBox(
                   'Balanço Final',
@@ -89,39 +96,48 @@ class FinanceReportService {
             ),
             pw.SizedBox(height: 30),
 
-            // Breakdown Section
-            pw.Text(
-              'Detalhamento de Receitas',
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            // Breakdowns Row
+            // Income Breakdown
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Resumo das Receitas',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Divider(thickness: 0.5),
+                pw.SizedBox(height: 8),
+                _buildBreakdownRow(
+                  'Mensalidades',
+                  incomeBreakdown['membership']?.toDouble() ?? 0.0,
+                  currencyFormat,
+                ),
+                _buildBreakdownRow(
+                  'Venda de Produtos',
+                  incomeBreakdown['sales']?.toDouble() ?? 0.0,
+                  currencyFormat,
+                ),
+                _buildBreakdownRow(
+                  'Sessões (Presenças)',
+                  incomeBreakdown['sessions']?.toDouble() ?? 0.0,
+                  currencyFormat,
+                ),
+                if ((incomeBreakdown['other']?.toDouble() ?? 0.0) > 0)
+                  _buildBreakdownRow(
+                    'Outras Entradas',
+                    incomeBreakdown['other']?.toDouble() ?? 0.0,
+                    currencyFormat,
+                  ),
+              ],
             ),
-            pw.Divider(),
-            pw.SizedBox(height: 10),
-            _buildBreakdownRow(
-              'Mensalidades',
-              incomeBreakdown['membership']?.toDouble() ?? 0.0,
-              currencyFormat,
-            ),
-            _buildBreakdownRow(
-              'Venda de Produtos',
-              incomeBreakdown['sales']?.toDouble() ?? 0.0,
-              currencyFormat,
-            ),
-            _buildBreakdownRow(
-              'Sessões (Presenças)',
-              incomeBreakdown['sessions']?.toDouble() ?? 0.0,
-              currencyFormat,
-            ),
-            if ((incomeBreakdown['other']?.toDouble() ?? 0.0) > 0)
-              _buildBreakdownRow(
-                'Outras Entradas',
-                incomeBreakdown['other']?.toDouble() ?? 0.0,
-                currencyFormat,
-              ),
             pw.SizedBox(height: 30),
 
             // Transactions Table
             pw.Text(
-              'Lista de Transações',
+              'Lista de Transações (Manuais)',
               style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
             ),
             pw.Divider(),
@@ -138,7 +154,9 @@ class FinanceReportService {
                 ];
               }).toList(),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColors.grey300,
+              ),
               cellAlignment: pw.Alignment.centerLeft,
               cellStyle: const pw.TextStyle(fontSize: 10),
               columnWidths: {
@@ -160,7 +178,12 @@ class FinanceReportService {
     );
   }
 
-  static pw.Widget _buildSummaryBox(String label, double value, PdfColor color, pw.Font boldFont) {
+  static pw.Widget _buildSummaryBox(
+    String label,
+    double value,
+    PdfColor color,
+    pw.Font boldFont,
+  ) {
     final currencyFormat = NumberFormat.currency(symbol: '€', locale: 'pt_PT');
     return pw.Expanded(
       child: pw.Container(

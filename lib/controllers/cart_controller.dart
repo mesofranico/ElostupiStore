@@ -21,6 +21,7 @@ class CartController extends GetxController {
   final RxBool isInternal = false.obs;
   final RxList<Map<String, dynamic>> pendingOrders =
       <Map<String, dynamic>>[].obs;
+  final RxDouble amountReceived = 0.0.obs;
 
   @override
   void onInit() {
@@ -93,6 +94,7 @@ class CartController extends GetxController {
 
   void clearCart() {
     items.clear();
+    amountReceived.value = 0.0;
     saveCartToStorage();
   }
 
@@ -127,17 +129,7 @@ class CartController extends GetxController {
       await _storage.write('cart_items', cartJson);
     } catch (e) {
       if (kDebugMode) {
-        if (kDebugMode) {
-          if (kDebugMode) {
-            if (kDebugMode) {
-              if (kDebugMode) {
-                if (kDebugMode) {
-                  print('Erro ao salvar carrinho: $e');
-                }
-              }
-            }
-          }
-        }
+        print('Erro ao salvar carrinho: $e');
       }
     }
   }
@@ -208,7 +200,6 @@ class CartController extends GetxController {
       clearCart();
       isInternal.value = false; // Resetar flag
 
-      UiUtils.showSuccess('Pedido realizado com sucesso. Stock atualizado.');
 
       isLoading.value = false;
       return true;
@@ -228,6 +219,7 @@ class CartController extends GetxController {
       await _bluetoothService.printReceipt(
         items: items.toList(),
         total: totalPrice,
+        silent: true,
       );
     } catch (e) {
       // Não mostrar erro ao utilizador se a impressão falhar
@@ -299,6 +291,9 @@ class CartController extends GetxController {
     isLoading.value = true;
     try {
       final ok = await _pendingOrderService.removePendingOrder(id);
+      if (ok) {
+        UiUtils.showSuccess('Pedido removido com sucesso.');
+      }
       isLoading.value = false;
       return ok;
     } catch (e) {
@@ -322,6 +317,12 @@ class CartController extends GetxController {
       if (ok) {
         // Tentar imprimir talão do pedido finalizado
         await _printPendingOrderReceipt(id);
+        
+        UiUtils.showSuccess(
+          isInternal 
+            ? 'Consumo interno registado com sucesso.' 
+            : 'Pedido finalizado com sucesso. Stock atualizado.'
+        );
       }
       isLoading.value = false;
       return ok;
@@ -371,6 +372,7 @@ class CartController extends GetxController {
         items: orderItems,
         total: total,
         note: note,
+        silent: true,
       );
     } catch (e) {
       // Não mostrar erro ao utilizador se a impressão falhar

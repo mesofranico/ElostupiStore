@@ -29,7 +29,7 @@ class DashboardScreen extends StatelessWidget {
         showBackButton: false,
       ),
       body: RefreshIndicator(
-        onRefresh: () => dashboardController.loadDashboard(),
+        onRefresh: () => dashboardController.loadDashboard(showLoading: false),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(12),

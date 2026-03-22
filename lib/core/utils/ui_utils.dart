@@ -11,32 +11,40 @@ class UiUtils {
     required Color color,
     Duration duration = const Duration(seconds: 3),
   }) {
-    // Garantir que não há overlays pendentes que possam ser fechados acidentalmente
-    // por um Get.back posterior se o snackbar demorar a abrir
+    // GetX handles snackbar queueing automatically. 
+    // Manual closing during transitions can cause assertion errors.
 
     Get.snackbar(
       title,
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: color.withValues(alpha: 0.95),
+      backgroundColor: color.withValues(alpha: 0.9),
       colorText: Colors.white,
       icon: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.only(left: 12),
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
+          color: Colors.white.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Center(
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
       ),
-      borderRadius: 20,
+      borderRadius: 16,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       boxShadows: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.2),
+          color: color.withValues(alpha: 0.3),
           blurRadius: 12,
           offset: const Offset(0, 4),
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
         ),
       ],
       duration: duration,
@@ -48,13 +56,20 @@ class UiUtils {
         onPressed: () => Get.back(),
         child: const Text(
           'OK',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
       shouldIconPulse: false,
-      barBlur: 10,
+      barBlur: 15,
+      borderWidth: 1,
+      borderColor: Colors.white.withValues(alpha: 0.2),
     );
   }
+
 
   static void showSuccess(String message) {
     showPremiumSnackbar(
@@ -79,7 +94,16 @@ class UiUtils {
       title: 'Informação',
       message: message,
       icon: Icons.info_outline,
-      color: AppStyle.primary,
+      color: AppStyle.info,
+    );
+  }
+
+  static void showWarning(String message) {
+    showPremiumSnackbar(
+      title: 'Aviso',
+      message: message,
+      icon: Icons.warning_amber_rounded,
+      color: AppStyle.accent,
     );
   }
 

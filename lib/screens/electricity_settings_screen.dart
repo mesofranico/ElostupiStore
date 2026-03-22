@@ -4,6 +4,7 @@ import '../controllers/electricity_controller.dart';
 import '../services/electricity_service.dart';
 import '../core/currency_formatter.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
 
 class ElectricitySettingsScreen extends StatelessWidget {
   const ElectricitySettingsScreen({super.key});
@@ -138,15 +139,7 @@ class ElectricitySettingsScreen extends StatelessWidget {
                           final price = double.parse(priceController.text);
                           final vat = double.parse(vatController.text);
                           if (price < 0 || vat < 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Os valores devem ser positivos',
-                                  style: TextStyle(color: theme.colorScheme.onError),
-                                ),
-                                backgroundColor: theme.colorScheme.error,
-                              ),
-                            );
+                            UiUtils.showError('Os valores devem ser positivos');
                             return;
                           }
                           await ElectricityService.updateSettings(
@@ -155,28 +148,12 @@ class ElectricitySettingsScreen extends StatelessWidget {
                           );
                           await controller.loadSettings();
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Configurações atualizadas com sucesso',
-                                  style: TextStyle(color: theme.colorScheme.onPrimary),
-                                ),
-                                backgroundColor: theme.colorScheme.primary,
-                              ),
-                            );
+                            UiUtils.showSuccess('Configurações atualizadas com sucesso');
                             Navigator.of(context).pop();
                           }
                         } catch (e) {
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Falha ao atualizar configurações: $e',
-                                  style: TextStyle(color: theme.colorScheme.onError),
-                                ),
-                                backgroundColor: theme.colorScheme.error,
-                              ),
-                            );
+                            UiUtils.showError('Falha ao atualizar configurações: $e');
                           }
                         }
                       },

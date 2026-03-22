@@ -17,8 +17,8 @@ class DashboardController extends GetxController {
     loadDashboard();
   }
 
-  Future<void> loadDashboard() async {
-    isLoading.value = true;
+  Future<void> loadDashboard({bool showLoading = true}) async {
+    if (showLoading) isLoading.value = true;
     try {
       final cartController = Get.find<CartController>();
       await cartController.updatePendingOrders();
@@ -39,6 +39,6 @@ class DashboardController extends GetxController {
     } catch (_) {
       lastReading.value = null;
     }
-    isLoading.value = false;
+    if (showLoading) isLoading.value = false;
   }
 }

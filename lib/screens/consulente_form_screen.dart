@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/consulente_controller.dart';
 import '../models/consulente.dart';
 import '../widgets/standard_appbar.dart';
+import '../core/utils/ui_utils.dart';
 
 class ConsulenteFormScreen extends StatefulWidget {
   final Consulente? consulente;
@@ -262,27 +263,11 @@ class _ConsulenteFormScreenState extends State<ConsulenteFormScreen> {
     if (success) {
       Get.back();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isEditing ? 'Consulente atualizado com sucesso' : 'Consulente criado com sucesso',
-              style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
+        UiUtils.showSuccess(isEditing ? 'Consulente atualizado com sucesso' : 'Consulente criado com sucesso');
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              controller.errorMessage.value,
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        UiUtils.showError(controller.errorMessage.value);
       }
     }
   }

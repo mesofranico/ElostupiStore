@@ -1,79 +1,28 @@
 import 'package:flutter/material.dart';
+import 'utils/ui_utils.dart';
 
 class SnackBarHelper {
-  /// Mostra um SnackBar de sucesso
+  /// Mostra um SnackBar de sucesso usando o estilo premium do UiUtils
   static void showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    UiUtils.showSuccess(message);
   }
 
-  /// Mostra um SnackBar de erro
+  /// Mostra um SnackBar de erro usando o estilo premium do UiUtils
   static void showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    UiUtils.showError(message);
   }
 
-  /// Mostra um SnackBar de aviso
+  /// Mostra um SnackBar de aviso usando o estilo premium do UiUtils
   static void showWarning(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.warning, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.orange,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    UiUtils.showWarning(message);
   }
 
-  /// Mostra um SnackBar de informação
+  /// Mostra um SnackBar de informação usando o estilo premium do UiUtils
   static void showInfo(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.blue,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    UiUtils.showInfo(message);
   }
 
-  /// Mostra um SnackBar personalizado
+  /// Mostra um SnackBar personalizado mapeado para o estilo premium
   static void showCustom(
     BuildContext context, {
     required String message,
@@ -82,20 +31,13 @@ class SnackBarHelper {
     Duration duration = const Duration(seconds: 3),
     EdgeInsets? margin,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: backgroundColor,
-        duration: duration,
-        behavior: SnackBarBehavior.floating,
-        margin: margin,
-      ),
+    // Para custom o ideal é usar o showPremiumSnackbar diretamente
+    UiUtils.showPremiumSnackbar(
+      title: 'Aviso',
+      message: message,
+      icon: icon,
+      color: backgroundColor,
+      duration: duration,
     );
   }
 }
