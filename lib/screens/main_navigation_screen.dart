@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import '../controllers/cart_controller.dart';
+import '../controllers/finance_controller.dart';
+import '../controllers/member_controller.dart';
+import '../controllers/payment_controller.dart';
 import 'dashboard_screen.dart';
 import 'shop_screen.dart';
 import 'reports_screen.dart';
@@ -22,6 +25,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _tabController = PersistentTabController(initialIndex: 2);
+    // Adicionar listener para atualizar dados ao trocar de separador
+    _tabController.addListener(() {
+      if (_tabController.index == 1) {
+        // Se entrar nos Relatórios, atualizar dados
+        try {
+          Get.find<FinanceController>().loadAllData();
+          Get.find<MemberController>().loadMembers(showLoading: false);
+          Get.find<PaymentController>().loadPayments();
+        } catch (e) {
+          // Ignorar se os controllers ainda não estiverem disponíveis
+        }
+      }
+    });
   }
 
   @override
