@@ -120,6 +120,8 @@ class FinanceController extends GetxController {
 
   double get totalIncome =>
       consolidatedReport['income']?['total']?.toDouble() ?? 0.0;
+  double get totalSessions =>
+      consolidatedReport['income']?['sessions']?.toDouble() ?? 0.0;
   double get totalExpense =>
       consolidatedReport['expense']?['total']?.toDouble() ?? 0.0;
   double get balance => consolidatedReport['balance']?.toDouble() ?? 0.0;

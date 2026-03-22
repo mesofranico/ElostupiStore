@@ -2,6 +2,25 @@ const express = require('express');
 const router = express.Router();
 const pool = require('./db');
 
+// GET /api/attendance/dates - Buscar todas as datas com marcação de presença
+router.get('/dates', async (req, res) => {
+  try {
+    const [rows] = await pool.execute(`
+      SELECT DISTINCT 
+        attendance_date
+      FROM attendance_records
+      ORDER BY attendance_date DESC
+    `);
+    
+    // Mapear para extrair apenas as datas em formato string YYYY-MM-DD
+    const dates = rows.map(row => row.attendance_date);
+    res.json(dates);
+  } catch (error) {
+    console.error('Erro ao buscar datas de presença:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/attendance - Buscar registos de presença por data
 router.get('/', async (req, res) => {
   try {

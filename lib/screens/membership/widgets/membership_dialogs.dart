@@ -1316,12 +1316,12 @@ class MembershipDialogs {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: AppStyle.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Handle bar
             Center(
@@ -1369,27 +1369,72 @@ class MembershipDialogs {
                       children: [
                         Text(member.name, style: AppStyle.titleStyle),
                         const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                (isOverdue ? AppStyle.danger : AppStyle.success)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: (isOverdue
+                                        ? AppStyle.danger
+                                        : AppStyle.success)
                                     .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            MembershipUtils.capitalizeFirstLetter(
-                              member.membershipType,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                MembershipUtils.capitalizeFirstLetter(
+                                  member.membershipType,
+                                ),
+                                style: AppStyle.labelStyle.copyWith(
+                                  color: isOverdue
+                                      ? AppStyle.danger
+                                      : AppStyle.success,
+                                  fontSize: 11,
+                                ),
+                              ),
                             ),
-                            style: AppStyle.labelStyle.copyWith(
-                              color: isOverdue
-                                  ? AppStyle.danger
-                                  : AppStyle.success,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: (member.isActive
+                                        ? AppStyle.success
+                                        : Colors.grey)
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    member.isActive
+                                        ? Icons.check_circle
+                                        : Icons.cancel,
+                                    color: member.isActive
+                                        ? AppStyle.success
+                                        : Colors.grey,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    member.isActive ? 'Ativo' : 'Inativo',
+                                    style: AppStyle.labelStyle.copyWith(
+                                      color: member.isActive
+                                          ? AppStyle.success
+                                          : Colors.grey[700],
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -1406,61 +1451,35 @@ class MembershipDialogs {
               ),
             ),
 
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: AppStyle.cardDecoration(
-                        color: member.isActive
-                            ? AppStyle.success.withValues(alpha: 0.05)
-                            : Colors.grey.withValues(alpha: 0.05),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            member.isActive ? Icons.check_circle : Icons.cancel,
-                            color: member.isActive
-                                ? AppStyle.success
-                                : Colors.grey,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Membro ${member.isActive ? 'Ativo' : 'Inativo'}',
-                            style: AppStyle.titleStyle.copyWith(
-                              fontSize: 16,
-                              color: member.isActive
-                                  ? AppStyle.success
-                                  : Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
 
                     // Contact Info
                     _buildDetailSection(
                       title: 'Informações de Contato',
                       children: [
-                        _buildDetailRow(
-                          icon: Icons.email_outlined,
-                          label: 'Email',
-                          value: member.email?.isNotEmpty == true
-                              ? member.email!
-                              : 'Não informado',
-                        ),
-                        _buildDetailRow(
-                          icon: Icons.phone_outlined,
-                          label: 'Telefone',
-                          value: member.phone.isNotEmpty
-                              ? member.phone
-                              : 'Não informado',
+                        Row(
+                          children: [
+                            _buildDetailItem(
+                              icon: Icons.email_outlined,
+                              label: 'Email',
+                              value: member.email?.isNotEmpty == true
+                                  ? member.email!
+                                  : 'Não informado',
+                            ),
+                            _buildDetailItem(
+                              icon: Icons.phone_outlined,
+                              label: 'Telefone',
+                              value: member.phone.isNotEmpty
+                                  ? member.phone
+                                  : 'Não informado',
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1470,39 +1489,49 @@ class MembershipDialogs {
                     _buildDetailSection(
                       title: 'Informações Financeiras',
                       children: [
-                        _buildDetailRow(
-                          icon: Icons.euro_outlined,
-                          label: 'Valor Mensal',
-                          value: CurrencyFormatter.formatEuro(
-                            member.monthlyFee,
-                          ),
-                          valueColor: AppStyle.primary,
-                        ),
-                        _buildDetailRow(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Data de Ingresso',
-                          value: MembershipUtils.formatDate(member.joinDate),
-                        ),
-                        if (member.lastPaymentDate != null)
-                          _buildDetailRow(
-                            icon: Icons.history_outlined,
-                            label: 'Último Pagamento',
-                            value: MembershipUtils.formatDate(
-                              member.lastPaymentDate!,
+                        Row(
+                          children: [
+                            _buildDetailItem(
+                              icon: Icons.euro_outlined,
+                              label: 'Valor Mensal',
+                              value: CurrencyFormatter.formatEuro(
+                                member.monthlyFee,
+                              ),
+                              valueColor: AppStyle.primary,
                             ),
-                          ),
-                        if (member.nextPaymentDate != null)
-                          _buildDetailRow(
-                            icon: isOverdue
-                                ? Icons.warning_amber_rounded
-                                : Icons.schedule_outlined,
-                            label: 'Próximo Pagamento',
-                            value: MembershipUtils.formatDate(
-                              member.nextPaymentDate!,
+                            _buildDetailItem(
+                              icon: Icons.calendar_today_outlined,
+                              label: 'Ingresso',
+                              value: MembershipUtils.formatDate(member.joinDate),
                             ),
-                            valueColor: isOverdue
-                                ? AppStyle.danger
-                                : AppStyle.success,
+                          ],
+                        ),
+                        if (member.lastPaymentDate != null ||
+                            member.nextPaymentDate != null)
+                          Row(
+                            children: [
+                              if (member.lastPaymentDate != null)
+                                _buildDetailItem(
+                                  icon: Icons.history_outlined,
+                                  label: 'Último Pg.',
+                                  value: MembershipUtils.formatDate(
+                                    member.lastPaymentDate!,
+                                  ),
+                                ),
+                              if (member.nextPaymentDate != null)
+                                _buildDetailItem(
+                                  icon: isOverdue
+                                      ? Icons.warning_amber_rounded
+                                      : Icons.schedule_outlined,
+                                  label: 'Próximo Pg.',
+                                  value: MembershipUtils.formatDate(
+                                    member.nextPaymentDate!,
+                                  ),
+                                  valueColor: isOverdue
+                                      ? AppStyle.danger
+                                      : AppStyle.success,
+                                ),
+                            ],
                           ),
                       ],
                     ),
@@ -1539,21 +1568,24 @@ class MembershipDialogs {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            _buildDetailRow(
-                              icon: Icons.timer_outlined,
-                              label: 'Tempo de atraso',
-                              value:
-                                  '${member.overdueMonths! * 30} dias (${member.overdueMonths} mês/meses)',
-                              valueColor: AppStyle.danger,
-                            ),
-                            _buildDetailRow(
-                              icon: Icons.payments_outlined,
-                              label: 'Total em dívida',
-                              value: CurrencyFormatter.formatEuro(
-                                member.totalOverdue ?? 0,
-                              ),
-                              valueColor: AppStyle.danger,
-                              isImportant: true,
+                            Row(
+                              children: [
+                                _buildDetailItem(
+                                  icon: Icons.timer_outlined,
+                                  label: 'Atraso',
+                                  value: '${member.overdueMonths} mês/meses',
+                                  valueColor: AppStyle.danger,
+                                ),
+                                _buildDetailItem(
+                                  icon: Icons.payments_outlined,
+                                  label: 'Dívida',
+                                  value: CurrencyFormatter.formatEuro(
+                                    member.totalOverdue ?? 0,
+                                  ),
+                                  valueColor: AppStyle.danger,
+                                  isImportant: true,
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1635,18 +1667,71 @@ class MembershipDialogs {
     );
   }
 
+  static Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+    bool isImportant = false,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppStyle.primary.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: AppStyle.primary, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppStyle.subtitleStyle.copyWith(fontSize: 10),
+                  ),
+                  Text(
+                    value,
+                    style: isImportant
+                        ? AppStyle.titleStyle.copyWith(
+                            fontSize: 14,
+                            color: valueColor,
+                          )
+                        : AppStyle.bodyStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: valueColor,
+                          ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   static void showPaymentDetails(BuildContext context, Payment payment) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
           color: AppStyle.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Handle bar
             Center(
@@ -1732,10 +1817,11 @@ class MembershipDialogs {
               ),
             ),
 
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildDetailSection(
                       title: 'Detalhes da Transação',
@@ -1745,31 +1831,39 @@ class MembershipDialogs {
                           label: 'Membro',
                           value: payment.memberName ?? 'Não informado',
                         ),
-                        _buildDetailRow(
-                          icon: Icons.euro_outlined,
-                          label: 'Valor Pago',
-                          value: CurrencyFormatter.formatEuro(payment.amount),
-                          valueColor: AppStyle.primary,
-                          isImportant: true,
+                        Row(
+                          children: [
+                            _buildDetailItem(
+                              icon: Icons.euro_outlined,
+                              label: 'Valor Pago',
+                              value: CurrencyFormatter.formatEuro(payment.amount),
+                              valueColor: AppStyle.primary,
+                              isImportant: true,
+                            ),
+                            _buildDetailItem(
+                              icon: Icons.category_outlined,
+                              label: 'Tipo',
+                              value: MembershipUtils.getPaymentTypeText(
+                                payment.paymentType,
+                              ),
+                            ),
+                          ],
                         ),
-                        _buildDetailRow(
-                          icon: Icons.category_outlined,
-                          label: 'Tipo de Pagamento',
-                          value: MembershipUtils.getPaymentTypeText(
-                            payment.paymentType,
-                          ),
-                        ),
-                        _buildDetailRow(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Data do Pagamento',
-                          value: MembershipUtils.formatDate(
-                            payment.paymentDate,
-                          ),
-                        ),
-                        _buildDetailRow(
-                          icon: Icons.history_toggle_off,
-                          label: 'Registado em',
-                          value: MembershipUtils.formatDate(payment.createdAt),
+                        Row(
+                          children: [
+                            _buildDetailItem(
+                              icon: Icons.calendar_today_outlined,
+                              label: 'Data Pg.',
+                              value: MembershipUtils.formatDate(
+                                payment.paymentDate,
+                              ),
+                            ),
+                            _buildDetailItem(
+                              icon: Icons.history_toggle_off,
+                              label: 'Registo',
+                              value: MembershipUtils.formatDate(payment.createdAt),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1811,7 +1905,6 @@ class MembershipDialogs {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
         decoration: const BoxDecoration(
           color: AppStyle.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

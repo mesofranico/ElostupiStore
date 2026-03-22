@@ -278,9 +278,9 @@ class MemberController extends GetxController {
     final now = DateTime.now();
     final nextPayment = member.nextPaymentDate!;
 
-    // É considerado em atraso apenas se o mês/ano for estritamente anterior ao actual
+    // É considerado em atraso se o mês/ano for anterior ou igual ao actual
     if (nextPayment.year < now.year) return true;
-    if (nextPayment.year == now.year && nextPayment.month < now.month) {
+    if (nextPayment.year == now.year && nextPayment.month <= now.month) {
       return true;
     }
 

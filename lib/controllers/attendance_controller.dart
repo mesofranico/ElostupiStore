@@ -10,6 +10,7 @@ import '../services/settings_service.dart';
 import '../models/financial_record.dart';
 import '../core/utils/ui_utils.dart';
 import 'consulente_controller.dart';
+import 'finance_controller.dart';
 
 class AttendanceController extends GetxController {
   final RxList<AttendanceRecord> attendanceRecords = <AttendanceRecord>[].obs;
@@ -21,6 +22,13 @@ class AttendanceController extends GetxController {
   final RxString errorMessage = ''.obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
   final RxMap<String, int> attendanceStats = <String, int>{}.obs;
+  final RxList<DateTime> attendanceDates = <DateTime>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadAttendanceDates();
+  }
 
   Future<void> loadAttendanceForDate(DateTime date) async {
     try {
@@ -68,10 +76,12 @@ class AttendanceController extends GetxController {
         'Todos os consulentes carregados: ${allConsulentesList.length}',
       );
 
-      // Carregar consulentes sem presença registada
       final consulentes =
           await AttendanceService.getConsulentesWithoutAttendance(date);
       consulentesWithoutAttendance.value = consulentes;
+
+      // Recarregar as datas com marcação para manter atualizado
+      await loadAttendanceDates();
 
       debugPrint('=== FIM DEBUG LOAD ATTENDANCE ===');
     } catch (e) {
@@ -179,6 +189,12 @@ class AttendanceController extends GetxController {
             recordDate: selectedDate.value,
           ),
         );
+
+        // Notificar FinanceController se estiver ativo para atualizar relatórios
+        if (Get.isRegistered<FinanceController>()) {
+          Get.find<FinanceController>().loadAllData();
+        }
+
         UiUtils.showSuccess(
           'Pagamento registado: ${totalAmount.toStringAsFixed(2)}€',
         );
@@ -351,5 +367,15 @@ class AttendanceController extends GetxController {
     } catch (_) {}
 
     await loadAttendanceForDate(selectedDate.value);
+  }
+
+  Future<void> loadAttendanceDates() async {
+    try {
+      final dates = await AttendanceService.getAttendanceDates();
+      attendanceDates.value = dates;
+      debugPrint('Datas com marcação carregadas: ${dates.length}');
+    } catch (e) {
+      debugPrint('Erro ao carregar datas com marcação: $e');
+    }
   }
 }

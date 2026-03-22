@@ -231,4 +231,22 @@ class AttendanceService {
       throw Exception('Erro ao buscar consulentes sem presença: $e');
     }
   }
+
+  static Future<List<DateTime>> getAttendanceDates() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.attendanceUrl}/dates'),
+        headers: ApiConfig.defaultHeaders,
+      ).timeout(ApiConfig.defaultTimeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((dateStr) => DateTime.parse(dateStr)).toList();
+      } else {
+        throw Exception('Erro ao buscar datas de presença: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Erro ao buscar datas de presença: $e');
+    }
+  }
 }

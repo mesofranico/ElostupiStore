@@ -9,6 +9,7 @@ import '../services/consulente_service.dart';
 import '../widgets/standard_appbar.dart';
 import '../core/utils/ui_utils.dart';
 import '../widgets/loading_view.dart';
+import '../core/app_style.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -201,7 +202,202 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             onPressed: controller.goToNextDay,
             icon: Icon(Icons.chevron_right, color: theme.colorScheme.primary),
           ),
+          IconButton(
+            onPressed: () => _showAttendanceDatesDialog(context, controller),
+            icon: Icon(Icons.list_alt, color: theme.colorScheme.primary),
+            tooltip: 'Ver datas com marcação',
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showAttendanceDatesDialog(
+    BuildContext context,
+    AttendanceController controller,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Handle de fecho
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Header do BottomSheet
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppStyle.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.calendar_month_rounded,
+                        color: AppStyle.primary,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Datas com Marcações', style: AppStyle.titleStyle),
+                          Text(
+                            'Selecione uma data para ver os registos',
+                            style: AppStyle.subtitleStyle,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Lista de Datas
+              Flexible(
+                child: Obx(() {
+                  if (controller.attendanceDates.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 48),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nenhuma data com marcação encontrada.',
+                            style: AppStyle.bodyStyle.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Limitar a altura se houver muitos itens
+                  return ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                      itemCount: controller.attendanceDates.length,
+                      separatorBuilder: (context, index) => const Divider(
+                        height: 1,
+                        indent: 56,
+                        endIndent: 0,
+                        color: Color(0xFFF1F5F9),
+                      ),
+                      itemBuilder: (context, index) {
+                        final date = controller.attendanceDates[index];
+                        final isSelected =
+                            DateFormat('yyyy-MM-dd').format(date) ==
+                            DateFormat('yyyy-MM-dd').format(
+                              controller.selectedDate.value,
+                            );
+
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              controller.changeDate(date);
+                              Navigator.pop(sheetContext);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppStyle.primary.withValues(
+                                            alpha: 0.1,
+                                          )
+                                          : const Color(0xFFF8FAFC),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.event_available_rounded,
+                                      size: 20,
+                                      color: isSelected
+                                          ? AppStyle.primary
+                                          : const Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      DateFormat('dd/MM/yyyy').format(date),
+                                      style: AppStyle.bodyStyle.copyWith(
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w500,
+                                        color: isSelected
+                                            ? AppStyle.primary
+                                            : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppStyle.primary,
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

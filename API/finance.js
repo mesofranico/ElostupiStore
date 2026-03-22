@@ -88,13 +88,19 @@ router.get('/report', async (req, res) => {
             [start, end]
         );
 
-        // 3. Somar outros rendimentos (manuais)
-        const [otherIncomeSum] = await pool.execute(
-            "SELECT SUM(amount) as total FROM financial_records WHERE type = 'income' AND category NOT IN ('Mensalidade', 'Venda de Produtos') AND record_date BETWEEN ? AND ?",
+        // 3. Somar sessões de presença
+        const [sessionsSum] = await pool.execute(
+            "SELECT SUM(amount) as total FROM financial_records WHERE type = 'income' AND category = 'Sessão' AND record_date BETWEEN ? AND ?",
             [start, end]
         );
 
-        // 4. Somar gastos/despesas
+        // 4. Somar outros rendimentos (manuais)
+        const [otherIncomeSum] = await pool.execute(
+            "SELECT SUM(amount) as total FROM financial_records WHERE type = 'income' AND category NOT IN ('Mensalidade', 'Venda de Produtos', 'Sessão') AND record_date BETWEEN ? AND ?",
+            [start, end]
+        );
+
+        // 5. Somar gastos/despesas
         const [expensesSum] = await pool.execute(
             "SELECT SUM(amount) as total FROM financial_records WHERE type = 'expense' AND record_date BETWEEN ? AND ?",
             [start, end]
@@ -102,15 +108,17 @@ router.get('/report', async (req, res) => {
 
         const membership = parseFloat(membershipSum[0].total || 0);
         const sales = parseFloat(salesSum[0].total || 0);
+        const sessions = parseFloat(sessionsSum[0].total || 0);
         const otherIncome = parseFloat(otherIncomeSum[0].total || 0);
         const totalExpenses = parseFloat(expensesSum[0].total || 0);
-        const totalIncome = membership + sales + otherIncome;
+        const totalIncome = membership + sales + sessions + otherIncome;
 
         res.json({
             period: { start, end },
             income: {
                 membership: membership,
                 sales: sales,
+                sessions: sessions,
                 other: otherIncome,
                 total: totalIncome
             },

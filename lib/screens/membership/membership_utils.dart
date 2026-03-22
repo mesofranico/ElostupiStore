@@ -131,7 +131,9 @@ class MembershipUtils {
           (m) =>
               m.paymentStatus == 'overdue' ||
               (m.nextPaymentDate != null &&
-                  m.nextPaymentDate!.isBefore(DateTime.now())),
+                  (m.nextPaymentDate!.year < DateTime.now().year ||
+                      (m.nextPaymentDate!.year == DateTime.now().year &&
+                          m.nextPaymentDate!.month <= DateTime.now().month))),
         )
         .length;
     final totalAmount = payments.fold<double>(0, (sum, p) => sum + p.amount);
@@ -153,7 +155,9 @@ class MembershipUtils {
           (m) =>
               m.paymentStatus == 'overdue' ||
               (m.nextPaymentDate != null &&
-                  m.nextPaymentDate!.isBefore(DateTime.now())),
+                  (m.nextPaymentDate!.year < DateTime.now().year ||
+                      (m.nextPaymentDate!.year == DateTime.now().year &&
+                          m.nextPaymentDate!.month <= DateTime.now().month))),
         )
         .toList();
 

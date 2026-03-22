@@ -7,14 +7,29 @@ import 'membership/tabs/members_tab.dart';
 import 'membership/tabs/payments_tab.dart';
 import 'membership/widgets/membership_dialogs.dart';
 
-class MembershipScreen extends StatelessWidget {
+class MembershipScreen extends StatefulWidget {
   const MembershipScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final MemberController memberController = Get.find<MemberController>();
-    final PaymentController paymentController = Get.find<PaymentController>();
+  State<MembershipScreen> createState() => _MembershipScreenState();
+}
 
+class _MembershipScreenState extends State<MembershipScreen> {
+  final MemberController memberController = Get.find<MemberController>();
+  final PaymentController paymentController = Get.find<PaymentController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Atualizar dados ao entrar no ecrã
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      memberController.loadMembers(showLoading: false);
+      paymentController.loadPayments();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return DefaultTabController(

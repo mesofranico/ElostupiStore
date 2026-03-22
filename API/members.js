@@ -21,14 +21,14 @@ router.get('/', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
-              COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
+              m.next_payment_date
             ) / 
               CASE m.membership_type
                 WHEN 'Mensal' THEN 30
@@ -41,9 +41,9 @@ router.get('/', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
-              COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
+              m.next_payment_date
             ) / 
               CASE m.membership_type
                 WHEN 'Mensal' THEN 30
@@ -84,14 +84,14 @@ router.get('/overdue', async (req, res) => {
         CONVERT_TZ(m.created_at, '+00:00', '+01:00') as created_at,
         CONVERT_TZ(m.updated_at, '+00:00', '+01:00') as updated_at,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             DATEDIFF(CURDATE(), m.next_payment_date)
           ELSE 0 
         END as days_overdue,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             FLOOR(DATEDIFF(CURDATE(), 
-              COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
+              m.next_payment_date
             ) / 
               CASE m.membership_type
                 WHEN 'Mensal' THEN 30
@@ -104,9 +104,9 @@ router.get('/overdue', async (req, res) => {
           ELSE 0 
         END as overdue_months,
         CASE 
-          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
+          WHEN DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND m.is_active = 1 THEN 
             (FLOOR(DATEDIFF(CURDATE(), 
-              COALESCE(m.last_payment_date, DATE_FORMAT(DATE_ADD(m.join_date, INTERVAL 1 MONTH), '%Y-%m-01'))
+              m.next_payment_date
             ) / 
               CASE m.membership_type
                 WHEN 'Mensal' THEN 30
@@ -119,7 +119,7 @@ router.get('/overdue', async (req, res) => {
           ELSE 0 
         END as total_overdue
       FROM members m
-      WHERE (DATE_FORMAT(m.next_payment_date, '%Y-%m-01') < DATE_FORMAT(CURDATE(), '%Y-%m-01') OR m.payment_status = 'overdue')
+      WHERE (DATE_FORMAT(m.next_payment_date, '%Y-%m-01') <= DATE_FORMAT(CURDATE(), '%Y-%m-01') OR m.payment_status = 'overdue')
       AND m.is_active = 1
       ORDER BY m.next_payment_date ASC
     `);
