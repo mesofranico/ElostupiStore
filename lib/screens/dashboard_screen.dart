@@ -233,8 +233,8 @@ class DashboardScreen extends StatelessWidget {
                                                   : '$dias dias restantes')
                                             : null;
                                         trailing = [
-                                          if (dataStr != null) dataStr,
-                                          if (diasStr != null) diasStr,
+                                          ?dataStr,
+                                          ?diasStr,
                                         ].join(' · ');
                                       }
                                       return _RecadoListItem(
