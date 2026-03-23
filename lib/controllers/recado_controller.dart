@@ -21,7 +21,9 @@ class RecadoController extends GetxController {
       final list = await RecadoService.getAll();
       recados.assignAll(list);
     } catch (e) {
-      // Erro silencioso ou log
+      if (kDebugMode) {
+        print('DEBUG: Erro ao carregar recados: $e');
+      }
     } finally {
       isLoading.value = false;
     }

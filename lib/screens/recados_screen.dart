@@ -64,182 +64,185 @@ class RecadosScreen extends StatelessWidget {
             ),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          itemCount: controller.recados.length,
-          itemBuilder: (context, index) {
-            final r = controller.recados[index];
-            final dias = r.diasRestantes;
-            final urgente = r.alerta || (dias != null && dias <= 7);
-            final accentColor = urgente
-                ? Colors.orange
-                : theme.colorScheme.tertiary;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(
-                    alpha: 0.35,
+        return RefreshIndicator(
+          onRefresh: () => controller.loadRecados(),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            itemCount: controller.recados.length,
+            itemBuilder: (context, index) {
+              final r = controller.recados[index];
+              final dias = r.diasRestantes;
+              final urgente = r.alerta || (dias != null && dias <= 7);
+              final accentColor = urgente
+                  ? Colors.orange
+                  : theme.colorScheme.tertiary;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.35,
+                    ),
+                    width: 1,
                   ),
-                  width: 1,
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 12, 4, 10),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            urgente
-                                ? Icons.notifications_active_rounded
-                                : Icons.note_alt_outlined,
-                            size: 18,
-                            color: accentColor,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            r.titulo,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: theme.colorScheme.onSurface,
-                              letterSpacing: -0.3,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (urgente)
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 4, 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
                           Container(
-                            margin: const EdgeInsets.only(right: 4),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(6),
+                              color: accentColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
                             ),
+                            child: Icon(
+                              urgente
+                                  ? Icons.notifications_active_rounded
+                                  : Icons.note_alt_outlined,
+                              size: 18,
+                              color: accentColor,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: Text(
-                              'Urgente',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
+                              r.titulo,
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: accentColor,
+                                color: theme.colorScheme.onSurface,
+                                letterSpacing: -0.3,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (urgente)
+                            Container(
+                              margin: const EdgeInsets.only(right: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Urgente',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: accentColor,
+                                ),
                               ),
                             ),
+                          PopupMenuButton<String>(
+                            icon: Icon(
+                              Icons.more_vert,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            onSelected: (value) {
+                              if (value == 'edit') {
+                                _openForm(context, controller, recado: r);
+                              } else if (value == 'delete') {
+                                _confirmDelete(context, controller, r);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Editar'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Eliminar'),
+                              ),
+                            ],
                           ),
-                        PopupMenuButton<String>(
-                          icon: Icon(
-                            Icons.more_vert,
-                            size: 20,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _openForm(context, controller, recado: r);
-                            } else if (value == 'delete') {
-                              _confirmDelete(context, controller, r);
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Editar'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Eliminar'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (r.pessoa.isNotEmpty ||
-                      r.instrucao.isNotEmpty ||
-                      r.dataLimite != null ||
-                      dias != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (r.pessoa.isNotEmpty ||
-                              r.dataLimite != null ||
-                              dias != null)
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                if (r.pessoa.isNotEmpty ||
-                                    (r.consulenteNames?.isNotEmpty ?? false))
-                                  _metaChip(
-                                    theme,
-                                    Icons.person_outline_rounded,
-                                    (r.consulenteNames != null &&
-                                            r.consulenteNames!.isNotEmpty)
-                                        ? '${r.consulenteNames!.length} consulente(s)'
-                                        : r.pessoa,
-                                    theme.colorScheme.primaryContainer,
-                                    theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                if (r.dataLimite != null || dias != null)
-                                  _metaChip(
-                                    theme,
-                                    Icons.event_rounded,
-                                    r.dataLimite != null
-                                        ? '${_formatDate(r.dataLimite!)}${dias != null ? ' · ${dias == 1 ? '1 dia restante' : '$dias dias restantes'}' : ''}'
-                                        : (dias == 1
-                                              ? '1 dia restante'
-                                              : '$dias dias restantes'),
-                                    theme.colorScheme.surfaceContainerHighest,
-                                    theme.colorScheme.onSurfaceVariant,
-                                  ),
-                              ],
-                            ),
-                          if (r.instrucao.isNotEmpty) ...[
-                            if (r.pessoa.isNotEmpty ||
-                                r.dataLimite != null ||
-                                dias != null)
-                              const SizedBox(height: 8),
-                            _InstrucoesExpandable(
-                              instrucao: r.instrucao,
-                              consulenteNames: r.consulenteNames,
-                              consulenteIds: r.consulenteIds,
-                              theme: theme,
-                              accentColor: accentColor,
-                            ),
-                          ],
                         ],
                       ),
                     ),
+                    if (r.pessoa.isNotEmpty ||
+                        r.instrucao.isNotEmpty ||
+                        r.dataLimite != null ||
+                        dias != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (r.pessoa.isNotEmpty ||
+                                r.dataLimite != null ||
+                                dias != null)
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if (r.pessoa.isNotEmpty ||
+                                      (r.consulenteNames?.isNotEmpty ?? false))
+                                    _metaChip(
+                                      theme,
+                                      Icons.person_outline_rounded,
+                                      (r.consulenteNames != null &&
+                                              r.consulenteNames!.isNotEmpty)
+                                          ? '${r.consulenteNames!.length} consulente(s)'
+                                          : r.pessoa,
+                                      theme.colorScheme.primaryContainer,
+                                      theme.colorScheme.onPrimaryContainer,
+                                    ),
+                                  if (r.dataLimite != null || dias != null)
+                                    _metaChip(
+                                      theme,
+                                      Icons.event_rounded,
+                                      r.dataLimite != null
+                                          ? '${_formatDate(r.dataLimite!)}${dias != null ? ' · ${dias == 1 ? '1 dia restante' : '$dias dias restantes'}' : ''}'
+                                          : (dias == 1
+                                                ? '1 dia restante'
+                                                : '$dias dias restantes'),
+                                      theme.colorScheme.surfaceContainerHighest,
+                                      theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                ],
+                              ),
+                            if (r.instrucao.isNotEmpty) ...[
+                              if (r.pessoa.isNotEmpty ||
+                                  r.dataLimite != null ||
+                                  dias != null)
+                                const SizedBox(height: 8),
+                              _InstrucoesExpandable(
+                                instrucao: r.instrucao,
+                                consulenteNames: r.consulenteNames,
+                                consulenteIds: r.consulenteIds,
+                                theme: theme,
+                                accentColor: accentColor,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+          ),
         );
       }),
     );
